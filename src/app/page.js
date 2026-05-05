@@ -206,7 +206,7 @@ export default function DashboardLayout() {
         onSync={handleSync}
       />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -384,13 +384,13 @@ function DashboardView({ data, allData }) {
   const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
       <header>
-        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
-        <p className="text-slate-500 mt-2 text-lg">Real-time operational overview for Vimanasa Nexus</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
+        <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <StatsCard 
           label="Total Workforce" 
           value={stats.staff} 
@@ -419,12 +419,12 @@ function DashboardView({ data, allData }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-xl text-slate-800">Quick Actions</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="lg:col-span-2 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h3 className="font-bold text-lg sm:text-xl text-slate-800">Quick Actions</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
             <QuickActionCard 
               icon={Users} 
               label="Add Employee" 
@@ -464,9 +464,9 @@ function DashboardView({ data, allData }) {
           </div>
         </div>
         
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
-          <h3 className="font-bold text-xl text-slate-800 mb-6">Recent Activity</h3>
-          <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
+          <h3 className="font-bold text-lg sm:text-xl text-slate-800 mb-4 sm:mb-6">Recent Activity</h3>
+          <div className="space-y-3 sm:space-y-4 max-h-[280px] sm:max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
             {allData?.workforce?.slice(0, 6).map((emp, i) => (
               <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer group">
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -500,10 +500,10 @@ function QuickActionCard({ icon: Icon, label, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`p-6 rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 active:scale-95 flex flex-col items-center gap-3 group`}
+      className={`p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 active:scale-95 flex flex-col items-center gap-2 sm:gap-3 group`}
     >
-      <Icon size={32} className="group-hover:scale-110 transition-transform" />
-      <span className="text-sm font-bold text-center">{label}</span>
+      <Icon size={24} className="sm:w-7 sm:h-7 lg:w-8 lg:h-8 group-hover:scale-110 transition-transform" />
+      <span className="text-xs sm:text-sm font-bold text-center leading-tight">{label}</span>
     </button>
   );
 }
@@ -517,18 +517,18 @@ function StatsCard({ label, value, trend, icon: Icon, color }) {
   };
   
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+    <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       <div className="flex justify-between items-start">
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{label}</p>
-        <div className={`p-2 rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-400'}`}>
-          <Icon size={20} />
+        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider sm:tracking-widest">{label}</p>
+        <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-400'}`}>
+          <Icon size={16} className="sm:w-5 sm:h-5" />
         </div>
       </div>
-      <div className="mt-4 flex items-baseline justify-between">
-        <h4 className="text-3xl font-black text-slate-900">{value}</h4>
+      <div className="mt-3 sm:mt-4 flex items-baseline justify-between">
+        <h4 className="text-2xl sm:text-3xl font-black text-slate-900">{value}</h4>
         {trend && (
-          <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl">
-            <ArrowUpRight size={12} />
+          <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 sm:py-1.5 bg-emerald-50 text-emerald-600 rounded-lg sm:rounded-xl">
+            <ArrowUpRight size={10} className="sm:w-3 sm:h-3" />
             {trend}
           </span>
         )}
@@ -547,57 +547,57 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
   ) : [];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-4 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{title}</h1>
-          <p className="text-slate-500 mt-2 text-lg">{subtitle}</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">{title}</h1>
+          <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">{subtitle}</p>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
           <button 
             onClick={onAdd}
-            className="flex-1 md:flex-none bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3.5 rounded-2xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 md:flex-none bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95"
           >
-            <Plus size={20} /> Add Entry
+            <Plus size={18} className="sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Add Entry</span><span className="sm:hidden">Add</span>
           </button>
           <ExportMenu data={filteredData} filename={title.toLowerCase().replace(' ', '_')} title={title} />
         </div>
       </header>
 
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100/50 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row gap-4 items-center bg-slate-50/50">
+      <div className="bg-white rounded-2xl sm:rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-100/50 overflow-hidden">
+        <div className="p-3 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row gap-3 sm:gap-4 items-center bg-slate-50/50">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
               placeholder={`Search in ${title}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-white shadow-sm focus:ring-4 focus:ring-blue-100 transition-all outline-none text-slate-700 font-medium"
+              className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl border-none bg-white shadow-sm focus:ring-4 focus:ring-blue-100 transition-all outline-none text-slate-700 text-sm sm:text-base font-medium"
             />
           </div>
-          <button className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 transition-all shadow-sm">
+          <button className="hidden sm:flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 transition-all shadow-sm">
             <Filter size={18} /> Filter
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[640px]">
             <thead>
               <tr className="bg-slate-50/80">
                 {columns.map(col => (
-                  <th key={col} className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{col}</th>
+                  <th key={col} className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">{col}</th>
                 ))}
-                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
+                <th className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredData.length > 0 ? filteredData.map((row, i) => (
                 <tr key={i} className="hover:bg-blue-50/30 transition-colors group">
                   {columns.map(col => (
-                    <td key={col} className="px-8 py-6">
+                    <td key={col} className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
                       {col.toLowerCase().includes('status') ? (
-                        <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
+                        <span className={`px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border whitespace-nowrap ${
                           String(row[col]).toLowerCase().includes('active') || String(row[col]).toLowerCase().includes('paid') || String(row[col]).toLowerCase().includes('completed')
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                           : String(row[col]).toLowerCase().includes('progress')
@@ -607,32 +607,32 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                           {row[col] || 'N/A'}
                         </span>
                       ) : (
-                        <span className="text-sm font-bold text-slate-700">{row[col] || 'N/A'}</span>
+                        <span className="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">{row[col] || 'N/A'}</span>
                       )}
                     </td>
                   ))}
-                  <td className="px-8 py-6">
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                    <div className="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => onEdit(row, i)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                       <button 
                         onClick={() => onDelete(row, i)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={columns.length + 1} className="px-8 py-20 text-center text-slate-400 italic">
+                  <td colSpan={columns.length + 1} className="px-4 sm:px-8 py-12 sm:py-20 text-center text-slate-400 text-sm sm:text-base italic">
                     {data ? "No records found matching your search." : "Loading entries from Google Sheets..."}
                   </td>
                 </tr>
