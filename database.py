@@ -54,9 +54,17 @@ def add_data(sheet_name, row_data):
         return False
     
     try:
+        # Convert NumPy/Pandas types to standard Python types for JSON serialization
+        clean_row = []
+        for item in row_data:
+            if hasattr(item, "item"): # Handles NumPy types
+                clean_row.append(item.item())
+            else:
+                clean_row.append(item)
+        
         sh = client.open("Vimanasa_HR_DB")
         worksheet = sh.worksheet(sheet_name)
-        worksheet.append_row(row_data)
+        worksheet.append_row(clean_row)
         return True
     except Exception as e:
         st.error(f"Error adding data to '{sheet_name}': {e}")

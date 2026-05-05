@@ -2,6 +2,9 @@ streamlit
 pandas
 gspread
 google-auth
-google-generativeai
+google-genai
 plotly
 python-dotenv
+pillow
+streamlit-option-menu
+streamlit-extras
