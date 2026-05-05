@@ -1,10 +1,20 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
+import EmployeeDetailForm from '@/components/EmployeeDetailForm';
+import PartnerDetailForm from '@/components/PartnerDetailForm';
 import GenericForm from '@/components/GenericForm';
+import AttendanceManager from '@/components/AttendanceManager';
+import LeaveManager from '@/components/LeaveManager';
+import DashboardCharts from '@/components/DashboardCharts';
+import ExpenseManager from '@/components/ExpenseManager';
+import PayrollActions from '@/components/PayrollActions';
+import ExportMenu from '@/components/ExportMenu';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2 } from 'lucide-react';
+import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import { generateSalarySlip } from '@/lib/pdfGenerator';
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -16,6 +26,9 @@ export default function DashboardLayout() {
     payroll: [],
     finance: [],
     compliance: [],
+    attendance: [],
+    leaveRequests: [],
+    expenses: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -29,7 +42,10 @@ export default function DashboardLayout() {
     partners: 'Clients',
     payroll: 'Payroll',
     finance: 'Finance',
-    compliance: 'Compliance'
+    compliance: 'Compliance',
+    attendance: 'Attendance',
+    leave: 'Leave Requests',
+    expenses: 'Expense Claims'
   };
 
   const fetchData = useCallback(async (tab) => {
@@ -83,17 +99,32 @@ export default function DashboardLayout() {
     setShowForm(true);
   };
 
-  const handleEdit = (item, tab) => {
+  const handleEdit = (item, tab, rowIndex) => {
     setFormType(tab);
-    setEditingItem(item);
+    setEditingItem({ ...item, _rowIndex: rowIndex });
     setShowForm(true);
   };
 
-  const handleDelete = async (item, tab) => {
-    if (!confirm('Are you sure you want to delete this entry?')) {
+  const handleDelete = async (item, tab, rowIndex) => {
+    if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
       return;
     }
-    alert('Delete functionality requires backend implementation. For now, please delete directly from Google Sheets.');
+    
+    try {
+      const sheetName = sheetMapping[tab];
+      await axios.delete('/api/gsheets', {
+        data: {
+          sheet: sheetName,
+          rowIndex: rowIndex
+        }
+      });
+      
+      toast.success('Entry deleted successfully!');
+      fetchData(tab);
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error('Failed to delete entry. Please try again.');
+    }
   };
 
   const handleSave = async (formData) => {
@@ -101,19 +132,30 @@ export default function DashboardLayout() {
       const sheetName = sheetMapping[formType];
       const values = Object.values(formData);
       
-      await axios.post('/api/gsheets', {
-        sheet: sheetName,
-        values: values
-      });
+      if (editingItem && editingItem._rowIndex !== undefined) {
+        // Update existing entry
+        await axios.put('/api/gsheets', {
+          sheet: sheetName,
+          rowIndex: editingItem._rowIndex,
+          values: values
+        });
+        toast.success('Entry updated successfully!');
+      } else {
+        // Add new entry
+        await axios.post('/api/gsheets', {
+          sheet: sheetName,
+          values: values
+        });
+        toast.success('Entry added successfully!');
+      }
       
       setShowForm(false);
       setEditingItem(null);
       setFormType(null);
       fetchData(formType);
-      alert('Entry saved successfully!');
     } catch (error) {
       console.error('Error saving:', error);
-      alert('Failed to save entry. Please try again.');
+      toast.error('Failed to save entry. Please try again.');
     }
   };
 
@@ -181,19 +223,139 @@ export default function DashboardLayout() {
               </div>
             )}
 
-            {activeTab === 'dashboard' && <DashboardView data={data.dashboard} />}
-            {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} onAdd={() => handleAddNew('workforce')} onEdit={(item) => handleEdit(item, 'workforce')} onDelete={(item) => handleDelete(item, 'workforce')} />}
-            {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item) => handleEdit(item, 'partners')} onDelete={(item) => handleDelete(item, 'partners')} />}
-            {activeTab === 'payroll' && <TableView title="Payroll" subtitle="Salary processing and disbursement status" data={data.payroll} columns={['Month', 'Total Payout', 'Pending', 'Status']} onAdd={() => handleAddNew('payroll')} onEdit={(item) => handleEdit(item, 'payroll')} onDelete={(item) => handleDelete(item, 'payroll')} />}
-            {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item) => handleEdit(item, 'finance')} onDelete={(item) => handleDelete(item, 'finance')} />}
-            {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item) => handleEdit(item, 'compliance')} onDelete={(item) => handleDelete(item, 'compliance')} />}
+            {activeTab === 'dashboard' && (
+              <>
+                <DashboardView data={data.dashboard} allData={data} />
+                <div className="mt-8">
+                  <DashboardCharts data={data} />
+                </div>
+              </>
+            )}
+            {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} onAdd={() => handleAddNew('workforce')} onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} tab="workforce" />}
+            {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item, idx) => handleEdit(item, 'partners', idx)} onDelete={(item, idx) => handleDelete(item, 'partners', idx)} tab="partners" />}
+            {activeTab === 'attendance' && (
+              <AttendanceManager 
+                employees={data.workforce}
+                onSave={async (record) => {
+                  await axios.post('/api/gsheets', {
+                    sheet: 'Attendance',
+                    values: Object.values(record)
+                  });
+                }}
+              />
+            )}
+            {activeTab === 'leave' && (
+              <LeaveManager 
+                employees={data.workforce}
+                leaveRequests={data.leaveRequests}
+                onSave={async (record) => {
+                  await axios.post('/api/gsheets', {
+                    sheet: 'Leave Requests',
+                    values: Object.values(record)
+                  });
+                  fetchData('leave');
+                }}
+                onApprove={async (request, idx) => {
+                  await axios.put('/api/gsheets', {
+                    sheet: 'Leave Requests',
+                    rowIndex: idx,
+                    values: Object.values({ ...request, Status: 'Approved', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
+                  });
+                  toast.success('Leave request approved');
+                  fetchData('leave');
+                }}
+                onReject={async (request, idx) => {
+                  await axios.put('/api/gsheets', {
+                    sheet: 'Leave Requests',
+                    rowIndex: idx,
+                    values: Object.values({ ...request, Status: 'Rejected', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
+                  });
+                  toast.success('Leave request rejected');
+                  fetchData('leave');
+                }}
+              />
+            )}
+            {activeTab === 'expenses' && (
+              <ExpenseManager 
+                employees={data.workforce}
+                expenses={data.expenses}
+                onSave={async (record) => {
+                  await axios.post('/api/gsheets', {
+                    sheet: 'Expense Claims',
+                    values: Object.values(record)
+                  });
+                  fetchData('expenses');
+                }}
+                onApprove={async (expense, idx) => {
+                  await axios.put('/api/gsheets', {
+                    sheet: 'Expense Claims',
+                    rowIndex: idx,
+                    values: Object.values({ ...expense, Status: 'Approved', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
+                  });
+                  toast.success('Expense claim approved');
+                  fetchData('expenses');
+                }}
+                onReject={async (expense, idx) => {
+                  await axios.put('/api/gsheets', {
+                    sheet: 'Expense Claims',
+                    rowIndex: idx,
+                    values: Object.values({ ...expense, Status: 'Rejected', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
+                  });
+                  toast.success('Expense claim rejected');
+                  fetchData('expenses');
+                }}
+              />
+            )}
+            {activeTab === 'payroll' && (
+              <div className="space-y-6">
+                <div className="flex justify-end">
+                  <PayrollActions employees={data.workforce} />
+                </div>
+                <TableView 
+                  title="Payroll" 
+                  subtitle="Salary processing and disbursement status" 
+                  data={data.payroll} 
+                  columns={['Month', 'Total Payout', 'Pending', 'Status']} 
+                  onAdd={() => handleAddNew('payroll')} 
+                  onEdit={(item, idx) => handleEdit(item, 'payroll', idx)} 
+                  onDelete={(item, idx) => handleDelete(item, 'payroll', idx)} 
+                  tab="payroll" 
+                />
+              </div>
+            )}
+            {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item, idx) => handleEdit(item, 'finance', idx)} onDelete={(item, idx) => handleDelete(item, 'finance', idx)} tab="finance" />}
+            {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item, idx) => handleEdit(item, 'compliance', idx)} onDelete={(item, idx) => handleDelete(item, 'compliance', idx)} tab="compliance" />}
             {activeTab === 'ai' && <AiAssistantView dataContext={data} />}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* Generic Form Modal */}
-      {showForm && formType && (
+      {/* Form Modals */}
+      {showForm && formType === 'workforce' && (
+        <EmployeeDetailForm
+          employee={editingItem}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingItem(null);
+            setFormType(null);
+          }}
+        />
+      )}
+      
+      {showForm && formType === 'partners' && (
+        <PartnerDetailForm
+          partner={editingItem}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingItem(null);
+            setFormType(null);
+          }}
+        />
+      )}
+      
+      {showForm && formType && !['workforce', 'partners'].includes(formType) && (
         <GenericForm
           title={formType.charAt(0).toUpperCase() + formType.slice(1)}
           fields={getFormFields(formType)}
@@ -210,14 +372,16 @@ export default function DashboardLayout() {
   );
 }
 
-function DashboardView({ data }) {
-  // Use mock if data is empty for visual demonstration
-  const stats = data && data.length > 0 ? data[0] : {
-    staff: "124",
-    deployed: "98",
-    clients: "12",
-    payroll: "₹1.2M"
+function DashboardView({ data, allData }) {
+  // Calculate real-time stats from actual data
+  const stats = {
+    staff: allData?.workforce?.length || 0,
+    deployed: allData?.workforce?.filter(e => e.Status === 'Active' || e['Employee Status'] === 'Active').length || 0,
+    clients: allData?.partners?.length || 0,
+    payroll: allData?.payroll?.[0]?.['Total Payout'] || allData?.payroll?.[0]?.['Monthly Billing'] || '₹0'
   };
+  
+  const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
 
   return (
     <div className="space-y-8">
@@ -227,39 +391,91 @@ function DashboardView({ data }) {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard label="Total Staff" value={stats.staff || stats.Staff || "0"} trend="+5%" icon="users" />
-        <StatsCard label="Deployed" value={stats.deployed || stats.Deployed || "0"} trend="82%" icon="target" />
-        <StatsCard label="Active Clients" value={stats.clients || stats.Clients || "0"} icon="briefcase" />
-        <StatsCard label="Monthly Payroll" value={stats.payroll || stats.Payroll || "₹0"} icon="credit-card" />
+        <StatsCard 
+          label="Total Workforce" 
+          value={stats.staff} 
+          trend="+5%" 
+          icon={Users}
+          color="blue"
+        />
+        <StatsCard 
+          label="Deployed Staff" 
+          value={stats.deployed} 
+          trend={`${deploymentRate}%`} 
+          icon={TrendingUp}
+          color="green"
+        />
+        <StatsCard 
+          label="Active Partners" 
+          value={stats.clients} 
+          icon={Shield}
+          color="purple"
+        />
+        <StatsCard 
+          label="Monthly Payroll" 
+          value={stats.payroll} 
+          icon={DollarSign}
+          color="orange"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-xl text-slate-800">Deployment Distribution</h3>
-            <button className="text-sm text-blue-600 font-semibold hover:bg-blue-50 px-3 py-1 rounded-lg transition-colors">View All Sites</button>
+            <h3 className="font-bold text-xl text-slate-800">Quick Actions</h3>
           </div>
-          <div className="h-80 bg-slate-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-200 group hover:border-blue-200 transition-colors">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <ArrowUpRight className="text-blue-500" size={32} />
-              </div>
-              <p className="text-slate-400 font-medium tracking-wide uppercase text-xs">Dynamic Chart Loading...</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <QuickActionCard 
+              icon={Users} 
+              label="Add Employee" 
+              color="blue"
+              onClick={() => {}}
+            />
+            <QuickActionCard 
+              icon={Shield} 
+              label="Add Partner" 
+              color="purple"
+              onClick={() => {}}
+            />
+            <QuickActionCard 
+              icon={FileText} 
+              label="Generate Payslip" 
+              color="green"
+              onClick={() => {}}
+            />
+            <QuickActionCard 
+              icon={DollarSign} 
+              label="Record Expense" 
+              color="orange"
+              onClick={() => {}}
+            />
+            <QuickActionCard 
+              icon={AlertTriangle} 
+              label="Compliance Alert" 
+              color="red"
+              onClick={() => {}}
+            />
+            <QuickActionCard 
+              icon={Download} 
+              label="Export Reports" 
+              color="slate"
+              onClick={() => {}}
+            />
           </div>
         </div>
+        
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
-          <h3 className="font-bold text-xl text-slate-800 mb-6">Live Logs</h3>
+          <h3 className="font-bold text-xl text-slate-800 mb-6">Recent Activity</h3>
           <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+            {allData?.workforce?.slice(0, 6).map((emp, i) => (
               <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer group">
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  {i}
+                  {i + 1}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">New Onboarding</p>
-                  <p className="text-xs text-slate-500 mt-0.5">EMP_ID: {2000 + i} assigned to Site B</p>
-                  <p className="text-[10px] text-blue-500 font-bold mt-1 uppercase tracking-widest">Just Now</p>
+                  <p className="text-sm font-bold text-slate-800">{emp.Employee || emp['First Name']}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{emp.Role || emp.Designation} - {emp.Status || emp['Employee Status']}</p>
+                  <p className="text-[10px] text-blue-500 font-bold mt-1 uppercase tracking-widest">Active</p>
                 </div>
               </div>
             ))}
@@ -271,13 +487,41 @@ function DashboardView({ data }) {
   );
 }
 
-function StatsCard({ label, value, trend, icon }) {
+function QuickActionCard({ icon: Icon, label, color, onClick }) {
+  const colorClasses = {
+    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+    purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
+    green: 'bg-green-50 text-green-600 hover:bg-green-100',
+    orange: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
+    red: 'bg-red-50 text-red-600 hover:bg-red-100',
+    slate: 'bg-slate-50 text-slate-600 hover:bg-slate-100',
+  };
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`p-6 rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 active:scale-95 flex flex-col items-center gap-3 group`}
+    >
+      <Icon size={32} className="group-hover:scale-110 transition-transform" />
+      <span className="text-sm font-bold text-center">{label}</span>
+    </button>
+  );
+}
+
+function StatsCard({ label, value, trend, icon: Icon, color }) {
+  const colorClasses = {
+    blue: 'bg-blue-50 text-blue-600',
+    green: 'bg-green-50 text-green-600',
+    purple: 'bg-purple-50 text-purple-600',
+    orange: 'bg-orange-50 text-orange-600',
+  };
+  
   return (
     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       <div className="flex justify-between items-start">
         <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{label}</p>
-        <div className="p-2 bg-slate-50 rounded-xl text-slate-400">
-          <Shield size={16} />
+        <div className={`p-2 rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-400'}`}>
+          <Icon size={20} />
         </div>
       </div>
       <div className="mt-4 flex items-baseline justify-between">
@@ -293,7 +537,7 @@ function StatsCard({ label, value, trend, icon }) {
   );
 }
 
-function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete }) {
+function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, tab }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = data ? data.filter(row => 
@@ -312,13 +556,11 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete }) 
         <div className="flex gap-3 w-full md:w-auto">
           <button 
             onClick={onAdd}
-            className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 md:flex-none bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3.5 rounded-2xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95"
           >
             <Plus size={20} /> Add Entry
           </button>
-          <button className="p-3.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
-            <Download size={20} />
-          </button>
+          <ExportMenu data={filteredData} filename={title.toLowerCase().replace(' ', '_')} title={title} />
         </div>
       </header>
 
@@ -372,14 +614,14 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete }) 
                   <td className="px-8 py-6">
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => onEdit(row)}
+                        onClick={() => onEdit(row, i)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button 
-                        onClick={() => onDelete(row)}
+                        onClick={() => onDelete(row, i)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
@@ -542,15 +784,12 @@ function Login({ onLogin }) {
             <div className="relative">
               {/* Logo */}
               <div className="mb-4 flex justify-center">
-                <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20">
-                  <svg width="120" height="40" viewBox="0 0 1024 200" className="w-auto h-12">
-                    {/* V Logo */}
-                    <path d="M 20 20 L 70 180 L 90 180 L 140 20 Z" fill="#2563eb"/>
-                    <path d="M 90 20 L 140 180 L 160 180 L 210 20 Z" fill="#06b6d4"/>
-                    {/* VIMANASA Text */}
-                    <text x="240" y="120" fontFamily="Arial, sans-serif" fontSize="80" fontWeight="bold" fill="#2563eb">VIMANASA</text>
-                    <text x="240" y="180" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="normal" fill="#64748b">SERVICES LLP</text>
-                  </svg>
+                <div className="bg-white p-4 rounded-2xl shadow-lg">
+                  <img 
+                    src="/vimanasa-logo.png" 
+                    alt="Vimanasa Services LLP" 
+                    className="h-16 w-auto"
+                  />
                 </div>
               </div>
               <h1 className="text-2xl font-black text-white mb-2">Welcome Back</h1>

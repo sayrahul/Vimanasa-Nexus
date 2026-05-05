@@ -9,7 +9,10 @@ import {
   MessageSquare,
   LogOut,
   RefreshCcw,
-  Shield
+  Shield,
+  Calendar,
+  Clock,
+  Receipt
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -17,6 +20,9 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
   { icon: Users, label: 'Workforce', id: 'workforce' },
   { icon: Building2, label: 'Partners', id: 'partners' },
+  { icon: Calendar, label: 'Attendance', id: 'attendance' },
+  { icon: Clock, label: 'Leave', id: 'leave' },
+  { icon: Receipt, label: 'Expenses', id: 'expenses' },
   { icon: Banknote, label: 'Payroll', id: 'payroll' },
   { icon: Wallet, label: 'Finance', id: 'finance' },
   { icon: ShieldCheck, label: 'Compliance', id: 'compliance' },
@@ -27,17 +33,14 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync }) {
   return (
     <div className="w-64 h-screen bg-white border-r border-slate-200 flex flex-col fixed left-0 top-0">
       <div className="p-6 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          {/* Vimanasa Logo */}
-          <div className="flex items-center gap-2">
-            <svg width="32" height="32" viewBox="0 0 100 100" className="flex-shrink-0">
-              <path d="M 10 10 L 35 90 L 45 90 L 70 10 Z" fill="#2563eb"/>
-              <path d="M 45 10 L 70 90 L 80 90 L 105 10 Z" fill="#06b6d4"/>
-            </svg>
-            <div>
-              <span className="font-black text-lg text-slate-800 leading-none block">VIMANASA</span>
-              <span className="text-[10px] text-slate-500 font-semibold leading-none">SERVICES LLP</span>
-            </div>
+        <div className="flex items-center justify-center">
+          {/* Vimanasa Logo with white background */}
+          <div className="bg-white p-3 rounded-xl shadow-sm">
+            <img 
+              src="/vimanasa-logo.png" 
+              alt="Vimanasa Services LLP" 
+              className="h-8 w-auto"
+            />
           </div>
         </div>
       </div>

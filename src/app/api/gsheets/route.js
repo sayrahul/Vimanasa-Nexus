@@ -79,7 +79,13 @@ export async function GET(req) {
   } catch (error) {
     console.error('Google Sheets API Error (GET):', error);
     
-    // Provide more specific error messages
+    // Check if the error is due to sheet not found (unable to parse range)
+    if (error.message && error.message.includes('Unable to parse range')) {
+      console.log(`Sheet "${sheetName}" does not exist yet. Returning empty array.`);
+      return Response.json([]); // Return empty array instead of error
+    }
+    
+    // Provide more specific error messages for other errors
     let errorMessage = 'Failed to fetch data from Google Sheets';
     let errorDetails = error.message;
     
@@ -131,6 +137,120 @@ export async function POST(req) {
     console.error('Google Sheets API Error (POST):', error);
     
     let errorMessage = 'Failed to add data to Google Sheets';
+    let errorDetails = error.message;
+    
+    if (error.code === 'ENOTFOUND') {
+      errorMessage = 'Network error: Cannot reach Google Sheets API';
+      errorDetails = 'Please check your internet connection and try again';
+    }
+    
+    return Response.json({ 
+      error: errorMessage,
+      details: errorDetails
+    }, { status: 500 });
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const body = await req.json();
+    const { sheet, rowIndex, values } = body;
+    
+    if (!sheet || rowIndex === undefined || !values) {
+      return Response.json({ error: 'Sheet name, row index, and values are required' }, { status: 400 });
+    }
+
+    if (!spreadsheetId) {
+      return Response.json({ error: 'Spreadsheet ID not configured' }, { status: 500 });
+    }
+
+    // Row index is 1-based in Google Sheets, +2 to account for header row
+    const actualRow = rowIndex + 2;
+    
+    // Use retry mechanism for network resilience
+    await retryWithBackoff(async () => {
+      return await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheet}!A${actualRow}:Z${actualRow}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [values] },
+      });
+    });
+    
+    return Response.json({ success: true, message: 'Data updated successfully' });
+  } catch (error) {
+    console.error('Google Sheets API Error (PUT):', error);
+    
+    let errorMessage = 'Failed to update data in Google Sheets';
+    let errorDetails = error.message;
+    
+    if (error.code === 'ENOTFOUND') {
+      errorMessage = 'Network error: Cannot reach Google Sheets API';
+      errorDetails = 'Please check your internet connection and try again';
+    }
+    
+    return Response.json({ 
+      error: errorMessage,
+      details: errorDetails
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(req) {
+  try {
+    const body = await req.json();
+    const { sheet, rowIndex } = body;
+    
+    if (!sheet || rowIndex === undefined) {
+      return Response.json({ error: 'Sheet name and row index are required' }, { status: 400 });
+    }
+
+    if (!spreadsheetId) {
+      return Response.json({ error: 'Spreadsheet ID not configured' }, { status: 500 });
+    }
+
+    // Get sheet ID first
+    const sheetMetadata = await retryWithBackoff(async () => {
+      return await sheets.spreadsheets.get({
+        spreadsheetId,
+      });
+    });
+    
+    const sheetInfo = sheetMetadata.data.sheets.find(
+      s => s.properties.title === sheet
+    );
+    
+    if (!sheetInfo) {
+      return Response.json({ error: `Sheet "${sheet}" not found` }, { status: 404 });
+    }
+    
+    const sheetId = sheetInfo.properties.sheetId;
+    const actualRow = rowIndex + 1; // +1 to account for header row
+    
+    // Delete the row
+    await retryWithBackoff(async () => {
+      return await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: actualRow,
+                endIndex: actualRow + 1,
+              },
+            },
+          }],
+        },
+      });
+    });
+    
+    return Response.json({ success: true, message: 'Data deleted successfully' });
+  } catch (error) {
+    console.error('Google Sheets API Error (DELETE):', error);
+    
+    let errorMessage = 'Failed to delete data from Google Sheets';
     let errorDetails = error.message;
     
     if (error.code === 'ENOTFOUND') {
