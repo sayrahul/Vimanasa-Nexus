@@ -761,10 +761,22 @@ function Login({ onLogin }) {
     const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || 'admin';
     const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Vimanasa@2026';
 
+    // Trim whitespace and check credentials
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+
+    console.log('Login attempt:', { 
+      entered: { username: trimmedUsername, password: '***' },
+      expected: { username: adminUser, password: '***' },
+      match: trimmedUsername === adminUser && trimmedPassword === adminPassword
+    });
+
     // Check credentials
-    if (username === adminUser && password === adminPassword) {
+    if (trimmedUsername === adminUser && trimmedPassword === adminPassword) {
+      console.log('Login successful!');
       onLogin();
     } else {
+      console.log('Login failed - credentials do not match');
       setError('Invalid username or password. Please try again.');
       setIsLoading(false);
     }
