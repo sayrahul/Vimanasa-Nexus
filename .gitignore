@@ -1,21 +1,41 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Environments
-.venv/
-env/
-venv/
-ENV/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Streamlit secrets (IMPORTANT: SENSITIVE DATA)
-.streamlit/secrets.toml
+# testing
+/coverage
 
-# Local environment files
-.env
-.flaskenv
+# next.js
+/.next/
+/out/
 
-# OS generated files
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
