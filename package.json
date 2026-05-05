@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:api": "node test-api.js",
+    "test:gemini": "node test-gemini.js",
+    "setup:sheets": "node setup-sheets.js",
+    "populate:sheets": "node populate-existing-sheets.js",
+    "list:models": "node list-models.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

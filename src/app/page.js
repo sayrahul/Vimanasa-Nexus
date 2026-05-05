@@ -7,7 +7,7 @@ import axios from 'axios';
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Mock for now
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Start with false for security
   const [data, setData] = useState({
     dashboard: null,
     workforce: [],
@@ -18,14 +18,29 @@ export default function DashboardLayout() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Map application tabs to actual Google Sheets names
+  const sheetMapping = {
+    dashboard: 'Dashboard',
+    workforce: 'Employees',
+    partners: 'Clients',
+    payroll: 'Payroll',
+    finance: 'Finance',
+    compliance: 'Compliance'
+  };
+
   const fetchData = useCallback(async (tab) => {
     if (tab === 'ai') return;
     setIsLoading(true);
     try {
-      const response = await axios.get(`/api/gsheets?sheet=${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+      const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
+      const response = await axios.get(`/api/gsheets?sheet=${sheetName}`);
       setData(prev => ({ ...prev, [tab]: response.data }));
     } catch (error) {
       console.error(`Error fetching ${tab} data:`, error);
+      // Show user-friendly error message
+      if (error.response?.status === 500) {
+        console.error('API Error details:', error.response?.data);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -276,9 +291,21 @@ function AiAssistantView({ dataContext }) {
         prompt: input,
         context: dataContext
       });
-      setMessages(prev => [...prev, { role: 'assistant', content: response.data.text }]);
+      
+      if (response.data.error) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `Error: ${response.data.error}. Please check your AI configuration.` 
+        }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: response.data.text }]);
+      }
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error while processing your request." }]);
+      console.error('AI Assistant Error:', error);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "Sorry, I encountered an error while processing your request. Please ensure your Gemini API key is configured correctly." 
+      }]);
     } finally {
       setIsTyping(false);
     }
@@ -342,9 +369,28 @@ function AiAssistantView({ dataContext }) {
 }
 
 function Login({ onLogin }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Check credentials against environment variables
+    if (username === process.env.NEXT_PUBLIC_ADMIN_USER && password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+      onLogin();
+    } else {
+      setError('Invalid credentials. Please try again.');
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-2xl w-full max-w-md text-center space-y-10 animate-in fade-in zoom-in duration-700">
+      <form onSubmit={handleLogin} className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-2xl w-full max-w-md text-center space-y-10 animate-in fade-in zoom-in duration-700">
         <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-2xl shadow-blue-200">
           <Shield size={40} />
         </div>
@@ -352,26 +398,38 @@ function Login({ onLogin }) {
           <h2 className="text-4xl font-black text-slate-900 tracking-tight">Nexus Portal</h2>
           <p className="text-slate-400 mt-3 font-bold uppercase tracking-widest text-xs">Secure Access Command</p>
         </div>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl text-sm font-bold">
+            {error}
+          </div>
+        )}
         <div className="space-y-4">
           <input 
             type="text" 
             placeholder="User ID" 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
             className="w-full px-8 py-5 rounded-3xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700"
           />
           <input 
             type="password" 
             placeholder="Access Key" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             className="w-full px-8 py-5 rounded-3xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none font-bold text-slate-700"
           />
         </div>
         <button 
-          onClick={onLogin}
-          className="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200 active:scale-95 uppercase tracking-widest"
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200 active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Initialize Sync
+          {isLoading ? 'Authenticating...' : 'Initialize Sync'}
         </button>
         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">© 2026 Vimanasa Services LLP</p>
-      </div>
+      </form>
     </div>
   );
 }
