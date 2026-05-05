@@ -757,8 +757,12 @@ function Login({ onLogin }) {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Check credentials against environment variables
-    if (username === process.env.NEXT_PUBLIC_ADMIN_USER && password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+    // Get credentials from environment variables with fallback
+    const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || 'admin';
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Vimanasa@2026';
+
+    // Check credentials
+    if (username === adminUser && password === adminPassword) {
       onLogin();
     } else {
       setError('Invalid username or password. Please try again.');
