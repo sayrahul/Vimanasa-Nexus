@@ -31,18 +31,37 @@ export default function DashboardLayout() {
   const fetchData = useCallback(async (tab) => {
     if (tab === 'ai') return;
     setIsLoading(true);
-    try {
-      const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
-      const response = await axios.get(`/api/gsheets?sheet=${sheetName}`);
-      setData(prev => ({ ...prev, [tab]: response.data }));
-    } catch (error) {
-      console.error(`Error fetching ${tab} data:`, error);
-      // Show user-friendly error message
-      if (error.response?.status === 500) {
-        console.error('API Error details:', error.response?.data);
+    
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
+        const response = await axios.get(`/api/gsheets?sheet=${sheetName}`);
+        setData(prev => ({ ...prev, [tab]: response.data }));
+        setIsLoading(false);
+        return; // Success, exit function
+      } catch (error) {
+        console.error(`Error fetching ${tab} data (attempt ${retries + 1}/${maxRetries}):`, error);
+        
+        retries++;
+        
+        if (retries >= maxRetries) {
+          // Final attempt failed
+          setIsLoading(false);
+          
+          if (error.response?.data?.code === 'ENOTFOUND') {
+            // Network error - show user-friendly message
+            console.error('Network connectivity issue. Data will retry automatically.');
+          } else if (error.response?.status === 500) {
+            console.error('API Error details:', error.response?.data);
+          }
+        } else {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        }
       }
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
