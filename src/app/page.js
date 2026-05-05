@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
+import GenericForm from '@/components/GenericForm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send } from 'lucide-react';
+import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Start with false for security
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState({
     dashboard: null,
     workforce: [],
@@ -17,6 +18,9 @@ export default function DashboardLayout() {
     compliance: [],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [formType, setFormType] = useState(null);
 
   // Map application tabs to actual Google Sheets names
   const sheetMapping = {
@@ -73,6 +77,82 @@ export default function DashboardLayout() {
     fetchData(activeTab);
   };
 
+  const handleAddNew = (tab) => {
+    setFormType(tab);
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = (item, tab) => {
+    setFormType(tab);
+    setEditingItem(item);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (item, tab) => {
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return;
+    }
+    alert('Delete functionality requires backend implementation. For now, please delete directly from Google Sheets.');
+  };
+
+  const handleSave = async (formData) => {
+    try {
+      const sheetName = sheetMapping[formType];
+      const values = Object.values(formData);
+      
+      await axios.post('/api/gsheets', {
+        sheet: sheetName,
+        values: values
+      });
+      
+      setShowForm(false);
+      setEditingItem(null);
+      setFormType(null);
+      fetchData(formType);
+      alert('Entry saved successfully!');
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Failed to save entry. Please try again.');
+    }
+  };
+
+  const getFormFields = (tab) => {
+    const fieldConfigs = {
+      workforce: [
+        { name: 'ID', label: 'Employee ID', type: 'text', required: true, disabled: true, placeholder: 'EMP001' },
+        { name: 'Employee', label: 'Employee Name', type: 'text', required: true, placeholder: 'John Doe' },
+        { name: 'Role', label: 'Role', type: 'select', required: true, options: ['Security Guard', 'Supervisor', 'Manager', 'Team Leader'] },
+        { name: 'Status', label: 'Status', type: 'select', required: true, options: ['Active', 'On Leave', 'Inactive'], defaultValue: 'Active' },
+      ],
+      partners: [
+        { name: 'Site ID', label: 'Site ID', type: 'text', required: true, disabled: true, placeholder: 'SITE001' },
+        { name: 'Partner Name', label: 'Partner Name', type: 'text', required: true, placeholder: 'Tech Corp India' },
+        { name: 'Location', label: 'Location', type: 'text', required: true, placeholder: 'Mumbai, Maharashtra' },
+        { name: 'Headcount', label: 'Headcount', type: 'number', required: true, placeholder: '25' },
+      ],
+      payroll: [
+        { name: 'Month', label: 'Month', type: 'text', required: true, placeholder: 'January 2026' },
+        { name: 'Total Payout', label: 'Total Payout', type: 'text', required: true, placeholder: '₹1,200,000' },
+        { name: 'Pending', label: 'Pending Amount', type: 'text', required: true, placeholder: '₹0' },
+        { name: 'Status', label: 'Status', type: 'select', required: true, options: ['Paid', 'Processing', 'Pending'], defaultValue: 'Pending' },
+      ],
+      finance: [
+        { name: 'Category', label: 'Category', type: 'text', required: true, placeholder: 'Client Payment - Tech Corp' },
+        { name: 'Amount', label: 'Amount', type: 'text', required: true, placeholder: '₹500,000' },
+        { name: 'Date', label: 'Date', type: 'date', required: true },
+        { name: 'Type', label: 'Type', type: 'select', required: true, options: ['Income', 'Expense'] },
+      ],
+      compliance: [
+        { name: 'Requirement', label: 'Requirement', type: 'text', required: true, placeholder: 'PF Filing - January' },
+        { name: 'Deadline', label: 'Deadline', type: 'date', required: true },
+        { name: 'Status', label: 'Status', type: 'select', required: true, options: ['Completed', 'Pending', 'In Progress'], defaultValue: 'Pending' },
+        { name: 'Doc Link', label: 'Document Link', type: 'url', required: false, placeholder: 'https://docs.google.com/' },
+      ],
+    };
+    return fieldConfigs[tab] || [];
+  };
+
   if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
 
   return (
@@ -102,15 +182,30 @@ export default function DashboardLayout() {
             )}
 
             {activeTab === 'dashboard' && <DashboardView data={data.dashboard} />}
-            {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} />}
-            {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} />}
-            {activeTab === 'payroll' && <TableView title="Payroll" subtitle="Salary processing and disbursement status" data={data.payroll} columns={['Month', 'Total Payout', 'Pending', 'Status']} />}
-            {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} />}
-            {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} />}
+            {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} onAdd={() => handleAddNew('workforce')} onEdit={(item) => handleEdit(item, 'workforce')} onDelete={(item) => handleDelete(item, 'workforce')} />}
+            {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item) => handleEdit(item, 'partners')} onDelete={(item) => handleDelete(item, 'partners')} />}
+            {activeTab === 'payroll' && <TableView title="Payroll" subtitle="Salary processing and disbursement status" data={data.payroll} columns={['Month', 'Total Payout', 'Pending', 'Status']} onAdd={() => handleAddNew('payroll')} onEdit={(item) => handleEdit(item, 'payroll')} onDelete={(item) => handleDelete(item, 'payroll')} />}
+            {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item) => handleEdit(item, 'finance')} onDelete={(item) => handleDelete(item, 'finance')} />}
+            {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item) => handleEdit(item, 'compliance')} onDelete={(item) => handleDelete(item, 'compliance')} />}
             {activeTab === 'ai' && <AiAssistantView dataContext={data} />}
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Generic Form Modal */}
+      {showForm && formType && (
+        <GenericForm
+          title={formType.charAt(0).toUpperCase() + formType.slice(1)}
+          fields={getFormFields(formType)}
+          data={editingItem}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingItem(null);
+            setFormType(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -198,7 +293,7 @@ function StatsCard({ label, value, trend, icon }) {
   );
 }
 
-function TableView({ title, subtitle, data, columns }) {
+function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = data ? data.filter(row => 
@@ -215,7 +310,10 @@ function TableView({ title, subtitle, data, columns }) {
           <p className="text-slate-500 mt-2 text-lg">{subtitle}</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 active:scale-95">
+          <button 
+            onClick={onAdd}
+            className="flex-1 md:flex-none bg-slate-900 text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 active:scale-95"
+          >
             <Plus size={20} /> Add Entry
           </button>
           <button className="p-3.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
@@ -258,8 +356,10 @@ function TableView({ title, subtitle, data, columns }) {
                     <td key={col} className="px-8 py-6">
                       {col.toLowerCase().includes('status') ? (
                         <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${
-                          String(row[col]).toLowerCase().includes('active') || String(row[col]).toLowerCase().includes('paid') || String(row[col]).toLowerCase().includes('success')
+                          String(row[col]).toLowerCase().includes('active') || String(row[col]).toLowerCase().includes('paid') || String(row[col]).toLowerCase().includes('completed')
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                          : String(row[col]).toLowerCase().includes('progress')
+                          ? 'bg-blue-50 text-blue-600 border-blue-100'
                           : 'bg-amber-50 text-amber-600 border-amber-100'
                         }`}>
                           {row[col] || 'N/A'}
@@ -270,9 +370,22 @@ function TableView({ title, subtitle, data, columns }) {
                     </td>
                   ))}
                   <td className="px-8 py-6">
-                    <button className="text-blue-600 hover:text-blue-800 font-black text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                      Manage
-                    </button>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => onEdit(row)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => onDelete(row)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )) : (
