@@ -765,18 +765,10 @@ function Login({ onLogin }) {
     const trimmedUsername = username.trim();
     const trimmedPassword = password.trim();
 
-    console.log('Login attempt:', { 
-      entered: { username: trimmedUsername, password: '***' },
-      expected: { username: adminUser, password: '***' },
-      match: trimmedUsername === adminUser && trimmedPassword === adminPassword
-    });
-
     // Check credentials
     if (trimmedUsername === adminUser && trimmedPassword === adminPassword) {
-      console.log('Login successful!');
       onLogin();
     } else {
-      console.log('Login failed - credentials do not match');
       setError('Invalid username or password. Please try again.');
       setIsLoading(false);
     }
