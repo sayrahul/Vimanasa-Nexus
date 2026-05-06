@@ -31,8 +31,19 @@ const menuItems = [
   { icon: Receipt, label: 'Invoices', id: 'invoices' },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync }) {
+export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync, lastSyncTime, isSyncing, autoSyncEnabled, onToggleAutoSync }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const formatSyncTime = (time) => {
+    if (!time) return 'Never';
+    const now = new Date();
+    const diff = Math.floor((now - time) / 1000); // seconds
+    
+    if (diff < 10) return 'Just now';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return time.toLocaleTimeString();
+  };
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -122,17 +133,72 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-2">
+        <div className="p-4 border-t border-slate-100 space-y-3">
+          {/* Sync Status */}
+          <div className="px-4 py-2 bg-slate-50 rounded-xl">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-slate-600">Sync Status</span>
+              {isSyncing && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-blue-600">Syncing...</span>
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-slate-500">
+              Last: {formatSyncTime(lastSyncTime)}
+            </div>
+          </div>
+
+          {/* Auto-Sync Toggle */}
+          <button
+            onClick={() => {
+              onToggleAutoSync();
+              setIsMobileMenuOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+              autoSyncEnabled
+                ? "bg-green-50 text-green-600 hover:bg-green-100"
+                : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-10 h-6 rounded-full transition-colors relative",
+                autoSyncEnabled ? "bg-green-500" : "bg-slate-300"
+              )}>
+                <div className={cn(
+                  "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
+                  autoSyncEnabled ? "right-1" : "left-1"
+                )} />
+              </div>
+              <span>Auto-Sync</span>
+            </div>
+            <span className="text-xs">
+              {autoSyncEnabled ? '10s' : 'Off'}
+            </span>
+          </button>
+
+          {/* Manual Sync Button */}
           <button 
             onClick={() => {
               onSync();
               setIsMobileMenuOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors"
+            disabled={isSyncing}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+              isSyncing
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                : "text-blue-600 hover:bg-blue-50"
+            )}
           >
-            <RefreshCcw size={18} />
-            Sync Cloud
+            <RefreshCcw size={18} className={isSyncing ? "animate-spin" : ""} />
+            {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
+
+          {/* Logout Button */}
           <button 
             onClick={() => {
               onLogout();

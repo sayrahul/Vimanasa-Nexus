@@ -40,6 +40,42 @@ export default function DashboardLayout() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formType, setFormType] = useState(null);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [syncInterval, setSyncInterval] = useState(null);
+
+  // Check for auto-login on component mount
+  useEffect(() => {
+    const rememberMe = localStorage.getItem('vimanasa_remember_me') === 'true';
+    const loginTimestamp = localStorage.getItem('vimanasa_login_timestamp');
+    const savedUsername = localStorage.getItem('vimanasa_remember_username');
+    
+    // Load auto-sync preference
+    const savedAutoSync = localStorage.getItem('vimanasa_auto_sync');
+    if (savedAutoSync !== null) {
+      setAutoSyncEnabled(savedAutoSync === 'true');
+    }
+    
+    if (rememberMe && loginTimestamp && savedUsername) {
+      const daysSinceLogin = (Date.now() - parseInt(loginTimestamp)) / (1000 * 60 * 60 * 24);
+      
+      // Auto-login if less than 7 days have passed
+      if (daysSinceLogin < 7) {
+        setIsAuthenticated(true);
+        // Show welcome back message
+        setTimeout(() => {
+          toast.success(`Welcome back, ${savedUsername}! 👋`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        }, 500);
+      } else {
+        // Clear expired session
+        localStorage.removeItem('vimanasa_login_timestamp');
+      }
+    }
+  }, []);
 
   // Map application tabs to actual Google Sheets names
   const sheetMapping = {
@@ -56,8 +92,12 @@ export default function DashboardLayout() {
     invoices: 'Client_Invoices'
   };
 
-  const fetchData = useCallback(async (tab) => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (tab, silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+    } else {
+      setIsSyncing(true);
+    }
     
     let retries = 0;
     const maxRetries = 3;
@@ -65,12 +105,32 @@ export default function DashboardLayout() {
     while (retries < maxRetries) {
       try {
         const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
-        const response = await axios.get(`/api/gsheets?sheet=${sheetName}`);
+        const response = await axios.get(`/api/gsheets?sheet=${sheetName}&timestamp=${Date.now()}`);
         
         // Handle new response format with success and data fields
         const responseData = response.data.data || response.data;
+        
+        // Check if data has changed
+        const currentData = data[tab];
+        const hasChanged = JSON.stringify(currentData) !== JSON.stringify(responseData);
+        
         setData(prev => ({ ...prev, [tab]: responseData }));
-        setIsLoading(false);
+        setLastSyncTime(new Date());
+        
+        if (!silent) {
+          setIsLoading(false);
+        } else {
+          setIsSyncing(false);
+        }
+        
+        // Show notification only if data changed during background sync
+        if (silent && hasChanged && responseData?.length > 0) {
+          toast.info('📊 Data updated from Google Sheets', {
+            position: "bottom-right",
+            autoClose: 2000,
+          });
+        }
+        
         return; // Success, exit function
       } catch (error) {
         console.error(`Error fetching ${tab} data (attempt ${retries + 1}/${maxRetries}):`, error);
@@ -101,6 +161,73 @@ export default function DashboardLayout() {
     fetchData(activeTab);
   }, [activeTab, fetchData]);
 
+  // Auto-sync: Poll for changes every 10 seconds when enabled
+  useEffect(() => {
+    if (!isAuthenticated || !autoSyncEnabled) return;
+
+    const interval = setInterval(() => {
+      // Silently fetch data for current tab
+      fetchData(activeTab, true);
+    }, 10000); // 10 seconds
+
+    setSyncInterval(interval);
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isAuthenticated, autoSyncEnabled, activeTab, fetchData]);
+
+  // Sync all tabs data periodically (every 30 seconds)
+  useEffect(() => {
+    if (!isAuthenticated || !autoSyncEnabled) return;
+
+    const fullSyncInterval = setInterval(() => {
+      // Sync all tabs in background
+      Object.keys(sheetMapping).forEach(tab => {
+        if (tab !== activeTab) {
+          fetchData(tab, true);
+        }
+      });
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(fullSyncInterval);
+  }, [isAuthenticated, autoSyncEnabled, activeTab, fetchData, sheetMapping]);
+
+  // Auto-sync: Poll for changes every 10 seconds when tab is active
+  useEffect(() => {
+    if (!isAuthenticated || !autoSyncEnabled) return;
+
+    const syncInterval = setInterval(() => {
+      // Only sync if user is not currently editing
+      if (!showForm && !isLoading) {
+        fetchData(activeTab, true); // Silent sync
+      }
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [activeTab, isAuthenticated, autoSyncEnabled, showForm, isLoading, fetchData]);
+
+  // Sync all tabs data periodically (every 30 seconds)
+  useEffect(() => {
+    if (!isAuthenticated || !autoSyncEnabled) return;
+
+    const fullSyncInterval = setInterval(() => {
+      if (!showForm && !isLoading) {
+        // Sync all important tabs in background
+        const tabsToSync = ['workforce', 'clients', 'partners', 'attendance', 'leave', 'expenses'];
+        tabsToSync.forEach(tab => {
+          if (tab !== activeTab) {
+            fetchData(tab, true);
+          }
+        });
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(fullSyncInterval);
+  }, [isAuthenticated, autoSyncEnabled, showForm, isLoading, activeTab, fetchData]);
+
   // Listen for navigation events from dashboard quick actions
   useEffect(() => {
     const handleNavigate = (event) => {
@@ -112,7 +239,36 @@ export default function DashboardLayout() {
   }, []);
 
   const handleSync = () => {
+    toast.info('🔄 Syncing all data with Google Sheets...', {
+      position: "top-right",
+      autoClose: 1500,
+    });
+    // Sync current tab
     fetchData(activeTab);
+    // Also sync other tabs in background
+    Object.keys(sheetMapping).forEach(tab => {
+      if (tab !== activeTab) {
+        fetchData(tab, true);
+      }
+    });
+  };
+
+  const toggleAutoSync = () => {
+    const newState = !autoSyncEnabled;
+    setAutoSyncEnabled(newState);
+    
+    // Save preference to localStorage
+    localStorage.setItem('vimanasa_auto_sync', newState.toString());
+    
+    toast.success(
+      newState 
+        ? '✅ Auto-sync enabled - Updates every 10 seconds' 
+        : '⏸️ Auto-sync paused - Click sync button to update manually',
+      {
+        position: "top-right",
+        autoClose: 3000,
+      }
+    );
   };
 
   const handleAddNew = (tab) => {
@@ -133,6 +289,10 @@ export default function DashboardLayout() {
     }
     
     try {
+      // Optimistic update - remove from UI immediately
+      const updatedData = data[tab].filter((_, index) => index !== rowIndex);
+      setData(prev => ({ ...prev, [tab]: updatedData }));
+      
       const sheetName = sheetMapping[tab];
       await axios.delete('/api/gsheets', {
         data: {
@@ -141,11 +301,15 @@ export default function DashboardLayout() {
         }
       });
       
-      toast.success('Entry deleted successfully!');
-      fetchData(tab);
+      toast.success('✅ Entry deleted successfully!');
+      
+      // Fetch fresh data to ensure sync
+      setTimeout(() => fetchData(tab, true), 1000);
     } catch (error) {
       console.error('Error deleting:', error);
-      toast.error('Failed to delete entry. Please try again.');
+      toast.error('❌ Failed to delete entry. Please try again.');
+      // Revert optimistic update by fetching fresh data
+      fetchData(tab);
     }
   };
 
@@ -155,29 +319,44 @@ export default function DashboardLayout() {
       const values = Object.values(formData);
       
       if (editingItem && editingItem._rowIndex !== undefined) {
-        // Update existing entry
+        // Optimistic update for edit
+        const updatedData = [...data[formType]];
+        updatedData[editingItem._rowIndex] = formData;
+        setData(prev => ({ ...prev, [formType]: updatedData }));
+        
+        // Update on server
         await axios.put('/api/gsheets', {
           sheet: sheetName,
           rowIndex: editingItem._rowIndex,
           values: values
         });
-        toast.success('Entry updated successfully!');
+        
+        toast.success('✅ Entry updated successfully!');
       } else {
-        // Add new entry
+        // Optimistic update for add
+        const newData = [...(data[formType] || []), formData];
+        setData(prev => ({ ...prev, [formType]: newData }));
+        
+        // Add on server
         await axios.post('/api/gsheets', {
           sheet: sheetName,
           values: values
         });
-        toast.success('Entry added successfully!');
+        
+        toast.success('✅ Entry added successfully!');
       }
       
       setShowForm(false);
       setEditingItem(null);
       setFormType(null);
-      fetchData(formType);
+      
+      // Fetch fresh data to ensure sync
+      setTimeout(() => fetchData(formType, true), 1000);
     } catch (error) {
       console.error('Error saving:', error);
-      toast.error('Failed to save entry. Please try again.');
+      toast.error('❌ Failed to save entry. Please try again.');
+      // Revert optimistic update by fetching fresh data
+      fetchData(formType);
     }
   };
 
@@ -224,8 +403,16 @@ export default function DashboardLayout() {
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        onLogout={() => setIsAuthenticated(false)}
+        onLogout={() => {
+          // Clear login timestamp on logout (but keep username if Remember Me was checked)
+          localStorage.removeItem('vimanasa_login_timestamp');
+          setIsAuthenticated(false);
+        }}
         onSync={handleSync}
+        lastSyncTime={lastSyncTime}
+        isSyncing={isSyncing}
+        autoSyncEnabled={autoSyncEnabled}
+        onToggleAutoSync={toggleAutoSync}
       />
       
       <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">
@@ -941,6 +1128,18 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('vimanasa_remember_username');
+    const savedRememberMe = localStorage.getItem('vimanasa_remember_me') === 'true';
+    
+    if (savedRememberMe && savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -960,6 +1159,19 @@ function Login({ onLogin }) {
 
     // Check credentials
     if (trimmedUsername === adminUser && trimmedPassword === adminPassword) {
+      // Handle Remember Me functionality
+      if (rememberMe) {
+        localStorage.setItem('vimanasa_remember_username', trimmedUsername);
+        localStorage.setItem('vimanasa_remember_me', 'true');
+        // Store login timestamp for auto-login
+        localStorage.setItem('vimanasa_login_timestamp', Date.now().toString());
+      } else {
+        // Clear saved credentials if Remember Me is unchecked
+        localStorage.removeItem('vimanasa_remember_username');
+        localStorage.removeItem('vimanasa_remember_me');
+        localStorage.removeItem('vimanasa_login_timestamp');
+      }
+      
       onLogin();
     } else {
       setError('Invalid username or password. Please try again.');
@@ -1080,16 +1292,35 @@ function Login({ onLogin }) {
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer group">
+              <label className="flex items-center gap-2 cursor-pointer group relative">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-100 transition-all"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer"
                 />
-                <span className="text-slate-600 font-medium group-hover:text-slate-900 transition-colors">Remember me</span>
+                <span className="text-slate-600 font-medium group-hover:text-slate-900 transition-colors select-none">
+                  Remember me
+                </span>
+                {rememberMe && (
+                  <span className="ml-1 text-green-600" title="Your username will be saved">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                    </svg>
+                  </span>
+                )}
+                {/* Tooltip */}
+                <div className="absolute left-0 -bottom-8 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  Stay logged in for 7 days
+                  <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-800 transform rotate-45"></div>
+                </div>
               </label>
               <button
                 type="button"
                 className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                onClick={() => {
+                  alert('Please contact your administrator to reset your password.\n\nEmail: vimanasaservices@gmail.com\nPhone: +91 99217 13207');
+                }}
               >
                 Forgot password?
               </button>
