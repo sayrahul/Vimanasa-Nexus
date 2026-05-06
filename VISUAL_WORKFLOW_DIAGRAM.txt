@@ -1,0 +1,426 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║           VIMANASA OUTSOURCING OS - COMPLETE WORKFLOW               ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════
+                    📋 PHASE 1: CLIENT ONBOARDING
+═══════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  ADMIN: Add New Client                                  │
+    │  ─────────────────────────────────────────────────────  │
+    │  • Client Name: Zilla Parishad IT Department            │
+    │  • GST Number: 27AABCU9603R1ZM                          │
+    │  • Location: Pune, Maharashtra                          │
+    │  • Contact: Mr. Rajesh Kumar                            │
+    │  • Payment Terms: Net 30                                │
+    │  • Agency Margin: 8.5%                                  │
+    │  • Contract: 1 year                                     │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Client Added to System                              │
+    │  • Client card appears in Clients tab                   │
+    │  • Ready for employee deployment                        │
+    │  • Saved in Google Sheets (Clients)                     │
+    └─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+                  👥 PHASE 2: EMPLOYEE DEPLOYMENT
+═══════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  ADMIN: Deploy Employee to Client                       │
+    │  ─────────────────────────────────────────────────────  │
+    │  Employee: Rahul Sharma                                 │
+    │  Client: Zilla Parishad IT Department                   │
+    │  Deployment Date: 2026-05-01                            │
+    │  Site: Pune Municipal Office                            │
+    │  Shift: 09:00 AM - 06:00 PM                             │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  💰 SALARY STRUCTURE (Pay Rate - What YOU Pay)          │
+    │  ─────────────────────────────────────────────────────  │
+    │  Basic Salary:        ₹20,000                           │
+    │  HRA:                 ₹5,000                            │
+    │  Allowances:          ₹3,000                            │
+    │  ─────────────────────────────────────────────────────  │
+    │  Total Pay Rate:      ₹28,000  ✅                       │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  📊 EMPLOYER STATUTORY (Your Cost)                      │
+    │  ─────────────────────────────────────────────────────  │
+    │  Employer PF (12%):   ₹3,360  (auto-calculated)         │
+    │  Employer ESIC (3.25%): ₹910  (auto-calculated)         │
+    │  ─────────────────────────────────────────────────────  │
+    │  Total Statutory:     ₹4,270  ✅                        │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  💵 AGENCY COMMISSION (Your Profit)                     │
+    │  ─────────────────────────────────────────────────────  │
+    │  Commission (8.5%):   ₹2,743  (auto-calculated)         │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  💳 BILL RATE (What You CHARGE Client)                  │
+    │  ─────────────────────────────────────────────────────  │
+    │  Pay Rate:            ₹28,000                           │
+    │  Statutory:           ₹4,270                            │
+    │  Commission:          ₹2,743                            │
+    │  ─────────────────────────────────────────────────────  │
+    │  Total Bill Rate:     ₹35,013  ✅                       │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  🧾 FINAL INVOICE AMOUNT (With GST)                     │
+    │  ─────────────────────────────────────────────────────  │
+    │  Bill Rate:           ₹35,013                           │
+    │  GST (18%):           ₹6,302  (auto-calculated)         │
+    │  ─────────────────────────────────────────────────────  │
+    │  Final Invoice:       ₹41,315  ✅                       │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Employee Deployed Successfully                      │
+    │  • Status: Deployed                                     │
+    │  • Assigned Client: Zilla Parishad                      │
+    │  • Financial data saved                                 │
+    │  • Ready for attendance tracking                        │
+    │  • Saved in Google Sheets (Employees)                   │
+    └─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+                    📅 PHASE 3: DAILY OPERATIONS
+═══════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  EMPLOYEE: Mark Attendance                              │
+    │  ─────────────────────────────────────────────────────  │
+    │  Date: 2026-05-06                                       │
+    │  Time: 09:00 AM                                         │
+    │  Action: Punch In                                       │
+    │  Location: Pune Municipal Office (GPS verified)         │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Attendance Marked                                   │
+    │  • Saved in Google Sheets (Attendance)                  │
+    │  • Visible to Admin                                     │
+    │  • Will be used for payroll calculation                 │
+    └─────────────────────────────────────────────────────────┘
+
+                         │
+                         ▼
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  EMPLOYEE: Apply for Leave (Optional)                   │
+    │  ─────────────────────────────────────────────────────  │
+    │  Leave Type: Sick Leave                                 │
+    │  From: 2026-05-10                                       │
+    │  To: 2026-05-11                                         │
+    │  Reason: Medical appointment                            │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ADMIN: Approve/Reject Leave                            │
+    │  ─────────────────────────────────────────────────────  │
+    │  Review: Leave request                                  │
+    │  Decision: ✅ Approved                                  │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Leave Approved                                      │
+    │  • Employee notified                                    │
+    │  • Leave balance updated                                │
+    │  • Saved in Google Sheets (Leaves)                      │
+    └─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+              💰 PHASE 4: MONTHLY BILLING CYCLE (End of Month)
+═══════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  STEP 1: Lock Attendance (30th/31st)                    │
+    │  ─────────────────────────────────────────────────────  │
+    │  Month: April 2026                                      │
+    │  Action: Review all attendance                          │
+    │  Resolve: Any discrepancies                             │
+    │  Click: "Lock Attendance"                               │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Attendance Locked                                   │
+    │  • No more changes allowed                              │
+    │  • Ready for payroll generation                         │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  STEP 2: Generate Employee Payroll                      │
+    │  ─────────────────────────────────────────────────────  │
+    │  Month: April 2026                                      │
+    │  Calculate: Salary based on Pay Rate                    │
+    │  Working Days: 26                                       │
+    │  Present Days: 24                                       │
+    │  Leave Days: 2                                          │
+    │  Salary: ₹28,000 (full month)                           │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Payroll Generated                                   │
+    │  • Payslips created for all employees                   │
+    │  • Saved in Google Sheets (Finance)                     │
+    │  • Ready for salary disbursement                        │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  STEP 3: Generate Client Invoice                        │
+    │  ─────────────────────────────────────────────────────  │
+    │  Client: Zilla Parishad IT Department                   │
+    │  Month: April 2026                                      │
+    │  Deployed Employees: 3                                  │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  📊 INVOICE CALCULATION                                 │
+    │  ─────────────────────────────────────────────────────  │
+    │  Employee 1: Rahul Sharma                               │
+    │    Working Days: 26                                     │
+    │    Bill Rate: ₹35,013                                   │
+    │    Amount: ₹9,10,338                                    │
+    │                                                         │
+    │  Employee 2: Priya Patel                                │
+    │    Working Days: 24                                     │
+    │    Bill Rate: ₹32,500                                   │
+    │    Amount: ₹7,80,000                                    │
+    │                                                         │
+    │  Employee 3: Amit Kumar                                 │
+    │    Working Days: 26                                     │
+    │    Bill Rate: ₹38,000                                   │
+    │    Amount: ₹9,88,000                                    │
+    │  ─────────────────────────────────────────────────────  │
+    │  Subtotal: ₹26,78,338                                   │
+    │  GST (18%): ₹4,82,101                                   │
+    │  ─────────────────────────────────────────────────────  │
+    │  TOTAL: ₹31,60,439                                      │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  📄 PROFESSIONAL PDF INVOICE GENERATED                  │
+    │  ─────────────────────────────────────────────────────  │
+    │  Invoice Number: INV-2026-04-001                        │
+    │  Invoice Date: 2026-04-30                               │
+    │  Due Date: 2026-05-30 (Net 30)                          │
+    │  Amount: ₹31,60,439                                     │
+    │                                                         │
+    │  Includes:                                              │
+    │  • Company branding                                     │
+    │  • Client details                                       │
+    │  • Employee breakdown                                   │
+    │  • GST calculations                                     │
+    │  • Payment terms                                        │
+    │  • Bank details                                         │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ Invoice Generated                                   │
+    │  • PDF downloaded                                       │
+    │  • Saved in Google Sheets (Client_Invoices)             │
+    │  • Status: Pending                                      │
+    │  • Ready to send to client                              │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  STEP 4: Send Invoice to Client                         │
+    │  ─────────────────────────────────────────────────────  │
+    │  Email: rajesh@zp.gov.in                                │
+    │  Attach: INV-2026-04-001.pdf                            │
+    │  Subject: Invoice for April 2026                        │
+    │  Mark as: Sent                                          │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ⏳ WAITING FOR PAYMENT                                 │
+    │  • Invoice status: Pending                              │
+    │  • Due date: 2026-05-30                                 │
+    │  • Follow up if needed                                  │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  STEP 5: Client Pays (When payment received)            │
+    │  ─────────────────────────────────────────────────────  │
+    │  Payment Date: 2026-05-25                               │
+    │  Amount: ₹31,60,439                                     │
+    │  Action: Mark as Paid                                   │
+    └────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │  ✅ PAYMENT RECEIVED                                    │
+    │  • Invoice status: Paid                                 │
+    │  • Payment date recorded                                │
+    │  • Financial reports updated                            │
+    │  • Cycle complete!                                      │
+    └─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+                    📊 PROFITABILITY ANALYSIS
+═══════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  MONTHLY PROFITABILITY (April 2026)                     │
+    │  ─────────────────────────────────────────────────────  │
+    │                                                         │
+    │  REVENUE (Client Invoices):                             │
+    │  ├─ Zilla Parishad:      ₹31,60,439                     │
+    │  ├─ Tech Corp India:     ₹25,50,000                     │
+    │  └─ Total Revenue:       ₹57,10,439                     │
+    │                                                         │
+    │  COSTS (Employee Payroll + Statutory):                  │
+    │  ├─ Total Payroll:       ₹42,00,000                     │
+    │  ├─ Total Statutory:     ₹6,40,000                      │
+    │  └─ Total Costs:         ₹48,40,000                     │
+    │                                                         │
+    │  PROFIT:                                                │
+    │  ├─ Gross Profit:        ₹8,70,439                      │
+    │  ├─ Profit Margin:       15.2%                          │
+    │  └─ Status:              ✅ Profitable                  │
+    │                                                         │
+    │  ANALYSIS:                                              │
+    │  • Zilla Parishad margin: 8.5% (as set)                │
+    │  • Tech Corp margin: 10% (as set)                       │
+    │  • On Bench employees: 2 (costing ₹56,000/month)       │
+    │  • Action: Deploy bench employees to increase profit    │
+    └─────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+                    🔄 COMPLETE MONTHLY CYCLE
+═══════════════════════════════════════════════════════════════════════
+
+    Day 1-29: Daily Operations
+    ├─ Employees mark attendance
+    ├─ Employees apply for leaves
+    ├─ Admin approves leaves
+    └─ Monitor deployment status
+
+    Day 30/31: Month End
+    ├─ Lock attendance
+    ├─ Review all records
+    └─ Prepare for billing
+
+    Day 1-2: Billing
+    ├─ Generate employee payroll
+    ├─ Generate client invoices
+    ├─ Download PDF invoices
+    └─ Send invoices to clients
+
+    Day 3-5: Salary Disbursement
+    ├─ Process salary payments
+    ├─ Send payslips to employees
+    └─ Pay statutory dues (PF, ESIC)
+
+    Day 5-30: Payment Collection
+    ├─ Follow up with clients
+    ├─ Track invoice status
+    ├─ Mark invoices as paid
+    └─ Record payment dates
+
+    Day 30: Analysis
+    ├─ Review profitability
+    ├─ Analyze margins by client
+    ├─ Plan next month deployments
+    └─ Make strategic decisions
+
+
+═══════════════════════════════════════════════════════════════════════
+                    🎯 KEY FEATURES SUMMARY
+═══════════════════════════════════════════════════════════════════════
+
+    ✅ CLIENT MANAGEMENT
+       • Add/edit/delete clients
+       • Set agency margins
+       • Track contracts
+       • Monitor deployed staff
+
+    ✅ EMPLOYEE DEPLOYMENT
+       • Deploy to clients
+       • Dual-salary structure
+       • Real-time calculations
+       • Status tracking
+
+    ✅ ATTENDANCE TRACKING
+       • Daily punch in/out
+       • GPS verification
+       • Monthly reports
+       • Lock for payroll
+
+    ✅ LEAVE MANAGEMENT
+       • Apply for leaves
+       • Approve/reject
+       • Track balance
+       • Leave history
+
+    ✅ PAYROLL GENERATION
+       • Auto-calculate salaries
+       • Generate payslips
+       • Track deductions
+       • Salary disbursement
+
+    ✅ CLIENT INVOICING
+       • Auto-generate invoices
+       • Professional PDFs
+       • GST calculations
+       • Payment tracking
+
+    ✅ PROFITABILITY TRACKING
+       • Real-time margins
+       • Client-wise analysis
+       • Bench cost tracking
+       • Strategic insights
+
+
+═══════════════════════════════════════════════════════════════════════
+                    🚀 YOUR OUTSOURCING OS IS READY!
+═══════════════════════════════════════════════════════════════════════
+
+    Open: http://localhost:3000
+    Login: admin / Vimanasa@2026
+
+    Start by:
+    1. Adding your real clients
+    2. Deploying your employees
+    3. Tracking daily attendance
+    4. Generating monthly invoices
+
+    Transform your outsourcing business today! 💼✨
+
+
+═══════════════════════════════════════════════════════════════════════
