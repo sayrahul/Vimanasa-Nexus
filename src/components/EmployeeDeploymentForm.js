@@ -95,26 +95,26 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-end z-50 animate-in fade-in duration-200">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full my-8"
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="bg-white shadow-2xl w-full max-w-2xl h-full flex flex-col"
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white flex justify-between items-center rounded-t-3xl">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div>
-            <h2 className="text-2xl font-black">{employee ? 'Edit Employee' : 'Add New Employee'}</h2>
-            <p className="text-blue-100 text-sm mt-1">Configure employee profile, deployment, and compensation</p>
+            <h2 className="text-2xl font-black text-slate-800">{employee ? 'Edit Employee' : 'Add New Employee'}</h2>
+            <p className="text-slate-500 text-sm mt-1">Configure employee profile, deployment, and compensation</p>
           </div>
-          <button onClick={onCancel} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+          <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <X size={24} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-8">
             {/* Left Column */}
             <div className="space-y-6">
               {/* Basic Information */}
@@ -287,10 +287,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Right Column */}
-            <div className="space-y-6">
               {/* Pay Rate (Visible to All) */}
               <div>
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -422,19 +419,19 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
         </form>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+        <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 z-10">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+            className="px-6 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200 font-medium transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg"
+            className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors shadow-lg shadow-blue-200"
           >
-            {employee ? 'Update Employee' : 'Add Employee'}
+            Save Deployment
           </button>
         </div>
       </motion.div>

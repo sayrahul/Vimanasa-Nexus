@@ -17,7 +17,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { generateSalarySlip } from '@/lib/pdfGenerator';
+import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -44,6 +46,36 @@ export default function DashboardLayout() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [syncInterval, setSyncInterval] = useState(null);
+
+  const [subTabs, setSubTabs] = useState({
+    clients: 'clients',
+    placements: 'workforce',
+    finance: 'overview',
+    reports: 'compliance'
+  });
+
+  const handleSubTabChange = (mainTab, newSubTab) => {
+    setSubTabs(prev => ({ ...prev, [mainTab]: newSubTab }));
+  };
+
+  const SubNavigation = ({ tabs, mainTab }) => (
+    <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-6 overflow-x-auto w-full max-w-fit border border-slate-200/60 shadow-sm">
+      {tabs.map(tab => (
+        <button
+          key={tab.id}
+          onClick={() => handleSubTabChange(mainTab, tab.id)}
+          className={cn(
+            "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200",
+            subTabs[mainTab] === tab.id 
+              ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
+              : "text-slate-600 hover:bg-slate-200/50"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
   // Check for auto-login on component mount
   useEffect(() => {
@@ -77,21 +109,6 @@ export default function DashboardLayout() {
     }
   }, []);
 
-  // Map application tabs to actual Google Sheets names
-  const sheetMapping = {
-    dashboard: 'Dashboard',
-    workforce: 'Employees',
-    clients: 'Clients',
-    partners: 'Partners',
-    payroll: 'Payroll',
-    finance: 'Finance',
-    compliance: 'Compliance',
-    attendance: 'Attendance',
-    leave: 'Leave Requests',
-    expenses: 'Expense Claims',
-    invoices: 'Client_Invoices'
-  };
-
   const fetchData = useCallback(async (tab, silent = false) => {
     if (!silent) {
       setIsLoading(true);
@@ -99,134 +116,113 @@ export default function DashboardLayout() {
       setIsSyncing(true);
     }
     
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries < maxRetries) {
-      try {
-        const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
-        const response = await axios.get(`/api/gsheets?sheet=${sheetName}&timestamp=${Date.now()}`);
-        
-        // Handle new response format with success and data fields
-        const responseData = response.data.data || response.data;
-        
-        // Check if data has changed
-        const currentData = data[tab];
+    try {
+      // Use Supabase database API
+      const response = await axios.get(`/api/database?table=${tab}&timestamp=${Date.now()}`);
+      
+      // Handle response format with success and data fields
+      const responseData = response.data.data || response.data;
+      
+      let changed = false;
+      
+      setData(prev => {
+        const currentData = prev[tab];
         const hasChanged = JSON.stringify(currentData) !== JSON.stringify(responseData);
         
-        setData(prev => ({ ...prev, [tab]: responseData }));
-        setLastSyncTime(new Date());
-        
-        if (!silent) {
-          setIsLoading(false);
-        } else {
-          setIsSyncing(false);
+        if (!hasChanged) {
+          return prev; // Return exact same reference to prevent re-renders
         }
         
-        // Show notification only if data changed during background sync
-        if (silent && hasChanged && responseData?.length > 0) {
-          toast.info('📊 Data updated from Google Sheets', {
-            position: "bottom-right",
-            autoClose: 2000,
-          });
-        }
-        
-        return; // Success, exit function
-      } catch (error) {
-        console.error(`Error fetching ${tab} data (attempt ${retries + 1}/${maxRetries}):`, error);
-        
-        retries++;
-        
-        if (retries >= maxRetries) {
-          // Final attempt failed
-          setIsLoading(false);
-          
-          if (error.response?.data?.code === 'ENOTFOUND') {
-            // Network error - show user-friendly message
-            console.error('Network connectivity issue. Data will retry automatically.');
-          } else if (error.response?.status === 500) {
-            console.error('API Error details:', error.response?.data);
-          } else if (error.response?.status === 401) {
-            console.error('Authentication required. Please log in.');
-          }
-        } else {
-          // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-        }
+        changed = true;
+        return { ...prev, [tab]: responseData };
+      });
+      
+      setLastSyncTime(new Date());
+      
+      if (!silent) {
+        setIsLoading(false);
+      } else {
+        setIsSyncing(false);
+      }
+      
+      // Show notification only if data changed during background sync
+      if (silent && changed && responseData?.length > 0) {
+        toast.info('📊 Data updated', {
+          position: "bottom-right",
+          autoClose: 2000,
+        });
+      }
+    } catch (error) {
+      console.error(`Error fetching ${tab} data:`, error);
+      setIsLoading(false);
+      setIsSyncing(false);
+      
+      if (!silent) {
+        toast.error('Failed to fetch data. Please try again.');
       }
     }
   }, []);
 
-  useEffect(() => {
-    fetchData(activeTab);
+  const syncCurrentGroup = useCallback((silent = false) => {
+    if (activeTab === 'dashboard') {
+      fetchData('workforce', silent);
+      fetchData('clients', silent);
+      fetchData('partners', silent);
+      fetchData('payroll', silent);
+      fetchData('finance', silent);
+      fetchData('leave', silent);
+      fetchData('expenses', silent);
+      fetchData('compliance', silent);
+    } else if (activeTab === 'clients') {
+      fetchData('clients', silent);
+      fetchData('partners', silent);
+    } else if (activeTab === 'placements') {
+      fetchData('workforce', silent);
+      fetchData('attendance', silent);
+      fetchData('leave', silent);
+    } else if (activeTab === 'finance') {
+      fetchData('finance', silent);
+      fetchData('payroll', silent);
+      fetchData('expenses', silent);
+      fetchData('invoices', silent);
+    } else if (activeTab === 'reports') {
+      fetchData('compliance', silent);
+      fetchData('attendance', silent);
+    }
   }, [activeTab, fetchData]);
 
-  // Auto-sync: Poll for changes every 10 seconds when enabled
   useEffect(() => {
-    if (!isAuthenticated || !autoSyncEnabled) return;
+    // When active tab changes, fetch the necessary data for that group
+    syncCurrentGroup(false);
+  }, [activeTab, syncCurrentGroup]);
 
-    const interval = setInterval(() => {
-      // Silently fetch data for current tab
-      fetchData(activeTab, true);
-    }, 10000); // 10 seconds
+  // Supabase Realtime Subscription
+  useEffect(() => {
+    if (!isAuthenticated || !autoSyncEnabled || !supabase) return;
 
-    setSyncInterval(interval);
+    // Subscribe to all public tables
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+        },
+        (payload) => {
+          console.log('[Realtime] Database change detected!', payload);
+          // Only fetch if we are not currently editing to prevent UI jumping
+          if (!showForm && !isLoading) {
+            syncCurrentGroup(true);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+      supabase.removeChannel(channel);
     };
-  }, [isAuthenticated, autoSyncEnabled, activeTab, fetchData]);
-
-  // Sync all tabs data periodically (every 30 seconds)
-  useEffect(() => {
-    if (!isAuthenticated || !autoSyncEnabled) return;
-
-    const fullSyncInterval = setInterval(() => {
-      // Sync all tabs in background
-      Object.keys(sheetMapping).forEach(tab => {
-        if (tab !== activeTab) {
-          fetchData(tab, true);
-        }
-      });
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(fullSyncInterval);
-  }, [isAuthenticated, autoSyncEnabled, activeTab, fetchData, sheetMapping]);
-
-  // Auto-sync: Poll for changes every 10 seconds when tab is active
-  useEffect(() => {
-    if (!isAuthenticated || !autoSyncEnabled) return;
-
-    const syncInterval = setInterval(() => {
-      // Only sync if user is not currently editing
-      if (!showForm && !isLoading) {
-        fetchData(activeTab, true); // Silent sync
-      }
-    }, 10000); // 10 seconds
-
-    return () => clearInterval(syncInterval);
-  }, [activeTab, isAuthenticated, autoSyncEnabled, showForm, isLoading, fetchData]);
-
-  // Sync all tabs data periodically (every 30 seconds)
-  useEffect(() => {
-    if (!isAuthenticated || !autoSyncEnabled) return;
-
-    const fullSyncInterval = setInterval(() => {
-      if (!showForm && !isLoading) {
-        // Sync all important tabs in background
-        const tabsToSync = ['workforce', 'clients', 'partners', 'attendance', 'leave', 'expenses'];
-        tabsToSync.forEach(tab => {
-          if (tab !== activeTab) {
-            fetchData(tab, true);
-          }
-        });
-      }
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(fullSyncInterval);
-  }, [isAuthenticated, autoSyncEnabled, showForm, isLoading, activeTab, fetchData]);
+  }, [isAuthenticated, autoSyncEnabled, showForm, isLoading, syncCurrentGroup]);
 
   // Listen for navigation events from dashboard quick actions
   useEffect(() => {
@@ -239,17 +235,17 @@ export default function DashboardLayout() {
   }, []);
 
   const handleSync = () => {
-    toast.info('🔄 Syncing all data with Google Sheets...', {
+    toast.info('🔄 Syncing all data...', {
       position: "top-right",
       autoClose: 1500,
     });
-    // Sync current tab
-    fetchData(activeTab);
-    // Also sync other tabs in background
-    Object.keys(sheetMapping).forEach(tab => {
-      if (tab !== activeTab) {
-        fetchData(tab, true);
-      }
+    // Sync current tab group
+    syncCurrentGroup(false);
+    
+    // Also sync all other tables in background
+    const allTabs = ['workforce', 'clients', 'partners', 'attendance', 'leave', 'expenses', 'payroll', 'finance', 'compliance', 'invoices'];
+    allTabs.forEach(tab => {
+      fetchData(tab, true);
     });
   };
 
@@ -289,15 +285,22 @@ export default function DashboardLayout() {
     }
     
     try {
+      // Get the item ID for Supabase
+      const itemId = item.id;
+      
+      if (!itemId) {
+        toast.error('❌ Cannot delete: Item ID not found');
+        return;
+      }
+      
       // Optimistic update - remove from UI immediately
       const updatedData = data[tab].filter((_, index) => index !== rowIndex);
       setData(prev => ({ ...prev, [tab]: updatedData }));
       
-      const sheetName = sheetMapping[tab];
-      await axios.delete('/api/gsheets', {
+      await axios.delete('/api/database', {
         data: {
-          sheet: sheetName,
-          rowIndex: rowIndex
+          table: tab,
+          id: itemId
         }
       });
       
@@ -315,33 +318,31 @@ export default function DashboardLayout() {
 
   const handleSave = async (formData) => {
     try {
-      const sheetName = sheetMapping[formType];
-      const values = Object.values(formData);
-      
-      if (editingItem && editingItem._rowIndex !== undefined) {
-        // Optimistic update for edit
-        const updatedData = [...data[formType]];
-        updatedData[editingItem._rowIndex] = formData;
+      if (editingItem && editingItem.id) {
+        // Update existing item
+        const updatedData = data[formType].map(item => 
+          item.id === editingItem.id ? { ...item, ...formData } : item
+        );
         setData(prev => ({ ...prev, [formType]: updatedData }));
         
         // Update on server
-        await axios.put('/api/gsheets', {
-          sheet: sheetName,
-          rowIndex: editingItem._rowIndex,
-          values: values
+        await axios.put('/api/database', {
+          table: formType,
+          id: editingItem.id,
+          data: formData
         });
         
         toast.success('✅ Entry updated successfully!');
       } else {
-        // Optimistic update for add
-        const newData = [...(data[formType] || []), formData];
-        setData(prev => ({ ...prev, [formType]: newData }));
-        
-        // Add on server
-        await axios.post('/api/gsheets', {
-          sheet: sheetName,
-          values: values
+        // Add new item
+        const response = await axios.post('/api/database', {
+          table: formType,
+          data: formData
         });
+        
+        // Add to local state with returned data (includes ID)
+        const newData = [...(data[formType] || []), response.data.data];
+        setData(prev => ({ ...prev, [formType]: newData }));
         
         toast.success('✅ Entry added successfully!');
       }
@@ -404,7 +405,6 @@ export default function DashboardLayout() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={() => {
-          // Clear login timestamp on logout (but keep username if Remember Me was checked)
           localStorage.removeItem('vimanasa_login_timestamp');
           setIsAuthenticated(false);
         }}
@@ -426,7 +426,7 @@ export default function DashboardLayout() {
             className="max-w-7xl mx-auto"
           >
             {isLoading && (
-              <div className="fixed top-8 right-8 bg-white px-4 py-2 rounded-full shadow-lg border border-slate-200 flex items-center gap-2 text-sm font-medium text-slate-600 animate-pulse">
+              <div className="fixed top-8 right-8 bg-white px-4 py-2 rounded-full shadow-lg border border-slate-200 flex items-center gap-2 text-sm font-medium text-slate-600 animate-pulse z-50">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
                 Updating from Cloud...
               </div>
@@ -440,189 +440,336 @@ export default function DashboardLayout() {
                 </div>
               </>
             )}
-            {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} onAdd={() => handleAddNew('workforce')} onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} tab="workforce" />}
+
             {activeTab === 'clients' && (
-              <ClientManagement
-                clients={data.clients}
-                onAdd={async (clientData) => {
-                  try {
-                    const sheetName = sheetMapping['clients'];
-                    await axios.post('/api/gsheets', {
-                      sheet: sheetName,
-                      values: Object.values(clientData)
-                    });
-                    toast.success('Client added successfully!');
-                    fetchData('clients');
-                  } catch (error) {
-                    console.error('Error adding client:', error);
-                    toast.error('Failed to add client. Please try again.');
-                  }
-                }}
-                onEdit={async (clientData, idx) => {
-                  try {
-                    const sheetName = sheetMapping['clients'];
-                    await axios.put('/api/gsheets', {
-                      sheet: sheetName,
-                      rowIndex: idx,
-                      values: Object.values(clientData)
-                    });
-                    toast.success('Client updated successfully!');
-                    fetchData('clients');
-                  } catch (error) {
-                    console.error('Error updating client:', error);
-                    toast.error('Failed to update client. Please try again.');
-                  }
-                }}
-                onDelete={async (client, idx) => {
-                  if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-                    return;
-                  }
-                  try {
-                    const sheetName = sheetMapping['clients'];
-                    await axios.delete('/api/gsheets', {
-                      data: {
-                        sheet: sheetName,
-                        rowIndex: idx
-                      }
-                    });
-                    toast.success('Client deleted successfully!');
-                    fetchData('clients');
-                  } catch (error) {
-                    console.error('Error deleting client:', error);
-                    toast.error('Failed to delete client. Please try again.');
-                  }
-                }}
-              />
-            )}
-            {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item, idx) => handleEdit(item, 'partners', idx)} onDelete={(item, idx) => handleDelete(item, 'partners', idx)} tab="partners" />}
-            {activeTab === 'attendance' && (
-              <AttendanceManager 
-                employees={data.workforce}
-                onSave={async (record) => {
-                  await axios.post('/api/gsheets', {
-                    sheet: 'Attendance',
-                    values: Object.values(record)
-                  });
-                }}
-              />
-            )}
-            {activeTab === 'leave' && (
-              <LeaveManager 
-                employees={data.workforce}
-                leaveRequests={data.leaveRequests}
-                onSave={async (record) => {
-                  await axios.post('/api/gsheets', {
-                    sheet: 'Leave Requests',
-                    values: Object.values(record)
-                  });
-                  fetchData('leave');
-                }}
-                onApprove={async (request, idx) => {
-                  await axios.put('/api/gsheets', {
-                    sheet: 'Leave Requests',
-                    rowIndex: idx,
-                    values: Object.values({ ...request, Status: 'Approved', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
-                  });
-                  toast.success('Leave request approved');
-                  fetchData('leave');
-                }}
-                onReject={async (request, idx) => {
-                  await axios.put('/api/gsheets', {
-                    sheet: 'Leave Requests',
-                    rowIndex: idx,
-                    values: Object.values({ ...request, Status: 'Rejected', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
-                  });
-                  toast.success('Leave request rejected');
-                  fetchData('leave');
-                }}
-              />
-            )}
-            {activeTab === 'expenses' && (
-              <ExpenseManager 
-                employees={data.workforce}
-                expenses={data.expenses}
-                onSave={async (record) => {
-                  await axios.post('/api/gsheets', {
-                    sheet: 'Expense Claims',
-                    values: Object.values(record)
-                  });
-                  fetchData('expenses');
-                }}
-                onApprove={async (expense, idx) => {
-                  await axios.put('/api/gsheets', {
-                    sheet: 'Expense Claims',
-                    rowIndex: idx,
-                    values: Object.values({ ...expense, Status: 'Approved', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
-                  });
-                  toast.success('Expense claim approved');
-                  fetchData('expenses');
-                }}
-                onReject={async (expense, idx) => {
-                  await axios.put('/api/gsheets', {
-                    sheet: 'Expense Claims',
-                    rowIndex: idx,
-                    values: Object.values({ ...expense, Status: 'Rejected', 'Approved By': 'Admin', 'Approved On': new Date().toLocaleDateString() })
-                  });
-                  toast.success('Expense claim rejected');
-                  fetchData('expenses');
-                }}
-              />
-            )}
-            {activeTab === 'payroll' && (
               <div className="space-y-6">
-                <div className="flex justify-end">
-                  <PayrollActions employees={data.workforce} />
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Client Hub</h1>
+                    <p className="text-slate-500 mt-1">Manage client relationships and site partners</p>
+                  </div>
                 </div>
-                <TableView 
-                  title="Payroll" 
-                  subtitle="Salary processing and disbursement status" 
-                  data={data.payroll} 
-                  columns={['Month', 'Total Payout', 'Pending', 'Status']} 
-                  onAdd={() => handleAddNew('payroll')} 
-                  onEdit={(item, idx) => handleEdit(item, 'payroll', idx)} 
-                  onDelete={(item, idx) => handleDelete(item, 'payroll', idx)} 
-                  tab="payroll" 
+                <SubNavigation 
+                  mainTab="clients" 
+                  tabs={[
+                    { id: 'clients', label: 'Client Management' },
+                    { id: 'partners', label: 'Site Partners' }
+                  ]} 
                 />
+                
+                {subTabs.clients === 'clients' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                    <ClientManagement
+                      clients={data.clients}
+                      onAdd={async (clientData) => {
+                        try {
+                          await axios.post('/api/database', { table: 'clients', data: clientData });
+                          toast.success('✅ Client added successfully!');
+                          fetchData('clients');
+                        } catch (error) { toast.error('❌ Failed to add client.'); }
+                      }}
+                      onEdit={async (clientData, idx) => {
+                        try {
+                          const client = data.clients[idx];
+                          await axios.put('/api/database', { table: 'clients', id: client.id, data: clientData });
+                          toast.success('✅ Client updated successfully!');
+                          fetchData('clients');
+                        } catch (error) { toast.error('❌ Failed to update client.'); }
+                      }}
+                      onDelete={async (client, idx) => {
+                        if (!confirm('Delete this client?')) return;
+                        try {
+                          await axios.delete('/api/database', { data: { table: 'clients', id: client.id } });
+                          toast.success('✅ Client deleted successfully!');
+                          fetchData('clients');
+                        } catch (error) { toast.error('❌ Failed to delete client.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+                
+                {subTabs.clients === 'partners' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                    <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item, idx) => handleEdit(item, 'partners', idx)} onDelete={(item, idx) => handleDelete(item, 'partners', idx)} tab="partners" />
+                  </motion.div>
+                )}
               </div>
             )}
-            {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item, idx) => handleEdit(item, 'finance', idx)} onDelete={(item, idx) => handleDelete(item, 'finance', idx)} tab="finance" />}
-            {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item, idx) => handleEdit(item, 'compliance', idx)} onDelete={(item, idx) => handleDelete(item, 'compliance', idx)} tab="compliance" />}
-            {activeTab === 'invoices' && (
-              <ClientInvoicing
-                invoices={data.invoices}
-                clients={data.clients}
-                employees={data.workforce}
-                attendance={data.attendance}
-                onGenerateInvoice={async (invoiceData) => {
-                  try {
-                    const sheetName = sheetMapping['invoices'];
-                    await axios.post('/api/gsheets', {
-                      sheet: sheetName,
-                      values: Object.values(invoiceData)
-                    });
-                    toast.success('Invoice generated successfully!');
-                    fetchData('invoices');
-                  } catch (error) {
-                    console.error('Error generating invoice:', error);
-                    toast.error('Failed to generate invoice. Please try again.');
-                  }
-                }}
-                onUpdateStatus={async (invoice, idx, newStatus) => {
-                  try {
-                    const sheetName = sheetMapping['invoices'];
-                    await axios.put('/api/gsheets', {
-                      sheet: sheetName,
-                      rowIndex: idx,
-                      values: Object.values({ ...invoice, Status: newStatus })
-                    });
-                    toast.success('Invoice status updated!');
-                    fetchData('invoices');
-                  } catch (error) {
-                    console.error('Error updating invoice:', error);
-                    toast.error('Failed to update invoice status.');
-                  }
-                }}
-              />
+
+            {activeTab === 'placements' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Manpower Placements</h1>
+                    <p className="text-slate-500 mt-1">Manage workforce deployment, attendance, and leaves</p>
+                  </div>
+                </div>
+                <SubNavigation 
+                  mainTab="placements" 
+                  tabs={[
+                    { id: 'workforce', label: 'Workforce Directory' },
+                    { id: 'attendance', label: 'Attendance Tracking' },
+                    { id: 'leave', label: 'Leave Requests' }
+                  ]} 
+                />
+
+                {subTabs.placements === 'workforce' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <TableView 
+                      title="Workforce" 
+                      subtitle="Manage employees and site assignments" 
+                      data={data.workforce} 
+                      columns={['ID', 'Employee', 'Role', 'Status']} 
+                      onAdd={() => handleAddNew('workforce')} 
+                      onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} 
+                      onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} 
+                      tab="workforce" 
+                      onGenerateDoc={async (item, type) => {
+                        try {
+                          toast.info(`Generating ${type} letter...`);
+                          if (type === 'offer') await generateOfferLetter(item);
+                          if (type === 'joining') await generateJoiningLetter(item);
+                          if (type === 'experience') await generateExperienceLetter(item);
+                          toast.success('Document generated successfully!');
+                        } catch (e) {
+                          toast.error('Failed to generate document');
+                        }
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {subTabs.placements === 'attendance' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <AttendanceManager 
+                      employees={data.workforce}
+                      onSave={async (record) => {
+                        try {
+                          await axios.post('/api/database', { table: 'attendance', data: record });
+                          toast.success('✅ Attendance recorded successfully!');
+                          fetchData('attendance');
+                        } catch (error) { toast.error('❌ Failed to save attendance.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {subTabs.placements === 'leave' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <LeaveManager 
+                      employees={data.workforce}
+                      leaveRequests={data.leaveRequests}
+                      onSave={async (record) => {
+                        try {
+                          await axios.post('/api/database', { table: 'leave', data: record });
+                          toast.success('✅ Leave request submitted!');
+                          fetchData('leave');
+                        } catch (error) { toast.error('❌ Failed to submit leave request.'); }
+                      }}
+                      onApprove={async (request, idx) => {
+                        try {
+                          await axios.put('/api/database', {
+                            table: 'leave', id: request.id,
+                            data: { ...request, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() }
+                          });
+                          toast.success('✅ Leave request approved');
+                          fetchData('leave');
+                        } catch (error) { toast.error('❌ Failed to approve leave request.'); }
+                      }}
+                      onReject={async (request, idx) => {
+                        try {
+                          await axios.put('/api/database', {
+                            table: 'leave', id: request.id,
+                            data: { ...request, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() }
+                          });
+                          toast.success('✅ Leave request rejected');
+                          fetchData('leave');
+                        } catch (error) { toast.error('❌ Failed to reject leave request.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'finance' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Finance Center</h1>
+                    <p className="text-slate-500 mt-1">Unified payroll, expenses, and invoicing platform</p>
+                  </div>
+                </div>
+                <SubNavigation 
+                  mainTab="finance" 
+                  tabs={[
+                    { id: 'overview', label: 'Financial Ledger' },
+                    { id: 'payroll', label: 'Payroll Processing' },
+                    { id: 'invoices', label: 'Client Invoices' },
+                    { id: 'expenses', label: 'Expense Claims' }
+                  ]} 
+                />
+
+                {subTabs.finance === 'overview' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <TableView title="Finance Ledger" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item, idx) => handleEdit(item, 'finance', idx)} onDelete={(item, idx) => handleDelete(item, 'finance', idx)} tab="finance" />
+                  </motion.div>
+                )}
+
+                {subTabs.finance === 'payroll' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="flex justify-end mb-6">
+                      <PayrollActions employees={data.workforce} />
+                    </div>
+                    <TableView title="Payroll Registry" subtitle="Salary processing and disbursement status" data={data.payroll} columns={['Month', 'Total Payout', 'Pending', 'Status']} onAdd={() => handleAddNew('payroll')} onEdit={(item, idx) => handleEdit(item, 'payroll', idx)} onDelete={(item, idx) => handleDelete(item, 'payroll', idx)} tab="payroll" />
+                  </motion.div>
+                )}
+
+                {subTabs.finance === 'invoices' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <ClientInvoicing
+                      invoices={data.invoices}
+                      clients={data.clients}
+                      employees={data.workforce}
+                      attendance={data.attendance}
+                      onGenerateInvoice={async (invoiceData) => {
+                        try {
+                          await axios.post('/api/database', { table: 'invoices', data: invoiceData });
+                          toast.success('✅ Invoice generated successfully!');
+                          fetchData('invoices');
+                        } catch (error) { toast.error('❌ Failed to generate invoice.'); }
+                      }}
+                      onUpdateStatus={async (invoice, idx, newStatus) => {
+                        try {
+                          await axios.put('/api/database', { table: 'invoices', id: invoice.id, data: { ...invoice, status: newStatus } });
+                          toast.success('✅ Invoice status updated!');
+                          fetchData('invoices');
+                        } catch (error) { toast.error('❌ Failed to update status.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {subTabs.finance === 'expenses' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <ExpenseManager 
+                      employees={data.workforce}
+                      expenses={data.expenses}
+                      onSave={async (record) => {
+                        try {
+                          await axios.post('/api/database', { table: 'expenses', data: record });
+                          toast.success('✅ Expense claim submitted!');
+                          fetchData('expenses');
+                        } catch (error) { toast.error('❌ Failed to submit expense claim.'); }
+                      }}
+                      onApprove={async (expense, idx) => {
+                        try {
+                          await axios.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          toast.success('✅ Expense claim approved');
+                          fetchData('expenses');
+                        } catch (error) { toast.error('❌ Failed to approve expense claim.'); }
+                      }}
+                      onReject={async (expense, idx) => {
+                        try {
+                          await axios.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          toast.success('✅ Expense claim rejected');
+                          fetchData('expenses');
+                        } catch (error) { toast.error('❌ Failed to reject expense claim.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reports' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Reports & Compliance</h1>
+                    <p className="text-slate-500 mt-1">Regulatory filings, audit reports, and statutory compliance</p>
+                  </div>
+                </div>
+                <SubNavigation 
+                  mainTab="reports" 
+                  tabs={[
+                    { id: 'compliance', label: 'Compliance Tracker' },
+                    { id: 'exports', label: 'Data Exports' }
+                  ]} 
+                />
+
+                {subTabs.reports === 'compliance' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item, idx) => handleEdit(item, 'compliance', idx)} onDelete={(item, idx) => handleDelete(item, 'compliance', idx)} tab="compliance" />
+                  </motion.div>
+                )}
+
+                {subTabs.reports === 'exports' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                      <h3 className="text-lg font-bold text-slate-800 mb-6">Master Data Exports</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {['workforce', 'clients', 'attendance', 'finance', 'payroll'].map((dataset) => (
+                           <div key={dataset} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50">
+                             <div className="flex items-center gap-3">
+                               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                 <FileText size={20} />
+                               </div>
+                               <div>
+                                 <div className="font-semibold text-slate-800 capitalize">{dataset} Data</div>
+                                 <div className="text-xs text-slate-500">{data[dataset]?.length || 0} Records found</div>
+                               </div>
+                             </div>
+                             <ExportMenu data={data[dataset] || []} filename={`${dataset}_export.csv`} />
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'settings' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">System Settings</h1>
+                    <p className="text-slate-500 mt-1">Configure preferences and system parameters</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-lg">Auto-Sync Data</span>
+                      <span className="text-sm text-slate-500">Automatically sync data from cloud every 10 seconds</span>
+                    </div>
+                    <button
+                      onClick={toggleAutoSync}
+                      className={cn(
+                        "relative inline-flex h-7 w-14 items-center rounded-full transition-colors",
+                        autoSyncEnabled ? "bg-green-500" : "bg-slate-300"
+                      )}
+                    >
+                      <span className={cn(
+                        "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                        autoSyncEnabled ? "translate-x-8" : "translate-x-1"
+                      )} />
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-lg">System Mode</span>
+                      <span className="text-sm text-slate-500">Database connection active</span>
+                    </div>
+                    <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-bold flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      Supabase PostgreSQL
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -1013,7 +1160,7 @@ function StatsCard({ label, value, trend, icon: Icon, color, subtitle }) {
   );
 }
 
-function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, tab }) {
+function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, tab, onGenerateDoc }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = data ? data.filter(row => 
@@ -1089,7 +1236,14 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                     </td>
                   ))}
                   <td className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
-                    <div className="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity items-center">
+                      {tab === 'workforce' && onGenerateDoc && (
+                        <div className="flex gap-1 border-r border-slate-200 pr-2 mr-1">
+                          <button onClick={() => onGenerateDoc(row, 'offer')} title="Generate Offer Letter" className="p-1 sm:p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><FileText size={14}/></button>
+                          <button onClick={() => onGenerateDoc(row, 'joining')} title="Generate Joining Letter" className="p-1 sm:p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"><FileText size={14}/></button>
+                          <button onClick={() => onGenerateDoc(row, 'experience')} title="Generate Experience Letter" className="p-1 sm:p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg"><FileText size={14}/></button>
+                        </div>
+                      )}
                       <button 
                         onClick={() => onEdit(row, i)}
                         className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

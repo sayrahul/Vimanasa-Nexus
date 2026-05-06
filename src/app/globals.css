@@ -64,6 +64,15 @@ body {
   }
 }
 
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 @keyframes zoom-in {
   from {
     transform: scale(0.95);
@@ -98,6 +107,10 @@ body {
 
 .slide-in-from-top-2 {
   animation-name: slide-in-from-top-2;
+}
+
+.slide-in-from-right {
+  animation-name: slide-in-from-right;
 }
 
 .zoom-in {

@@ -79,24 +79,24 @@ export default function GenericForm({ title, fields, data, onSave, onCancel }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-end z-50 animate-in fade-in duration-200">
+      <div className="bg-white shadow-2xl w-full max-w-2xl h-full flex flex-col animate-in slide-in-from-right duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 p-6 flex justify-between items-center">
+        <div className="bg-white border-b border-slate-100 p-6 flex justify-between items-center sticky top-0 z-10">
           <div>
-            <h2 className="text-2xl font-black text-white">
+            <h2 className="text-2xl font-black text-slate-800">
               {data ? `Edit ${title}` : `Add New ${title}`}
             </h2>
-            <p className="text-blue-100 text-sm mt-1">
+            <p className="text-slate-500 text-sm mt-1">
               {data ? 'Update existing entry' : 'Fill in the details below'}
             </p>
           </div>
           <button
             onClick={onCancel}
-            className="p-2 hover:bg-white/20 rounded-xl transition-colors group"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors group"
             title="Close"
           >
-            <X className="text-white group-hover:rotate-90 transition-transform duration-300" size={24} />
+            <X className="text-slate-500 group-hover:rotate-90 transition-transform duration-300" size={24} />
           </button>
         </div>
 
@@ -123,11 +123,11 @@ export default function GenericForm({ title, fields, data, onSave, onCancel }) {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col h-[calc(95vh-180px)]">
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto flex flex-col">
+          <div className="flex-1 p-6">
             {categories.length > 1 ? (
               // Show fields by active category
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {fieldsByCategory[activeTab]?.map((field) => (
                   <FormField
                     key={field.name}
@@ -139,7 +139,7 @@ export default function GenericForm({ title, fields, data, onSave, onCancel }) {
               </div>
             ) : (
               // Show all fields if only one category
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {fields.map((field) => (
                   <FormField
                     key={field.name}
@@ -153,20 +153,19 @@ export default function GenericForm({ title, fields, data, onSave, onCancel }) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4 p-6 bg-slate-50 border-t border-slate-200">
+          <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 z-10">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-6 py-3.5 bg-white border-2 border-slate-300 text-slate-700 rounded-2xl font-bold hover:bg-slate-100 hover:border-slate-400 transition-all flex items-center justify-center gap-2 group"
+              className="px-6 py-2.5 rounded-xl text-slate-600 hover:bg-slate-200 font-medium transition-colors"
             >
-              <XCircle size={20} className="group-hover:rotate-90 transition-transform" />
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 group"
+              className="px-6 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors shadow-lg shadow-blue-200 flex items-center gap-2 group"
             >
-              <Save size={20} className="group-hover:scale-110 transition-transform" />
+              <Save size={18} className="group-hover:scale-110 transition-transform" />
               {data ? 'Update Entry' : 'Save Entry'}
             </button>
           </div>

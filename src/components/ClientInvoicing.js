@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, Mail, Calendar, DollarSign, Building2, CheckCircle, Clock, XCircle, Plus, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { generateClientInvoice } from '@/lib/invoiceGenerator';
+import { generateClientInvoice } from '@/lib/pdfGenerator';
 
 export default function ClientInvoicing({ invoices, clients, employees, attendance, onGenerateInvoice, onUpdateStatus }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -132,7 +132,11 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
-                            onClick={async () => await generateClientInvoice(invoice)}
+                            onClick={async () => await generateClientInvoice(
+                              { 'Client Name': invoice['Client Name'] }, 
+                              invoice['Invoice Amount'], 
+                              invoice['Invoice Number']
+                            )}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Download PDF"
                           >
