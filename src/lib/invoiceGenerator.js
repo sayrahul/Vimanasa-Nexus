@@ -1,7 +1,8 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-export function generateClientInvoice(invoiceData) {
+export async function generateClientInvoice(invoiceData) {
+  // Dynamic import to avoid SSR issues
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
+  
   const doc = new jsPDF();
   
   // Colors
@@ -198,7 +199,11 @@ export function generateClientInvoice(invoiceData) {
 }
 
 // Generate Invoice Summary Report
-export function generateInvoiceSummaryReport(invoices, month) {
+export async function generateInvoiceSummaryReport(invoices, month) {
+  // Dynamic import to avoid SSR issues
+  const { default: jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
+  
   const doc = new jsPDF();
   
   const primaryColor = [37, 99, 235];

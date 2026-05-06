@@ -132,7 +132,7 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => generateClientInvoice(invoice)}
+                            onClick={async () => await generateClientInvoice(invoice)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Download PDF"
                           >
