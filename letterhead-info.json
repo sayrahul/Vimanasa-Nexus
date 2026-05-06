@@ -1,0 +1,23 @@
+{
+  "companyName": "VIMANASA SERVICES LLP",
+  "tagline": "CONNECT • CREATE • DELIVER",
+  "logo": {
+    "description": "V-shaped logo with dark blue and light blue triangular elements",
+    "colors": ["#1e3a8a", "#7dd3fc"]
+  },
+  "contact": {
+    "phones": ["99217 13207", "8669 997711"],
+    "website": "www.vimanasa.com",
+    "email": "vimanasaservices@gmail.com"
+  },
+  "addresses": {
+    "registered": "227, At Undegaon, Post Kodri, Taluka Gangakhed, Dist. Parbhani, 431514",
+    "corporate": "Nath Valley Road, Kanchanwadi, Chhatrapati Sambhajinagar (Aurangabad), 431001"
+  },
+  "llpin": "ACX-2082",
+  "brandColors": {
+    "primary": "#1e3a8a",
+    "secondary": "#7dd3fc",
+    "accent": "#3b82f6"
+  }
+}

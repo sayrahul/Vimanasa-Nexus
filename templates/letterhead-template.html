@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vimanasa Services LLP - Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: white;
+        }
+        
+        .letterhead {
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 4px solid #1e3a8a;
+        }
+        
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .company-info h1 {
+            color: #1e3a8a;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .tagline {
+            color: #666;
+            font-size: 12px;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+        
+        .header-line {
+            height: 3px;
+            background: linear-gradient(to right, #1e3a8a 0%, #3b82f6 50%, #7dd3fc 100%);
+            margin: 0 40px;
+        }
+        
+        .content {
+            padding: 40px;
+            min-height: 600px;
+        }
+        
+        .footer {
+            background: #1e3a8a;
+            color: white;
+            padding: 20px 40px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .footer-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .footer-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+        }
+        
+        .llpin {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.05;
+            font-size: 120px;
+            color: #1e3a8a;
+            font-weight: bold;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @media print {
+            .letterhead {
+                max-width: 100%;
+            }
+            
+            @page {
+                margin: 0;
+                size: A4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="letterhead">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="30,20 50,70 10,70" fill="#1e3a8a"/>
+                    <polygon points="50,20 70,70 90,70" fill="#7dd3fc"/>
+                </svg>
+                <div class="company-info">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <span style="color: #1e3a8a; font-size: 14px; font-weight: bold;">VIMANASA</span>
+                        <span style="color: #666; font-size: 11px;">SERVICES LLP</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <h1 style="color: #1e3a8a; font-size: 32px; font-weight: bold; letter-spacing: 2px;">VIMANASA SERVICES LLP</h1>
+                <p class="tagline">CONNECT • CREATE • DELIVER</p>
+            </div>
+        </div>
+        
+        <div class="header-line"></div>
+        
+        <!-- Content Area -->
+        <div class="content" style="position: relative;">
+            <div class="watermark">VIMANASA</div>
+            
+            <!-- DOCUMENT CONTENT GOES HERE -->
+            <div id="document-content">
+                <!-- This section will be replaced with actual document content -->
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-row">
+                    <span>📞</span>
+                    <span>99217 13207 | 8669 997711</span>
+                    <span style="margin-left: 20px;">🌐</span>
+                    <span>www.vimanasa.com</span>
+                    <span style="margin-left: 20px;">✉️</span>
+                    <span>vimanasaservices@gmail.com</span>
+                </div>
+                <div class="footer-row">
+                    <span>📍</span>
+                    <span>Registered Office: 227, At Undegaon, Post Kodri, Taluka Gangakhed, Dist. Parbhani, 431514</span>
+                </div>
+                <div class="footer-row">
+                    <span>🏢</span>
+                    <span>Corporate Office: Nath Valley Road, Kanchanwadi, Chhatrapati Sambhajinagar (Aurangabad), 431001</span>
+                </div>
+                <div class="llpin">LLPIN: ACX-2082</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

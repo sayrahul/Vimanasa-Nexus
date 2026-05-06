@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - Vimanasa Services LLP</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: white; }
+        .letterhead { width: 100%; max-width: 210mm; margin: 0 auto; background: white; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 4px solid #1e3a8a; }
+        .logo-section { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 80px; height: 80px; }
+        .company-info h1 { color: #1e3a8a; font-size: 28px; font-weight: bold; letter-spacing: 1px; }
+        .tagline { color: #666; font-size: 12px; letter-spacing: 2px; margin-top: 5px; }
+        .header-line { height: 3px; background: linear-gradient(to right, #1e3a8a 0%, #3b82f6 50%, #7dd3fc 100%); margin: 0 40px; }
+        .content { padding: 40px; min-height: 600px; }
+        .footer { background: #1e3a8a; color: white; padding: 20px 40px; font-size: 11px; line-height: 1.6; }
+        .footer-content { display: flex; flex-direction: column; gap: 8px; }
+        .footer-row { display: flex; align-items: center; gap: 10px; }
+        .llpin { text-align: right; font-weight: bold; margin-top: 10px; }
+        
+        /* Invoice Specific Styles */
+        .invoice-title { text-align: center; color: #1e3a8a; font-size: 32px; font-weight: bold; margin-bottom: 30px; }
+        .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .invoice-details { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        .invoice-details p { margin: 5px 0; font-size: 14px; }
+        .client-details { margin-bottom: 30px; }
+        .client-details h3 { color: #1e3a8a; margin-bottom: 10px; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .invoice-table th { background: #1e3a8a; color: white; padding: 12px; text-align: left; }
+        .invoice-table td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .invoice-table tr:hover { background: #f8f9fa; }
+        .total-section { text-align: right; margin-top: 20px; }
+        .total-row { display: flex; justify-content: flex-end; gap: 100px; margin: 10px 0; font-size: 16px; }
+        .grand-total { font-size: 20px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; }
+        .terms { margin-top: 40px; font-size: 12px; color: #666; }
+        .terms h4 { color: #1e3a8a; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="letterhead">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="30,20 50,70 10,70" fill="#1e3a8a"/>
+                    <polygon points="50,20 70,70 90,70" fill="#7dd3fc"/>
+                </svg>
+                <div class="company-info">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <span style="color: #1e3a8a; font-size: 14px; font-weight: bold;">VIMANASA</span>
+                        <span style="color: #666; font-size: 11px;">SERVICES LLP</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <h1 style="color: #1e3a8a; font-size: 32px; font-weight: bold; letter-spacing: 2px;">VIMANASA SERVICES LLP</h1>
+                <p class="tagline">CONNECT • CREATE • DELIVER</p>
+            </div>
+        </div>
+        
+        <div class="header-line"></div>
+        
+        <!-- Content Area -->
+        <div class="content">
+            <h2 class="invoice-title">INVOICE</h2>
+            
+            <div class="invoice-header">
+                <div class="invoice-details">
+                    <p><strong>Invoice No:</strong> INV-2026-001</p>
+                    <p><strong>Date:</strong> May 6, 2026</p>
+                    <p><strong>Due Date:</strong> May 20, 2026</p>
+                </div>
+            </div>
+            
+            <div class="client-details">
+                <h3>Bill To:</h3>
+                <p><strong>[Client Name]</strong></p>
+                <p>[Client Address Line 1]</p>
+                <p>[Client Address Line 2]</p>
+                <p>[City, State, PIN]</p>
+                <p>Email: [client@email.com]</p>
+                <p>Phone: [Client Phone]</p>
+            </div>
+            
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>[Service/Product Description]</td>
+                        <td>1</td>
+                        <td>₹ 10,000.00</td>
+                        <td>₹ 10,000.00</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>[Service/Product Description]</td>
+                        <td>2</td>
+                        <td>₹ 5,000.00</td>
+                        <td>₹ 10,000.00</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="total-section">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>₹ 20,000.00</span>
+                </div>
+                <div class="total-row">
+                    <span>GST (18%):</span>
+                    <span>₹ 3,600.00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Grand Total:</span>
+                    <span>₹ 23,600.00</span>
+                </div>
+            </div>
+            
+            <div class="terms">
+                <h4>Payment Terms & Conditions:</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>Payment is due within 14 days of invoice date</li>
+                    <li>Please make payment to the bank details provided</li>
+                    <li>Late payments may incur additional charges</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-row">
+                    <span>📞</span>
+                    <span>99217 13207 | 8669 997711</span>
+                    <span style="margin-left: 20px;">🌐</span>
+                    <span>www.vimanasa.com</span>
+                    <span style="margin-left: 20px;">✉️</span>
+                    <span>vimanasaservices@gmail.com</span>
+                </div>
+                <div class="footer-row">
+                    <span>📍</span>
+                    <span>Registered Office: 227, At Undegaon, Post Kodri, Taluka Gangakhed, Dist. Parbhani, 431514</span>
+                </div>
+                <div class="footer-row">
+                    <span>🏢</span>
+                    <span>Corporate Office: Nath Valley Road, Kanchanwadi, Chhatrapati Sambhajinagar (Aurangabad), 431001</span>
+                </div>
+                <div class="llpin">LLPIN: ACX-2082</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
