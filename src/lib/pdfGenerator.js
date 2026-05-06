@@ -6,7 +6,7 @@ export function generateSalarySlip(employee, month, year) {
   
   // Company Header
   doc.setFillColor(37, 99, 235); // Blue
-  doc.rect(0, 0, 210, 40, 'F');
+  doc.rect(0, 0, 210, 45, 'F');
   
   // Company Logo/Name
   doc.setTextColor(255, 255, 255);
@@ -17,38 +17,39 @@ export function generateSalarySlip(employee, month, year) {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text('Enterprise HR & Workforce Management', 105, 22, { align: 'center' });
-  doc.text('Mumbai, Maharashtra | GST: 27XXXXX1234X1ZX', 105, 28, { align: 'center' });
-  doc.text('www.vimanasa.com | hr@vimanasa.com', 105, 34, { align: 'center' });
+  doc.text('Nath Valley Road, Kanchanwadi, Chhatrapati Sambhajinagar (Aurangabad), 431001', 105, 28, { align: 'center' });
+  doc.text('www.vimanasa.com | vimanasaservices@gmail.com | +91 99217 13207', 105, 34, { align: 'center' });
+  doc.text('LLPIN: ACX-2082', 105, 40, { align: 'center' });
   
   // Salary Slip Title
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('SALARY SLIP', 105, 50, { align: 'center' });
+  doc.text('SALARY SLIP', 105, 55, { align: 'center' });
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`For the month of ${month} ${year}`, 105, 57, { align: 'center' });
+  doc.text(`For the month of ${month} ${year}`, 105, 62, { align: 'center' });
   
   // Employee Details Box
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.rect(15, 65, 180, 35);
+  doc.rect(15, 70, 180, 35);
   
   // Employee Info - Left Column
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Employee Details:', 20, 73);
+  doc.text('Employee Details:', 20, 78);
   
   doc.setFont('helvetica', 'normal');
-  doc.text(`Employee ID: ${employee.employeeId || 'N/A'}`, 20, 80);
-  doc.text(`Name: ${employee.firstName || ''} ${employee.lastName || ''}`, 20, 87);
-  doc.text(`Designation: ${employee.designation || 'N/A'}`, 20, 94);
+  doc.text(`Employee ID: ${employee.employeeId || 'N/A'}`, 20, 85);
+  doc.text(`Name: ${employee.firstName || ''} ${employee.lastName || ''}`, 20, 92);
+  doc.text(`Designation: ${employee.designation || 'N/A'}`, 20, 99);
   
   // Employee Info - Right Column
-  doc.text(`Department: ${employee.department || 'N/A'}`, 110, 80);
-  doc.text(`Date of Joining: ${employee.dateOfJoining || 'N/A'}`, 110, 87);
-  doc.text(`PAN: ${employee.panNumber || 'N/A'}`, 110, 94);
+  doc.text(`Department: ${employee.department || 'N/A'}`, 110, 85);
+  doc.text(`Date of Joining: ${employee.dateOfJoining || 'N/A'}`, 110, 92);
+  doc.text(`PAN: ${employee.panNumber || 'N/A'}`, 110, 99);
   
   // Salary Details Table
   const earnings = [
@@ -73,7 +74,7 @@ export function generateSalarySlip(employee, month, year) {
   
   // Earnings Table
   doc.autoTable({
-    startY: 110,
+    startY: 115,
     head: [['EARNINGS', 'AMOUNT (₹)']],
     body: earnings,
     foot: [['Total Earnings', formatCurrency(totalEarnings)]],
@@ -89,7 +90,7 @@ export function generateSalarySlip(employee, month, year) {
   
   // Deductions Table
   doc.autoTable({
-    startY: 110,
+    startY: 115,
     head: [['DEDUCTIONS', 'AMOUNT (₹)']],
     body: deductions,
     foot: [['Total Deductions', formatCurrency(totalDeductions)]],
@@ -136,7 +137,7 @@ export function generateSalarySlip(employee, month, year) {
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
   doc.text('This is a computer-generated salary slip and does not require a signature.', 105, finalY + 67, { align: 'center' });
-  doc.text('For any queries, please contact HR Department at hr@vimanasa.com', 105, finalY + 72, { align: 'center' });
+  doc.text('For any queries, please contact HR Department at vimanasaservices@gmail.com or +91 99217 13207', 105, finalY + 72, { align: 'center' });
   
   // Confidential Notice
   doc.setFont('helvetica', 'bold');
