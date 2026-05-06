@@ -1,0 +1,106 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                    🚀 QUICK SETUP - 4 MINUTES                        ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ STEP 1: ENABLE GOOGLE SHEETS API (1 minute)                         │
+└──────────────────────────────────────────────────────────────────────┘
+
+1. Open this link:
+   https://console.cloud.google.com/apis/library/sheets.googleapis.com
+
+2. Click the blue "ENABLE" button
+
+3. Wait for "API enabled" confirmation
+
+✅ Done? Move to Step 2!
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ STEP 2: RUN AUTOMATED SETUP (30 seconds)                            │
+└──────────────────────────────────────────────────────────────────────┘
+
+Run this command:
+
+   node auto-setup.js
+
+Wait for "🎉 SETUP COMPLETE!" message
+
+✅ Done? Move to Step 3!
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ STEP 3: VERIFY SETUP (30 seconds)                                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+Run this command:
+
+   node test-setup.js
+
+Should show "🎉 ALL TESTS PASSED!"
+
+✅ Done? Move to Step 4!
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ STEP 4: TEST IN APP (2 minutes)                                     │
+└──────────────────────────────────────────────────────────────────────┘
+
+1. Open: http://localhost:3001
+2. Login: admin / Vimanasa@2026
+3. Click "Clients" tab → See 2 sample clients
+4. Click "Workforce" tab → Deploy an employee
+5. Click "Invoices" tab → Generate an invoice
+
+✅ Everything works? YOU'RE DONE! 🎉
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                         📋 QUICK REFERENCE                           ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+App URL:        http://localhost:3001
+Login:          admin / Vimanasa@2026
+Google Sheet:   https://docs.google.com/spreadsheets/d/1rqqMJDLreg8GloJfAT_er6pvB0KhYDSI6GmSg3k2eGM/edit
+Service Email:  rahul-mwsnoc@appspot.gserviceaccount.com
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                      🚨 IF SOMETHING FAILS                           ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+Error: "unregistered callers"
+→ Go back to Step 1, enable the API
+
+Error: "permission denied"
+→ Share Google Sheet with: rahul-mwsnoc@appspot.gserviceaccount.com
+
+Error: "spreadsheet not found"
+→ Check .env.local has correct Spreadsheet ID
+
+Script hangs?
+→ Check internet connection, try again
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                    📚 DOCUMENTATION FILES                            ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+ENABLE_API_GUIDE.md          ← Detailed step-by-step guide
+COPY_PASTE_SETUP.md          ← Manual setup (if script fails)
+COMPLETE_WORKFLOW_DETAILED.md ← How to use the app
+MASTER_ROADMAP.md            ← Future features (Phase 2 & 3)
+
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                         ✨ YOU'RE READY!                            ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+Your Outsourcing OS is now fully functional with:
+✅ Client Management
+✅ Employee Deployment with Dual-Salary
+✅ Automated Invoice Generation
+✅ Professional PDF Invoices
+✅ Real-time Financial Calculations
+
+Start by adding your real clients and deploying employees! 🚀

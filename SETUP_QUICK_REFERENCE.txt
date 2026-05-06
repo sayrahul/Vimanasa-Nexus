@@ -1,0 +1,198 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    VIMANASA NEXUS - QUICK SETUP REFERENCE                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📊 YOUR GOOGLE SHEET
+https://docs.google.com/spreadsheets/d/1rqqMJDLreg8GloJfAT_er6pvB0KhYDSI6GmSg3k2eGM/edit
+
+🔐 SERVICE ACCOUNT (Grant Editor Access)
+rahul-mwsnoc@appspot.gserviceaccount.com
+
+🌐 APP URL
+http://localhost:3001
+
+🔑 LOGIN CREDENTIALS
+Username: admin
+Password: Vimanasa@2026
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 STEP 1: CREATE "CLIENTS" SHEET
+
+1. Click + button at bottom
+2. Rename to: Clients
+3. Paste headers in A1:
+
+Client ID	Client Name	GST Number	Location	Contact Person	Contact Phone	Contact Email	Payment Terms	Contract Start	Contract End	Agency Margin %	Margin Type	Manages Leaves	Status	Deployed Staff
+
+4. Paste sample data in A2:
+
+CLI001	Zilla Parishad IT Department	27AABCU9603R1ZM	Pune, Maharashtra	Mr. Rajesh Kumar	+91 98765 43210	rajesh@zp.gov.in	Net 30	2026-01-01	2027-01-01	8.5	Percentage	No	Active	0
+
+5. Format: Bold, Blue background, White text, Freeze row 1
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 STEP 2: CREATE "CLIENT_INVOICES" SHEET
+
+1. Click + button at bottom
+2. Rename to: Client_Invoices
+3. Paste headers in A1:
+
+Invoice Number	Client Name	Client ID	Month	Invoice Date	Due Date	Total Employees	Subtotal	GST Amount	Invoice Amount	Status	Payment Terms	Paid Date	Notes
+
+4. Format: Bold, Blue background, White text, Freeze row 1
+5. Leave empty (invoices generated from app)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 STEP 3: UPDATE "EMPLOYEES" SHEET
+
+1. Go to Employees sheet
+2. Find last column
+3. Paste these 20 new headers in next empty column:
+
+Deployment Status	Assigned Client	Deployment Date	Site Location	Shift Start	Shift End	Phone	Email	Aadhar	PAN	Basic Salary	HRA	Allowances	Total Pay Rate	Employer PF	Employer ESIC	Agency Commission	Total Bill Rate	GST Amount	Final Invoice Amount
+
+4. Format new headers: Bold, Blue background, White text
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 STEP 4: GRANT ACCESS
+
+1. Click Share button (top right)
+2. Add: rahul-mwsnoc@appspot.gserviceaccount.com
+3. Permission: Editor
+4. Click Share
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION CHECKLIST
+
+□ Clients sheet exists with 15 columns
+□ 2 sample clients added
+□ Client_Invoices sheet exists with 14 columns
+□ Client_Invoices is empty
+□ Employees sheet has 20 new columns
+□ Service account has Editor access
+□ App loads at http://localhost:3001
+□ Can login successfully
+□ Clients tab shows 2 clients
+□ Can add new client
+□ Can deploy employee
+□ Bill Rate auto-calculates
+□ Can generate invoice
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 KEY CONCEPTS
+
+DUAL-SALARY STRUCTURE:
+┌─────────────────────────────────────────────────────────────────┐
+│ Employee Sees (Pay Rate):          ₹22,000                      │
+│ Client Pays (Bill Rate):           ₹31,878                      │
+│ Your Profit:                       ₹9,878 per employee/month    │
+│ Employee Never Knows the Markup!                                │
+└─────────────────────────────────────────────────────────────────┘
+
+DEPLOYMENT STATUS:
+• On Bench    = Not assigned (costing you money)
+• Deployed    = Assigned to client (generating revenue)
+• Inactive    = Not working
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION FILES
+
+SETUP:
+• MANUAL_SHEETS_SETUP.md          - Detailed text guide
+• SHEETS_SETUP_VISUAL_GUIDE.md    - Step-by-step with descriptions
+• SETUP_QUICK_REFERENCE.txt       - This file
+
+USAGE:
+• QUICK_START_OUTSOURCING.md      - 5-minute quick start
+• COMPLETE_WORKFLOW_DETAILED.md   - Complete workflows
+• IMPLEMENTATION_COMPLETE.md      - Feature overview
+
+PLANNING:
+• MASTER_ROADMAP.md               - Complete transformation plan
+• PHASE2_ADVANCED_FEATURES_PLAN.md - Next level features
+• PHASE3_ENTERPRISE_FEATURES_PLAN.md - Enterprise scale
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 QUICK TEST WORKFLOW
+
+1. START APP
+   npm run dev
+
+2. LOGIN
+   http://localhost:3001
+   admin / Vimanasa@2026
+
+3. ADD CLIENT
+   Clients → Add Client → Fill form → Save
+
+4. DEPLOY EMPLOYEE
+   Workforce → Add Entry → Set "Deployed" → Select Client → Add Salary → Save
+
+5. GENERATE INVOICE
+   Invoices → Generate Invoice → Select Client → Generate → Download PDF
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 PROFIT CALCULATION EXAMPLE
+
+Employee: Rajesh Kumar (Security Guard)
+
+WHAT YOU PAY (Pay Rate):
+Basic Salary:     ₹15,000
+HRA:              ₹5,000
+Allowances:       ₹2,000
+Total Pay Rate:   ₹22,000/month
+
+WHAT CLIENT PAYS (Bill Rate):
+Pay Rate:         ₹22,000
+Employer PF:      ₹1,800  (12% of basic)
+Employer ESIC:    ₹715    (3.25% of gross)
+Agency Commission:₹2,500  (YOUR MARKUP)
+Subtotal:         ₹27,015
+GST (18%):        ₹4,863
+Final Invoice:    ₹31,878/month
+
+YOUR PROFIT:      ₹9,878/month per employee
+
+FOR 10 EMPLOYEES: ₹98,780/month = ₹11,85,360/year
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🐛 COMMON ISSUES
+
+ISSUE: "Sheet not found"
+FIX: Check exact names: Clients, Client_Invoices, Employees
+
+ISSUE: Data not saving
+FIX: Verify service account has Editor access
+
+ISSUE: Bill Rate not calculating
+FIX: Enter numbers (not text) in salary fields
+
+ISSUE: Can't see data in app
+FIX: Hard refresh (Ctrl+Shift+R) or restart server
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 SUPPORT
+
+Browser Console: Press F12 to see errors
+Dev Server: Check terminal for error messages
+Documentation: Read the .md files in project root
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 SETUP TIME: 15 MINUTES
+🎯 RESULT: FULLY FUNCTIONAL OUTSOURCING OS
+
+Ready to transform your business! 🚀
+
+═══════════════════════════════════════════════════════════════════════════════

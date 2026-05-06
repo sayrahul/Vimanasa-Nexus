@@ -1,159 +1,410 @@
-// Script to set up Google Sheets with the correct structure
-require('dotenv').config({ path: '.env.local' });
+/**
+ * Google Sheets Setup Script
+ * This script will add the required sheets to your existing Google Sheets
+ * for the Outsourcing OS transformation
+ */
+
 const { google } = require('googleapis');
+require('dotenv').config({ path: '.env.local' });
 
-async function setupGoogleSheets() {
-  console.log('🚀 Setting up Google Sheets for Vimanasa Nexus...\n');
+// Configuration
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
 
+// Initialize Google Sheets API
+const auth = new google.auth.JWT(
+  SERVICE_ACCOUNT_EMAIL,
+  null,
+  PRIVATE_KEY,
+  ['https://www.googleapis.com/auth/spreadsheets']
+);
+
+const sheets = google.sheets({ version: 'v4', auth });
+
+// Sheet configurations
+const SHEETS_TO_CREATE = [
+  {
+    name: 'Clients',
+    headers: [
+      'Client ID',
+      'Client Name',
+      'GST Number',
+      'Location',
+      'Contact Person',
+      'Contact Phone',
+      'Contact Email',
+      'Payment Terms',
+      'Contract Start',
+      'Contract End',
+      'Agency Margin %',
+      'Margin Type',
+      'Manages Leaves',
+      'Status',
+      'Deployed Staff'
+    ],
+    sampleData: [
+      [
+        'CLI001',
+        'Zilla Parishad IT Department',
+        '27AABCU9603R1ZM',
+        'Pune, Maharashtra',
+        'Mr. Rajesh Kumar',
+        '+91 98765 43210',
+        'rajesh@zp.gov.in',
+        'Net 30',
+        '2026-01-01',
+        '2027-01-01',
+        '8.5',
+        'Percentage',
+        'No',
+        'Active',
+        '0'
+      ],
+      [
+        'CLI002',
+        'Tech Corp India',
+        '27AABCU9603R1ZN',
+        'Mumbai, Maharashtra',
+        'Ms. Priya Sharma',
+        '+91 98765 43211',
+        'priya@techcorp.com',
+        'Net 45',
+        '2026-02-01',
+        '2027-02-01',
+        '10.0',
+        'Percentage',
+        'Yes',
+        'Active',
+        '0'
+      ]
+    ]
+  },
+  {
+    name: 'Client_Invoices',
+    headers: [
+      'Invoice Number',
+      'Client Name',
+      'Client ID',
+      'Month',
+      'Invoice Date',
+      'Due Date',
+      'Total Employees',
+      'Subtotal',
+      'GST Amount',
+      'Invoice Amount',
+      'Status',
+      'Payment Terms',
+      'Paid Date',
+      'Notes'
+    ],
+    sampleData: [
+      // Empty - invoices will be generated from the app
+    ]
+  }
+];
+
+// Columns to add to existing Employees sheet
+const EMPLOYEES_NEW_COLUMNS = [
+  'Deployment Status',
+  'Assigned Client',
+  'Deployment Date',
+  'Site Location',
+  'Shift Start',
+  'Shift End',
+  'Phone',
+  'Email',
+  'Aadhar',
+  'PAN',
+  'Basic Salary',
+  'HRA',
+  'Allowances',
+  'Total Pay Rate',
+  'Employer PF',
+  'Employer ESIC',
+  'Agency Commission',
+  'Total Bill Rate',
+  'GST Amount',
+  'Final Invoice Amount'
+];
+
+async function checkSheetExists(sheetName) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-        private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    const response = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
     });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-    // Get existing sheets
-    const metadata = await sheets.spreadsheets.get({ spreadsheetId });
-    const existingSheets = metadata.data.sheets.map(s => s.properties.title);
     
-    console.log('📊 Current sheets:', existingSheets.join(', '));
-    console.log('');
+    const sheet = response.data.sheets.find(
+      s => s.properties.title === sheetName
+    );
+    
+    return sheet ? sheet.properties.sheetId : null;
+  } catch (error) {
+    console.error(`Error checking sheet ${sheetName}:`, error.message);
+    return null;
+  }
+}
 
-    // Define required sheets with their headers and sample data
-    const requiredSheets = {
-      'Dashboard': {
-        headers: ['Staff', 'Deployed', 'Clients', 'Payroll'],
-        sampleData: [
-          ['124', '98', '12', '₹1,200,000']
-        ]
-      },
-      'Employees': {
-        headers: ['ID', 'Employee', 'Role', 'Status'],
-        sampleData: [
-          ['EMP001', 'Rajesh Kumar', 'Security Guard', 'Active'],
-          ['EMP002', 'Priya Sharma', 'Supervisor', 'Active'],
-          ['EMP003', 'Amit Patel', 'Security Guard', 'Active'],
-          ['EMP004', 'Sneha Reddy', 'Manager', 'Active'],
-          ['EMP005', 'Vikram Singh', 'Security Guard', 'On Leave']
-        ]
-      },
-      'Clients': {
-        headers: ['Site ID', 'Partner Name', 'Location', 'Headcount'],
-        sampleData: [
-          ['SITE001', 'Tech Corp India', 'Mumbai, Maharashtra', '25'],
-          ['SITE002', 'Finance Solutions Ltd', 'Delhi NCR', '15'],
-          ['SITE003', 'Retail Mega Mart', 'Bangalore, Karnataka', '30'],
-          ['SITE004', 'Manufacturing Hub', 'Pune, Maharashtra', '20']
-        ]
-      },
-      'Payroll': {
-        headers: ['Month', 'Total Payout', 'Pending', 'Status'],
-        sampleData: [
-          ['January 2026', '₹1,200,000', '₹0', 'Paid'],
-          ['February 2026', '₹1,250,000', '₹50,000', 'Processing'],
-          ['March 2026', '₹1,300,000', '₹1,300,000', 'Pending']
-        ]
-      },
-      'Finance': {
-        headers: ['Category', 'Amount', 'Date', 'Type'],
-        sampleData: [
-          ['Client Payment - Tech Corp', '₹500,000', '2026-01-15', 'Income'],
-          ['Salary Disbursement', '₹1,200,000', '2026-01-31', 'Expense'],
-          ['Office Rent', '₹50,000', '2026-01-05', 'Expense'],
-          ['Client Payment - Finance Solutions', '₹300,000', '2026-01-20', 'Income'],
-          ['Equipment Purchase', '₹75,000', '2026-01-10', 'Expense']
-        ]
-      },
-      'Compliance': {
-        headers: ['Requirement', 'Deadline', 'Status', 'Doc Link'],
-        sampleData: [
-          ['PF Filing - January', '2026-02-15', 'Completed', 'https://docs.google.com/'],
-          ['ESI Return - January', '2026-02-21', 'Pending', 'https://docs.google.com/'],
-          ['GST Filing - Q4', '2026-01-31', 'Completed', 'https://docs.google.com/'],
-          ['Labour License Renewal', '2026-03-31', 'In Progress', 'https://docs.google.com/']
-        ]
-      }
-    };
-
-    // Create or update sheets
-    for (const [sheetName, sheetData] of Object.entries(requiredSheets)) {
-      console.log(`📝 Processing sheet: ${sheetName}`);
-      
-      let sheetId;
-      const existingSheet = metadata.data.sheets.find(s => s.properties.title === sheetName);
-      
-      if (!existingSheet) {
-        // Create new sheet
-        console.log(`   Creating new sheet: ${sheetName}`);
-        const addSheetResponse = await sheets.spreadsheets.batchUpdate({
-          spreadsheetId,
-          requestBody: {
-            requests: [{
-              addSheet: {
-                properties: {
-                  title: sheetName
+async function createSheet(sheetConfig) {
+  console.log(`\n📄 Creating sheet: ${sheetConfig.name}`);
+  
+  try {
+    // Check if sheet already exists
+    const existingSheetId = await checkSheetExists(sheetConfig.name);
+    
+    if (existingSheetId) {
+      console.log(`   ⚠️  Sheet "${sheetConfig.name}" already exists. Skipping creation.`);
+      return existingSheetId;
+    }
+    
+    // Create the sheet
+    const response = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: sheetConfig.name,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: sheetConfig.headers.length,
+                  frozenRowCount: 1
                 }
               }
-            }]
+            }
           }
-        });
-        sheetId = addSheetResponse.data.replies[0].addSheet.properties.sheetId;
-        console.log(`   ✓ Sheet created`);
-      } else {
-        sheetId = existingSheet.properties.sheetId;
-        console.log(`   ✓ Sheet already exists`);
+        ]
       }
-
-      // Check if sheet has data
-      const existingData = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: `${sheetName}!A:Z`,
+    });
+    
+    const newSheetId = response.data.replies[0].addSheet.properties.sheetId;
+    console.log(`   ✅ Sheet created successfully`);
+    
+    // Add headers
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${sheetConfig.name}!A1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [sheetConfig.headers]
+      }
+    });
+    console.log(`   ✅ Headers added`);
+    
+    // Format headers (bold, background color)
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            repeatCell: {
+              range: {
+                sheetId: newSheetId,
+                startRowIndex: 0,
+                endRowIndex: 1
+              },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: {
+                    red: 0.2,
+                    green: 0.4,
+                    blue: 0.8
+                  },
+                  textFormat: {
+                    foregroundColor: {
+                      red: 1.0,
+                      green: 1.0,
+                      blue: 1.0
+                    },
+                    fontSize: 11,
+                    bold: true
+                  }
+                }
+              },
+              fields: 'userEnteredFormat(backgroundColor,textFormat)'
+            }
+          }
+        ]
+      }
+    });
+    console.log(`   ✅ Headers formatted`);
+    
+    // Add sample data if provided
+    if (sheetConfig.sampleData && sheetConfig.sampleData.length > 0) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetConfig.name}!A2`,
+        valueInputOption: 'RAW',
+        requestBody: {
+          values: sheetConfig.sampleData
+        }
       });
-
-      if (!existingData.data.values || existingData.data.values.length === 0) {
-        // Add headers and sample data
-        console.log(`   Adding headers and sample data...`);
-        const allData = [sheetData.headers, ...sheetData.sampleData];
-        
-        await sheets.spreadsheets.values.update({
-          spreadsheetId,
-          range: `${sheetName}!A1`,
-          valueInputOption: 'USER_ENTERED',
-          requestBody: {
-            values: allData
-          }
-        });
-        console.log(`   ✓ Data added (${allData.length} rows)`);
-      } else {
-        console.log(`   ✓ Sheet already has data (${existingData.data.values.length} rows)`);
-      }
-      
-      console.log('');
+      console.log(`   ✅ Sample data added (${sheetConfig.sampleData.length} rows)`);
     }
-
-    console.log('✅ Google Sheets setup completed successfully!\n');
-    console.log('📊 Spreadsheet URL: https://docs.google.com/spreadsheets/d/' + spreadsheetId);
-    console.log('\n💡 Next steps:');
-    console.log('   1. Open the spreadsheet and verify the data');
-    console.log('   2. Customize the sample data as needed');
-    console.log('   3. Run "npm run dev" to start the application');
-
+    
+    return newSheetId;
   } catch (error) {
-    console.error('\n❌ Error setting up Google Sheets:');
-    console.error('Error:', error.message);
+    console.error(`   ❌ Error creating sheet:`, error.message);
+    throw error;
+  }
+}
+
+async function updateEmployeesSheet() {
+  console.log(`\n📄 Updating Employees sheet with new columns`);
+  
+  try {
+    // Check if Employees sheet exists
+    const employeesSheetId = await checkSheetExists('Employees');
     
-    if (error.code === 403) {
-      console.error('\n💡 Permission Error: The service account needs "Editor" access.');
-      console.error('   Share the spreadsheet with:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+    if (!employeesSheetId) {
+      console.log(`   ⚠️  Employees sheet not found. Please ensure it exists.`);
+      return;
     }
     
+    // Get current headers
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Employees!1:1'
+    });
+    
+    const currentHeaders = response.data.values ? response.data.values[0] : [];
+    console.log(`   📊 Current columns: ${currentHeaders.length}`);
+    
+    // Check which columns need to be added
+    const columnsToAdd = EMPLOYEES_NEW_COLUMNS.filter(
+      col => !currentHeaders.includes(col)
+    );
+    
+    if (columnsToAdd.length === 0) {
+      console.log(`   ✅ All required columns already exist`);
+      return;
+    }
+    
+    console.log(`   📝 Adding ${columnsToAdd.length} new columns`);
+    
+    // Add new columns
+    const newHeaders = [...currentHeaders, ...columnsToAdd];
+    
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Employees!1:1',
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [newHeaders]
+      }
+    });
+    
+    console.log(`   ✅ New columns added successfully`);
+    console.log(`   📊 Total columns now: ${newHeaders.length}`);
+    
+    // Format new header cells
+    const startCol = currentHeaders.length;
+    const endCol = newHeaders.length;
+    
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            repeatCell: {
+              range: {
+                sheetId: employeesSheetId,
+                startRowIndex: 0,
+                endRowIndex: 1,
+                startColumnIndex: startCol,
+                endColumnIndex: endCol
+              },
+              cell: {
+                userEnteredFormat: {
+                  backgroundColor: {
+                    red: 0.2,
+                    green: 0.4,
+                    blue: 0.8
+                  },
+                  textFormat: {
+                    foregroundColor: {
+                      red: 1.0,
+                      green: 1.0,
+                      blue: 1.0
+                    },
+                    fontSize: 11,
+                    bold: true
+                  }
+                }
+              },
+              fields: 'userEnteredFormat(backgroundColor,textFormat)'
+            }
+          }
+        ]
+      }
+    });
+    
+    console.log(`   ✅ New headers formatted`);
+    
+  } catch (error) {
+    console.error(`   ❌ Error updating Employees sheet:`, error.message);
+    throw error;
+  }
+}
+
+async function main() {
+  console.log('🚀 Starting Google Sheets Setup for Outsourcing OS\n');
+  console.log(`📊 Spreadsheet ID: ${SPREADSHEET_ID}`);
+  console.log(`📧 Service Account: ${SERVICE_ACCOUNT_EMAIL}\n`);
+  
+  try {
+    // Test connection
+    console.log('🔐 Testing connection to Google Sheets...');
+    const testResponse = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+    console.log(`✅ Connected successfully to: "${testResponse.data.properties.title}"\n`);
+    
+    // Create new sheets
+    console.log('📝 Creating new sheets...');
+    for (const sheetConfig of SHEETS_TO_CREATE) {
+      await createSheet(sheetConfig);
+    }
+    
+    // Update Employees sheet
+    await updateEmployeesSheet();
+    
+    // Summary
+    console.log('\n' + '='.repeat(60));
+    console.log('🎉 SETUP COMPLETE!');
+    console.log('='.repeat(60));
+    console.log('\n✅ Sheets Created/Updated:');
+    console.log('   1. Clients (with 2 sample clients)');
+    console.log('   2. Client_Invoices (empty, ready for invoices)');
+    console.log('   3. Employees (updated with 20 new columns)');
+    
+    console.log('\n📋 Next Steps:');
+    console.log('   1. Open your Google Sheet and verify the new sheets');
+    console.log('   2. Review the sample clients in the Clients sheet');
+    console.log('   3. Update existing employees with deployment info');
+    console.log('   4. Start using the app at http://localhost:3001');
+    
+    console.log('\n📚 Documentation:');
+    console.log('   - QUICK_START_OUTSOURCING.md - Quick start guide');
+    console.log('   - COMPLETE_WORKFLOW_DETAILED.md - Detailed workflows');
+    console.log('   - GOOGLE_SHEETS_SETUP_OUTSOURCING.md - Sheet details');
+    
+    console.log('\n🔗 Your Google Sheet:');
+    console.log(`   https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`);
+    
+    console.log('\n✨ Your Outsourcing OS is ready to use!\n');
+    
+  } catch (error) {
+    console.error('\n❌ Setup failed:', error.message);
+    console.error('\nTroubleshooting:');
+    console.error('1. Verify your .env.local file has correct credentials');
+    console.error('2. Ensure service account has edit access to the sheet');
+    console.error('3. Check that the spreadsheet ID is correct');
+    console.error('4. Review the error message above for details\n');
     process.exit(1);
   }
 }
 
-setupGoogleSheets();
+// Run the setup
+main();

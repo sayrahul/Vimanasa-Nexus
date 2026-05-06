@@ -6,7 +6,6 @@ import {
   Banknote, 
   Wallet, 
   ShieldCheck, 
-  MessageSquare,
   LogOut,
   RefreshCcw,
   Shield,
@@ -21,6 +20,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
   { icon: Users, label: 'Workforce', id: 'workforce' },
+  { icon: Building2, label: 'Clients', id: 'clients' },
   { icon: Building2, label: 'Partners', id: 'partners' },
   { icon: Calendar, label: 'Attendance', id: 'attendance' },
   { icon: Clock, label: 'Leave', id: 'leave' },
@@ -28,7 +28,7 @@ const menuItems = [
   { icon: Banknote, label: 'Payroll', id: 'payroll' },
   { icon: Wallet, label: 'Finance', id: 'finance' },
   { icon: ShieldCheck, label: 'Compliance', id: 'compliance' },
-  { icon: MessageSquare, label: 'AI Assistant', id: 'ai' },
+  { icon: Receipt, label: 'Invoices', id: 'invoices' },
 ];
 
 export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync }) {

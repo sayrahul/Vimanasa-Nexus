@@ -2,7 +2,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import EmployeeDetailForm from '@/components/EmployeeDetailForm';
+import EmployeeDeploymentForm from '@/components/EmployeeDeploymentForm';
 import PartnerDetailForm from '@/components/PartnerDetailForm';
+import ClientManagement from '@/components/ClientManagement';
+import ClientInvoicing from '@/components/ClientInvoicing';
 import GenericForm from '@/components/GenericForm';
 import AttendanceManager from '@/components/AttendanceManager';
 import LeaveManager from '@/components/LeaveManager';
@@ -19,9 +22,11 @@ import { generateSalarySlip } from '@/lib/pdfGenerator';
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('admin'); // admin, sub-admin, employee
   const [data, setData] = useState({
     dashboard: null,
     workforce: [],
+    clients: [],
     partners: [],
     payroll: [],
     finance: [],
@@ -29,6 +34,7 @@ export default function DashboardLayout() {
     attendance: [],
     leaveRequests: [],
     expenses: [],
+    invoices: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -39,17 +45,18 @@ export default function DashboardLayout() {
   const sheetMapping = {
     dashboard: 'Dashboard',
     workforce: 'Employees',
-    partners: 'Clients',
+    clients: 'Clients',
+    partners: 'Partners',
     payroll: 'Payroll',
     finance: 'Finance',
     compliance: 'Compliance',
     attendance: 'Attendance',
     leave: 'Leave Requests',
-    expenses: 'Expense Claims'
+    expenses: 'Expense Claims',
+    invoices: 'Client_Invoices'
   };
 
   const fetchData = useCallback(async (tab) => {
-    if (tab === 'ai') return;
     setIsLoading(true);
     
     let retries = 0;
@@ -232,6 +239,59 @@ export default function DashboardLayout() {
               </>
             )}
             {activeTab === 'workforce' && <TableView title="Workforce" subtitle="Manage employees and site assignments" data={data.workforce} columns={['ID', 'Employee', 'Role', 'Status']} onAdd={() => handleAddNew('workforce')} onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} tab="workforce" />}
+            {activeTab === 'clients' && (
+              <ClientManagement
+                clients={data.clients}
+                onAdd={async (clientData) => {
+                  try {
+                    const sheetName = sheetMapping['clients'];
+                    await axios.post('/api/gsheets', {
+                      sheet: sheetName,
+                      values: Object.values(clientData)
+                    });
+                    toast.success('Client added successfully!');
+                    fetchData('clients');
+                  } catch (error) {
+                    console.error('Error adding client:', error);
+                    toast.error('Failed to add client. Please try again.');
+                  }
+                }}
+                onEdit={async (clientData, idx) => {
+                  try {
+                    const sheetName = sheetMapping['clients'];
+                    await axios.put('/api/gsheets', {
+                      sheet: sheetName,
+                      rowIndex: idx,
+                      values: Object.values(clientData)
+                    });
+                    toast.success('Client updated successfully!');
+                    fetchData('clients');
+                  } catch (error) {
+                    console.error('Error updating client:', error);
+                    toast.error('Failed to update client. Please try again.');
+                  }
+                }}
+                onDelete={async (client, idx) => {
+                  if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+                    return;
+                  }
+                  try {
+                    const sheetName = sheetMapping['clients'];
+                    await axios.delete('/api/gsheets', {
+                      data: {
+                        sheet: sheetName,
+                        rowIndex: idx
+                      }
+                    });
+                    toast.success('Client deleted successfully!');
+                    fetchData('clients');
+                  } catch (error) {
+                    console.error('Error deleting client:', error);
+                    toast.error('Failed to delete client. Please try again.');
+                  }
+                }}
+              />
+            )}
             {activeTab === 'partners' && <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item, idx) => handleEdit(item, 'partners', idx)} onDelete={(item, idx) => handleDelete(item, 'partners', idx)} tab="partners" />}
             {activeTab === 'attendance' && (
               <AttendanceManager 
@@ -325,15 +385,53 @@ export default function DashboardLayout() {
             )}
             {activeTab === 'finance' && <TableView title="Finance" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item, idx) => handleEdit(item, 'finance', idx)} onDelete={(item, idx) => handleDelete(item, 'finance', idx)} tab="finance" />}
             {activeTab === 'compliance' && <TableView title="Compliance" subtitle="Statutory filings and regulatory status" data={data.compliance} columns={['Requirement', 'Deadline', 'Status', 'Doc Link']} onAdd={() => handleAddNew('compliance')} onEdit={(item, idx) => handleEdit(item, 'compliance', idx)} onDelete={(item, idx) => handleDelete(item, 'compliance', idx)} tab="compliance" />}
-            {activeTab === 'ai' && <AiAssistantView dataContext={data} />}
+            {activeTab === 'invoices' && (
+              <ClientInvoicing
+                invoices={data.invoices}
+                clients={data.clients}
+                employees={data.workforce}
+                attendance={data.attendance}
+                onGenerateInvoice={async (invoiceData) => {
+                  try {
+                    const sheetName = sheetMapping['invoices'];
+                    await axios.post('/api/gsheets', {
+                      sheet: sheetName,
+                      values: Object.values(invoiceData)
+                    });
+                    toast.success('Invoice generated successfully!');
+                    fetchData('invoices');
+                  } catch (error) {
+                    console.error('Error generating invoice:', error);
+                    toast.error('Failed to generate invoice. Please try again.');
+                  }
+                }}
+                onUpdateStatus={async (invoice, idx, newStatus) => {
+                  try {
+                    const sheetName = sheetMapping['invoices'];
+                    await axios.put('/api/gsheets', {
+                      sheet: sheetName,
+                      rowIndex: idx,
+                      values: Object.values({ ...invoice, Status: newStatus })
+                    });
+                    toast.success('Invoice status updated!');
+                    fetchData('invoices');
+                  } catch (error) {
+                    console.error('Error updating invoice:', error);
+                    toast.error('Failed to update invoice status.');
+                  }
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
 
       {/* Form Modals */}
       {showForm && formType === 'workforce' && (
-        <EmployeeDetailForm
+        <EmployeeDeploymentForm
           employee={editingItem}
+          clients={data.clients}
+          userRole={userRole}
           onSave={handleSave}
           onCancel={() => {
             setShowForm(false);
@@ -639,103 +737,6 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AiAssistantView({ dataContext }) {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hello! I'm your Vimanasa AI Assistant. I have access to your Workforce, Payroll, and Finance data. How can I help you today?" }
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    
-    const userMsg = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
-
-    try {
-      const response = await axios.post('/api/ai', {
-        prompt: input,
-        context: dataContext
-      });
-      
-      if (response.data.error) {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: `Error: ${response.data.error}. Please check your AI configuration.` 
-        }]);
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.data.text }]);
-      }
-    } catch (error) {
-      console.error('AI Assistant Error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "Sorry, I encountered an error while processing your request. Please ensure your Gemini API key is configured correctly." 
-      }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in duration-500">
-      <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center gap-4">
-        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
-          <Shield size={24} />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Nexus AI</h2>
-          <p className="text-xs font-bold text-blue-500 uppercase tracking-widest">Enterprise Intelligence</p>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-6 rounded-3xl font-medium text-sm leading-relaxed ${
-              msg.role === 'user' 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 rounded-br-none' 
-                : 'bg-slate-50 text-slate-800 shadow-sm rounded-bl-none border border-slate-100'
-            }`}>
-              {msg.content}
-            </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex gap-2">
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" />
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:0.2s]" />
-              <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:0.4s]" />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="p-8 bg-slate-50/30 border-t border-slate-100">
-        <div className="relative flex items-center gap-4">
-          <input 
-            type="text" 
-            placeholder="Ask about payroll trends, staff distribution, or compliance alerts..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 px-8 py-5 rounded-[2rem] border-none shadow-xl focus:ring-4 focus:ring-blue-100 outline-none text-slate-700 font-bold"
-          />
-          <button 
-            onClick={handleSend}
-            className="p-5 bg-blue-600 text-white rounded-[2rem] hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-90"
-          >
-            <Send size={24} />
-          </button>
         </div>
       </div>
     </div>
