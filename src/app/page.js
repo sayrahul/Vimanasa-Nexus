@@ -66,7 +66,10 @@ export default function DashboardLayout() {
       try {
         const sheetName = sheetMapping[tab] || tab.charAt(0).toUpperCase() + tab.slice(1);
         const response = await axios.get(`/api/gsheets?sheet=${sheetName}`);
-        setData(prev => ({ ...prev, [tab]: response.data }));
+        
+        // Handle new response format with success and data fields
+        const responseData = response.data.data || response.data;
+        setData(prev => ({ ...prev, [tab]: responseData }));
         setIsLoading(false);
         return; // Success, exit function
       } catch (error) {
@@ -83,6 +86,8 @@ export default function DashboardLayout() {
             console.error('Network connectivity issue. Data will retry automatically.');
           } else if (error.response?.status === 500) {
             console.error('API Error details:', error.response?.data);
+          } else if (error.response?.status === 401) {
+            console.error('Authentication required. Please log in.');
           }
         } else {
           // Wait before retrying (exponential backoff)
@@ -95,6 +100,16 @@ export default function DashboardLayout() {
   useEffect(() => {
     fetchData(activeTab);
   }, [activeTab, fetchData]);
+
+  // Listen for navigation events from dashboard quick actions
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      setActiveTab(event.detail);
+    };
+    
+    window.addEventListener('navigate-tab', handleNavigate);
+    return () => window.removeEventListener('navigate-tab', handleNavigate);
+  }, []);
 
   const handleSync = () => {
     fetchData(activeTab);
@@ -471,23 +486,59 @@ export default function DashboardLayout() {
 }
 
 function DashboardView({ data, allData }) {
+  const [activeTab, setActiveTab] = useState('workforce');
+  const [showQuickAction, setShowQuickAction] = useState(null);
+  
   // Calculate real-time stats from actual data
   const stats = {
     staff: allData?.workforce?.length || 0,
     deployed: allData?.workforce?.filter(e => e.Status === 'Active' || e['Employee Status'] === 'Active').length || 0,
     clients: allData?.partners?.length || 0,
-    payroll: allData?.payroll?.[0]?.['Total Payout'] || allData?.payroll?.[0]?.['Monthly Billing'] || '₹0'
+    payroll: allData?.payroll?.[0]?.['Total Payout'] || allData?.payroll?.[0]?.['Monthly Billing'] || '₹0',
+    onLeave: allData?.workforce?.filter(e => e.Status === 'On Leave').length || 0,
+    pendingLeave: allData?.leaveRequests?.filter(r => r.Status === 'Pending').length || 0,
+    pendingExpenses: allData?.expenses?.filter(e => e.Status === 'Pending').length || 0,
+    complianceDue: allData?.compliance?.filter(c => c.Status === 'Pending').length || 0,
   };
   
   const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
 
+  // Calculate financial summary
+  const financialSummary = {
+    totalIncome: allData?.finance?.filter(f => f.Type === 'Income').reduce((sum, f) => {
+      const amount = String(f.Amount || '0').replace(/[₹,]/g, '');
+      return sum + parseFloat(amount || 0);
+    }, 0) || 0,
+    totalExpense: allData?.finance?.filter(f => f.Type === 'Expense').reduce((sum, f) => {
+      const amount = String(f.Amount || '0').replace(/[₹,]/g, '');
+      return sum + parseFloat(amount || 0);
+    }, 0) || 0,
+  };
+  
+  const profit = financialSummary.totalIncome - financialSummary.totalExpense;
+  const profitMargin = financialSummary.totalIncome > 0 
+    ? Math.round((profit / financialSummary.totalIncome) * 100) 
+    : 0;
+
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <header>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
-        <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
+          <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-2 rounded-xl font-bold">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            Live Data
+          </div>
+          <div className="text-slate-500 font-medium">
+            Last updated: {new Date().toLocaleTimeString()}
+          </div>
+        </div>
       </header>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <StatsCard 
           label="Total Workforce" 
@@ -495,6 +546,7 @@ function DashboardView({ data, allData }) {
           trend="+5%" 
           icon={Users}
           color="blue"
+          subtitle={`${stats.onLeave} on leave`}
         />
         <StatsCard 
           label="Deployed Staff" 
@@ -502,111 +554,240 @@ function DashboardView({ data, allData }) {
           trend={`${deploymentRate}%`} 
           icon={TrendingUp}
           color="green"
+          subtitle="Deployment rate"
         />
         <StatsCard 
           label="Active Partners" 
           value={stats.clients} 
           icon={Shield}
           color="purple"
+          subtitle="Client sites"
         />
         <StatsCard 
           label="Monthly Payroll" 
           value={stats.payroll} 
           icon={DollarSign}
           color="orange"
+          subtitle="Current month"
+        />
+      </div>
+
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <MiniStatCard 
+          label="Pending Leave" 
+          value={stats.pendingLeave}
+          color="amber"
+          clickable
+        />
+        <MiniStatCard 
+          label="Pending Expenses" 
+          value={stats.pendingExpenses}
+          color="orange"
+          clickable
+        />
+        <MiniStatCard 
+          label="Compliance Due" 
+          value={stats.complianceDue}
+          color="red"
+          clickable
+        />
+        <MiniStatCard 
+          label="Profit Margin" 
+          value={`${profitMargin}%`}
+          color="green"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        {/* Quick Actions */}
         <div className="lg:col-span-2 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h3 className="font-bold text-lg sm:text-xl text-slate-800">Quick Actions</h3>
+            <span className="text-xs text-slate-500 font-medium">Click to perform action</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
             <QuickActionCard 
               icon={Users} 
               label="Add Employee" 
               color="blue"
-              onClick={() => {}}
+              count={stats.staff}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'workforce' }));
+                setTimeout(() => {
+                  document.querySelector('[data-action="add-workforce"]')?.click();
+                }, 100);
+              }}
             />
             <QuickActionCard 
               icon={Shield} 
               label="Add Partner" 
               color="purple"
-              onClick={() => {}}
+              count={stats.clients}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'partners' }));
+                setTimeout(() => {
+                  document.querySelector('[data-action="add-partners"]')?.click();
+                }, 100);
+              }}
             />
             <QuickActionCard 
               icon={FileText} 
               label="Generate Payslip" 
               color="green"
-              onClick={() => {}}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'payroll' }));
+              }}
             />
             <QuickActionCard 
               icon={DollarSign} 
               label="Record Expense" 
               color="orange"
-              onClick={() => {}}
+              count={stats.pendingExpenses}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'expenses' }));
+              }}
             />
             <QuickActionCard 
               icon={AlertTriangle} 
-              label="Compliance Alert" 
+              label="Compliance" 
               color="red"
-              onClick={() => {}}
+              count={stats.complianceDue}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'compliance' }));
+              }}
             />
             <QuickActionCard 
               icon={Download} 
               label="Export Reports" 
               color="slate"
-              onClick={() => {}}
+              onClick={() => {
+                toast.info('Export functionality - Select a specific section to export data');
+              }}
             />
           </div>
         </div>
         
+        {/* Recent Activity */}
         <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
-          <h3 className="font-bold text-lg sm:text-xl text-slate-800 mb-4 sm:mb-6">Recent Activity</h3>
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h3 className="font-bold text-lg sm:text-xl text-slate-800">Recent Activity</h3>
+            <button className="text-xs text-blue-600 font-bold hover:text-blue-700">View All</button>
+          </div>
           <div className="space-y-3 sm:space-y-4 max-h-[280px] sm:max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
             {allData?.workforce?.slice(0, 6).map((emp, i) => (
-              <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer group">
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer group"
+              >
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  {i + 1}
+                  {(emp.Employee || emp['First Name'] || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-800">{emp.Employee || emp['First Name']}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{emp.Role || emp.Designation} - {emp.Status || emp['Employee Status']}</p>
-                  <p className="text-[10px] text-blue-500 font-bold mt-1 uppercase tracking-widest">Active</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{emp.Employee || emp['First Name']}</p>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">{emp.Role || emp.Designation}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                      (emp.Status || emp['Employee Status']) === 'Active' 
+                        ? 'bg-green-50 text-green-600' 
+                        : 'bg-amber-50 text-amber-600'
+                    }`}>
+                      {emp.Status || emp['Employee Status']}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Financial Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-bold text-green-900">Total Income</h4>
+            <ArrowUpRight className="text-green-600" size={20} />
+          </div>
+          <p className="text-3xl font-black text-green-900">
+            ₹{(financialSummary.totalIncome / 100000).toFixed(2)}L
+          </p>
+          <p className="text-xs text-green-600 mt-1 font-medium">This month</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-2xl border border-red-100">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-bold text-red-900">Total Expenses</h4>
+            <ArrowDownRight className="text-red-600" size={20} />
+          </div>
+          <p className="text-3xl font-black text-red-900">
+            ₹{(financialSummary.totalExpense / 100000).toFixed(2)}L
+          </p>
+          <p className="text-xs text-red-600 mt-1 font-medium">This month</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-100">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-bold text-blue-900">Net Profit</h4>
+            <TrendingUp className="text-blue-600" size={20} />
+          </div>
+          <p className="text-3xl font-black text-blue-900">
+            ₹{(profit / 100000).toFixed(2)}L
+          </p>
+          <p className="text-xs text-blue-600 mt-1 font-medium">{profitMargin}% margin</p>
         </div>
       </div>
     </div>
   );
 }
 
-function QuickActionCard({ icon: Icon, label, color, onClick }) {
+function QuickActionCard({ icon: Icon, label, color, onClick, count }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
-    purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
-    green: 'bg-green-50 text-green-600 hover:bg-green-100',
-    orange: 'bg-orange-50 text-orange-600 hover:bg-orange-100',
-    red: 'bg-red-50 text-red-600 hover:bg-red-100',
-    slate: 'bg-slate-50 text-slate-600 hover:bg-slate-100',
+    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-blue-200',
+    purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:shadow-purple-200',
+    green: 'bg-green-50 text-green-600 hover:bg-green-100 hover:shadow-green-200',
+    orange: 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:shadow-orange-200',
+    red: 'bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-red-200',
+    slate: 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-slate-200',
   };
   
   return (
     <button
       onClick={onClick}
-      className={`p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 active:scale-95 flex flex-col items-center gap-2 sm:gap-3 group`}
+      className={`relative p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 hover:shadow-lg active:scale-95 flex flex-col items-center gap-2 sm:gap-3 group`}
     >
+      {count !== undefined && count > 0 && (
+        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
+          {count}
+        </span>
+      )}
       <Icon size={24} className="sm:w-7 sm:h-7 lg:w-8 lg:h-8 group-hover:scale-110 transition-transform" />
       <span className="text-xs sm:text-sm font-bold text-center leading-tight">{label}</span>
     </button>
   );
 }
 
-function StatsCard({ label, value, trend, icon: Icon, color }) {
+function MiniStatCard({ label, value, color, clickable }) {
+  const colorClasses = {
+    amber: 'bg-amber-50 border-amber-200 text-amber-900',
+    orange: 'bg-orange-50 border-orange-200 text-orange-900',
+    red: 'bg-red-50 border-red-200 text-red-900',
+    green: 'bg-green-50 border-green-200 text-green-900',
+  };
+  
+  return (
+    <div className={`${colorClasses[color]} p-4 rounded-xl border-2 ${clickable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}>
+      <p className="text-xs font-bold uppercase tracking-wider opacity-70">{label}</p>
+      <p className="text-2xl font-black mt-1">{value}</p>
+    </div>
+  );
+}
+
+function StatsCard({ label, value, trend, icon: Icon, color, subtitle }) {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -615,9 +796,19 @@ function StatsCard({ label, value, trend, icon: Icon, color }) {
   };
   
   return (
-    <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, scale: 1.02 }}
+      className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
+    >
       <div className="flex justify-between items-start">
-        <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider sm:tracking-widest">{label}</p>
+        <div className="flex-1">
+          <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider sm:tracking-widest">{label}</p>
+          {subtitle && (
+            <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">{subtitle}</p>
+          )}
+        </div>
         <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-400'}`}>
           <Icon size={16} className="sm:w-5 sm:h-5" />
         </div>
@@ -631,7 +822,7 @@ function StatsCard({ label, value, trend, icon: Icon, color }) {
           </span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -654,6 +845,7 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
         <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
           <button 
             onClick={onAdd}
+            data-action={`add-${tab}`}
             className="flex-1 md:flex-none bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95"
           >
             <Plus size={18} className="sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Add Entry</span><span className="sm:hidden">Add</span>

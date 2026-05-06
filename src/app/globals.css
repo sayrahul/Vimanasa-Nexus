@@ -25,6 +25,7 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
+  transition: background 0.3s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -52,6 +53,17 @@ body {
   }
 }
 
+@keyframes slide-in-from-top-2 {
+  from {
+    transform: translateY(-0.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes zoom-in {
   from {
     transform: scale(0.95);
@@ -60,6 +72,15 @@ body {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -75,8 +96,16 @@ body {
   animation-name: slide-in-from-bottom-4;
 }
 
+.slide-in-from-top-2 {
+  animation-name: slide-in-from-top-2;
+}
+
 .zoom-in {
   animation-name: zoom-in;
+}
+
+.duration-300 {
+  animation-duration: 300ms;
 }
 
 .duration-500 {
@@ -87,8 +116,42 @@ body {
   animation-duration: 700ms;
 }
 
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Loading skeleton */
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 0px, #f8f8f8 40px, #f0f0f0 80px);
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+}
+
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100;
+    @apply bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all;
+  }
+  
+  .stat-card {
+    @apply bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer;
   }
 }
