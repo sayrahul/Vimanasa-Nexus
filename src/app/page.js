@@ -1212,7 +1212,7 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                 {columns.map(col => (
                   <th key={col} className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">{col}</th>
                 ))}
-                <th className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                <th className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-5 text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider sticky right-0 bg-slate-50/90 backdrop-blur-sm shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -1235,7 +1235,7 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                       )}
                     </td>
                   ))}
-                  <td className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6">
+                  <td className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 sticky right-0 bg-white/95 backdrop-blur-md shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 group-hover:bg-blue-50/90 transition-colors">
                     <div className="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity items-center">
                       {tab === 'workforce' && onGenerateDoc && (
                         <div className="flex gap-1 border-r border-slate-200 pr-2 mr-1">
@@ -1246,14 +1246,14 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                       )}
                       <button 
                         onClick={() => onEdit(row, i)}
-                        className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                         title="Edit"
                       >
                         <Edit2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                       <button 
                         onClick={() => onDelete(row, i)}
-                        className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                         title="Delete"
                       >
                         <Trash2 size={14} className="sm:w-4 sm:h-4" />

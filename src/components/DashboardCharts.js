@@ -207,8 +207,9 @@ export default function DashboardCharts({ data }) {
           className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
         >
           <h3 className="text-lg font-bold text-slate-800 mb-4">Deployment Distribution</h3>
-          <div className="flex items-center justify-between">
-            <ResponsiveContainer width="60%" height={250}>
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-6 sm:gap-0">
+            <div className="w-full sm:w-[60%] h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={deploymentData}
@@ -226,8 +227,9 @@ export default function DashboardCharts({ data }) {
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-col gap-3">
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col gap-3 w-full sm:w-auto">
               {deploymentData.map((entry, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div 

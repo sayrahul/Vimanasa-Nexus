@@ -58,15 +58,15 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync, las
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[50]"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "w-64 h-screen bg-white border-r border-slate-200 flex flex-col fixed left-0 top-0 z-40 transition-transform duration-300",
-        "lg:translate-x-0",
+        "w-72 h-screen bg-white border-r border-slate-200 flex flex-col fixed left-0 top-0 z-[60] transition-transform duration-300 shadow-2xl lg:shadow-none",
+        "lg:translate-x-0 lg:w-64",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Logo - Desktop Only */}
