@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
@@ -14,12 +14,17 @@
     "test:gemini": "node test-gemini.js",
     "setup:sheets": "node setup-sheets.js",
     "populate:sheets": "node populate-existing-sheets.js",
-    "list:models": "node list-models.js"
+    "list:models": "node list-models.js",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
+    "@opennextjs/cloudflare": "^1.19.6",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "core-js": "^3.49.0",
@@ -51,6 +56,7 @@
     "eslint-config-next": "16.2.4",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "wrangler": "^4.88.0"
   }
 }
