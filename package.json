@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage",
     "test:gemini": "node test-gemini.js",
     "list:models": "node list-models.js",
-    "pages:build": "npx @cloudflare/next-on-pages"
+    "pages:build": "npx @cloudflare/next-on-pages && mkdir -p dist && cp -r .vercel/output/static/* dist/"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
