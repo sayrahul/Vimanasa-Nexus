@@ -55,7 +55,10 @@ export async function GET(req) {
       return Response.json({ 
         error: 'Configuration Error',
         message: 'Supabase is not configured' 
-      }, { status: 500 });
+      }, { 
+        status: 500,
+        headers: corsHeaders
+      });
     }
 
     // Dashboard doesn't have a table - return empty data

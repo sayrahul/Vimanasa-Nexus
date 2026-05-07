@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Diagnostic Tool - Vimanasa Nexus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            font-size: 24px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .result.error {
+            border-color: #f44336;
+            background: #fef1f1;
+        }
+
+        .result.warning {
+            border-color: #ff9800;
+            background: #fff8f1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-badge.loading {
+            background: #2196f3;
+            color: white;
+        }
+
+        .status-badge.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-badge.error {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-badge.warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .table-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .table-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-item.exists {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .table-item.missing {
+            border-color: #f44336;
+            background: #fef1f1;
+        }
+
+        .table-item.empty {
+            border-color: #ff9800;
+            background: #fff8f1;
+        }
+
+        .icon {
+            font-size: 18px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+
+        .summary-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .solution-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .solution-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .solution-box ol {
+            margin-left: 20px;
+            color: #856404;
+        }
+
+        .solution-box li {
+            margin: 8px 0;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Dashboard Diagnostic Tool</h1>
+            <p>Diagnose "Unable to fetch data" issues in Vimanasa Nexus</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2><span class="section-icon">🔧</span> Quick Diagnosis</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Click the button below to automatically check your database configuration and identify issues.
+                </p>
+                <button onclick="runFullDiagnostic()" id="diagBtn">
+                    🚀 Run Full Diagnostic
+                </button>
+                <div class="progress" id="progress" style="display: none;">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div id="diagResult" class="result"></div>
+            </div>
+
+            <div class="section">
+                <h2><span class="section-icon">📊</span> Check Individual Tables</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Test specific database tables to see if they exist and contain data.
+                </p>
+                <button onclick="checkTable('employees')">Employees</button>
+                <button onclick="checkTable('clients')">Clients</button>
+                <button onclick="checkTable('partners')">Partners</button>
+                <button onclick="checkTable('attendance')">Attendance</button>
+                <button onclick="checkTable('payroll')">Payroll</button>
+                <button onclick="checkAllTables()">Check All Tables</button>
+                <div id="tableResult" class="result"></div>
+            </div>
+
+            <div class="section">
+                <h2><span class="section-icon">🌐</span> Test API Endpoints</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Verify that your API routes are working correctly.
+                </p>
+                <button onclick="testAPI('workforce')">Test Workforce API</button>
+                <button onclick="testAPI('clients')">Test Clients API</button>
+                <button onclick="testAPI('dashboard')">Test Dashboard API</button>
+                <div id="apiResult" class="result"></div>
+            </div>
+
+            <div class="section">
+                <h2><span class="section-icon">⚙️</span> Environment Check</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Verify that environment variables are properly configured.
+                </p>
+                <button onclick="checkEnvironment()">Check Environment</button>
+                <div id="envResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const REQUIRED_TABLES = [
+            'employees', 'clients', 'partners', 'attendance',
+            'leave_requests', 'expense_claims', 'payroll',
+            'finance', 'client_invoices', 'compliance'
+        ];
+
+        let diagnosticResults = {
+            tablesChecked: 0,
+            tablesExist: 0,
+            tablesMissing: 0,
+            tablesWithData: 0,
+            tablesEmpty: 0,
+            details: []
+        };
+
+        function showResult(elementId, content, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.className = `result show ${type}`;
+            element.innerHTML = content;
+        }
+
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const progress = document.getElementById('progress');
+            progress.style.display = 'block';
+            progressBar.style.width = percent + '%';
+        }
+
+        async function checkTable(table) {
+            const resultDiv = document.getElementById('tableResult');
+            resultDiv.className = 'result show';
+            resultDiv.innerHTML = '<span class="status-badge loading"><span class="spinner">⏳</span> Checking...</span>';
+
+            try {
+                const response = await fetch(`/api/database?table=${table}&timestamp=${Date.now()}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const count = data.count || data.data?.length || 0;
+                    const status = count > 0 ? 'success' : 'warning';
+                    const icon = count > 0 ? '✅' : '⚠️';
+                    
+                    showResult('tableResult', 
+                        `<span class="status-badge ${status}">${icon} ${status.toUpperCase()}</span>\n\n` +
+                        `Table: ${table}\n` +
+                        `Status: ${response.status}\n` +
+                        `Records: ${count}\n\n` +
+                        `${count > 0 ? '✅ Table exists and has data' : '⚠️ Table exists but is empty'}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`,
+                        status
+                    );
+                } else {
+                    showResult('tableResult',
+                        `<span class="status-badge error">❌ ERROR</span>\n\n` +
+                        `Table: ${table}\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.error || 'Unknown error'}\n` +
+                        `Message: ${data.message || 'No message'}\n\n` +
+                        `❌ Table may not exist or is inaccessible`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('tableResult',
+                    `<span class="status-badge error">❌ ERROR</span>\n\n` +
+                    `Table: ${table}\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This usually means:\n` +
+                    `• API endpoint is not accessible\n` +
+                    `• Network connectivity issue\n` +
+                    `• CORS blocking the request`,
+                    'error'
+                );
+            }
+        }
+
+        async function checkAllTables() {
+            const resultDiv = document.getElementById('tableResult');
+            resultDiv.className = 'result show';
+            resultDiv.innerHTML = '<span class="status-badge loading"><span class="spinner">⏳</span> Checking all tables...</span>';
+
+            diagnosticResults = {
+                tablesChecked: 0,
+                tablesExist: 0,
+                tablesMissing: 0,
+                tablesWithData: 0,
+                tablesEmpty: 0,
+                details: []
+            };
+
+            let html = '<div class="table-status">';
+
+            for (const table of REQUIRED_TABLES) {
+                try {
+                    const response = await fetch(`/api/database?table=${table}`);
+                    const data = await response.json();
+                    
+                    diagnosticResults.tablesChecked++;
+                    
+                    if (response.ok) {
+                        const count = data.count || data.data?.length || 0;
+                        diagnosticResults.tablesExist++;
+                        
+                        if (count > 0) {
+                            diagnosticResults.tablesWithData++;
+                            html += `<div class="table-item exists"><span class="icon">✅</span> ${table} (${count})</div>`;
+                            diagnosticResults.details.push({ table, status: 'exists', count });
+                        } else {
+                            diagnosticResults.tablesEmpty++;
+                            html += `<div class="table-item empty"><span class="icon">⚠️</span> ${table} (empty)</div>`;
+                            diagnosticResults.details.push({ table, status: 'empty', count: 0 });
+                        }
+                    } else {
+                        diagnosticResults.tablesMissing++;
+                        html += `<div class="table-item missing"><span class="icon">❌</span> ${table} (missing)</div>`;
+                        diagnosticResults.details.push({ table, status: 'missing' });
+                    }
+                } catch (error) {
+                    diagnosticResults.tablesMissing++;
+                    html += `<div class="table-item missing"><span class="icon">❌</span> ${table} (error)</div>`;
+                    diagnosticResults.details.push({ table, status: 'error', error: error.message });
+                }
+            }
+
+            html += '</div>';
+
+            // Add summary
+            html += '<div class="summary">';
+            html += `<div class="summary-card"><div class="number">${diagnosticResults.tablesChecked}</div><div class="label">Total Checked</div></div>`;
+            html += `<div class="summary-card"><div class="number">${diagnosticResults.tablesExist}</div><div class="label">Exist</div></div>`;
+            html += `<div class="summary-card"><div class="number">${diagnosticResults.tablesMissing}</div><div class="label">Missing</div></div>`;
+            html += `<div class="summary-card"><div class="number">${diagnosticResults.tablesWithData}</div><div class="label">With Data</div></div>`;
+            html += '</div>';
+
+            // Add solution if tables are missing
+            if (diagnosticResults.tablesMissing > 0) {
+                html += `
+                    <div class="solution-box">
+                        <h3>🔧 Solution Required</h3>
+                        <p><strong>${diagnosticResults.tablesMissing} tables are missing!</strong></p>
+                        <p>Follow these steps to fix the issue:</p>
+                        <ol>
+                            <li>Open the file: <strong>FETCH_DATA_FIX.md</strong></li>
+                            <li>Copy the complete SQL script from the file</li>
+                            <li>Go to Supabase Dashboard → SQL Editor</li>
+                            <li>Paste and run the SQL script</li>
+                            <li>Refresh your dashboard</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked) {
+                html += `
+                    <div class="solution-box">
+                        <h3>⚠️ All Tables Are Empty</h3>
+                        <p>Your tables exist but have no data.</p>
+                        <ol>
+                            <li>Run the SQL script in <strong>FETCH_DATA_FIX.md</strong> to add sample data</li>
+                            <li>Or use the dashboard UI to add your own data</li>
+                        </ol>
+                    </div>
+                `;
+            }
+
+            const resultType = diagnosticResults.tablesMissing > 0 ? 'error' : 
+                              diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
+
+            showResult('tableResult', html, resultType);
+        }
+
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.className = 'result show';
+            resultDiv.innerHTML = '<span class="status-badge loading"><span class="spinner">⏳</span> Testing API...</span>';
+
+            try {
+                const response = await fetch(`/api/database?table=${endpoint}&timestamp=${Date.now()}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('apiResult',
+                        `<span class="status-badge success">✅ SUCCESS</span>\n\n` +
+                        `Endpoint: /api/database?table=${endpoint}\n` +
+                        `Status: ${response.status}\n` +
+                        `Records: ${data.count || data.data?.length || 0}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`,
+                        'success'
+                    );
+                } else {
+                    showResult('apiResult',
+                        `<span class="status-badge error">❌ FAILED</span>\n\n` +
+                        `Endpoint: /api/database?table=${endpoint}\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.error || 'Unknown error'}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                showResult('apiResult',
+                    `<span class="status-badge error">❌ ERROR</span>\n\n` +
+                    `Endpoint: /api/database?table=${endpoint}\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This usually means:\n` +
+                    `• API route doesn't exist\n` +
+                    `• Server is not running\n` +
+                    `• Network connectivity issue`,
+                    'error'
+                );
+            }
+        }
+
+        async function checkEnvironment() {
+            const resultDiv = document.getElementById('envResult');
+            resultDiv.className = 'result show';
+            resultDiv.innerHTML = '<span class="status-badge loading"><span class="spinner">⏳</span> Checking environment...</span>';
+
+            try {
+                const response = await fetch('/api/check-env');
+                const data = await response.json();
+
+                const allConfigured = data.allConfigured;
+                const vars = data.variables || {};
+
+                let html = `<span class="status-badge ${allConfigured ? 'success' : 'error'}">` +
+                          `${allConfigured ? '✅ ALL CONFIGURED' : '❌ MISSING VARIABLES'}</span>\n\n`;
+
+                html += 'Environment Variables:\n\n';
+                for (const [key, value] of Object.entries(vars)) {
+                    html += `${value ? '✅' : '❌'} ${key}\n`;
+                }
+
+                if (!allConfigured) {
+                    html += '\n⚠️ Some environment variables are missing!\n';
+                    html += 'Check your .env.local file and ensure all required variables are set.';
+                }
+
+                showResult('envResult', html, allConfigured ? 'success' : 'error');
+            } catch (error) {
+                showResult('envResult',
+                    `<span class="status-badge error">❌ ERROR</span>\n\n` +
+                    `Could not check environment variables.\n` +
+                    `Error: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+
+        async function runFullDiagnostic() {
+            const btn = document.getElementById('diagBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running diagnostic...';
+
+            updateProgress(0);
+
+            // Step 1: Check environment (20%)
+            updateProgress(20);
+            await checkEnvironment();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 2: Check all tables (80%)
+            updateProgress(50);
+            await checkAllTables();
+            updateProgress(100);
+
+            // Generate final report
+            setTimeout(() => {
+                const resultDiv = document.getElementById('diagResult');
+                let html = '<span class="status-badge success">✅ DIAGNOSTIC COMPLETE</span>\n\n';
+
+                html += `📊 Summary:\n`;
+                html += `• Total Tables: ${diagnosticResults.tablesChecked}\n`;
+                html += `• Existing: ${diagnosticResults.tablesExist}\n`;
+                html += `• Missing: ${diagnosticResults.tablesMissing}\n`;
+                html += `• With Data: ${diagnosticResults.tablesWithData}\n`;
+                html += `• Empty: ${diagnosticResults.tablesEmpty}\n\n`;
+
+                if (diagnosticResults.tablesMissing > 0) {
+                    html += `❌ PROBLEM: ${diagnosticResults.tablesMissing} tables are missing!\n\n`;
+                    html += `📝 SOLUTION:\n`;
+                    html += `1. Open FETCH_DATA_FIX.md\n`;
+                    html += `2. Run the SQL script in Supabase\n`;
+                    html += `3. Refresh your dashboard\n`;
+                } else if (diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked) {
+                    html += `⚠️ PROBLEM: All tables are empty!\n\n`;
+                    html += `📝 SOLUTION:\n`;
+                    html += `1. Run the SQL script to add sample data\n`;
+                    html += `2. Or add data via the dashboard UI\n`;
+                } else {
+                    html += `✅ DATABASE IS PROPERLY CONFIGURED!\n\n`;
+                    html += `If you're still seeing errors:\n`;
+                    html += `1. Clear browser cache (Ctrl+Shift+R)\n`;
+                    html += `2. Check browser console (F12)\n`;
+                    html += `3. Verify Supabase credentials\n`;
+                }
+
+                const resultType = diagnosticResults.tablesMissing > 0 ? 'error' :
+                                  diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
+
+                showResult('diagResult', html, resultType);
+
+                btn.disabled = false;
+                btn.textContent = '🚀 Run Full Diagnostic';
+                document.getElementById('progress').style.display = 'none';
+            }, 500);
+        }
+    </script>
+</body>
+</html>

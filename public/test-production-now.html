@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Production - Vimanasa Nexus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+        
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        .status {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .test-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        
+        .test-item.pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        
+        .test-item.fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Production Test</h1>
+        <p class="subtitle">Verify your deployment is working</p>
+        
+        <button class="button" onclick="runFullTest()">🔍 Run Full Test</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function runFullTest() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Testing...</p></div>';
+            
+            const results = {
+                envCheck: null,
+                apiTests: []
+            };
+            
+            // Test 1: Environment Check
+            try {
+                const envResponse = await fetch('/api/check-env');
+                const envData = await envResponse.json();
+                results.envCheck = {
+                    status: envData.status,
+                    ok: envData.status === 'OK',
+                    data: envData
+                };
+            } catch (error) {
+                results.envCheck = {
+                    status: 'ERROR',
+                    ok: false,
+                    error: error.message
+                };
+            }
+            
+            // Test 2: API Endpoints
+            const tables = ['workforce', 'clients', 'partners'];
+            for (const table of tables) {
+                try {
+                    const response = await fetch(`/api/database?table=${table}`);
+                    const data = await response.json();
+                    results.apiTests.push({
+                        table,
+                        status: response.status,
+                        ok: response.ok,
+                        count: data.count || 0
+                    });
+                } catch (error) {
+                    results.apiTests.push({
+                        table,
+                        status: 0,
+                        ok: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            // Display Results
+            displayResults(results);
+        }
+        
+        function displayResults(results) {
+            const resultDiv = document.getElementById('result');
+            const allPassed = results.envCheck.ok && results.apiTests.every(t => t.ok);
+            
+            let html = '';
+            
+            if (allPassed) {
+                html += '<div class="status">✅</div>';
+                html += '<div class="result success">';
+                html += '<strong>🎉 ALL TESTS PASSED!</strong>\n\n';
+                html += 'Your production deployment is working correctly!\n\n';
+            } else {
+                html += '<div class="status">❌</div>';
+                html += '<div class="result error">';
+                html += '<strong>⚠️ SOME TESTS FAILED</strong>\n\n';
+            }
+            
+            // Environment Check
+            html += '<strong>1. Environment Variables:</strong>\n';
+            if (results.envCheck.ok) {
+                html += '✅ All environment variables configured correctly\n';
+                if (results.envCheck.data.checks.supabaseServiceRoleKey) {
+                    html += `   SUPABASE_SERVICE_ROLE_KEY: ${results.envCheck.data.checks.supabaseServiceRoleKey.value}\n`;
+                }
+            } else {
+                html += '❌ Environment check failed\n';
+                if (results.envCheck.error) {
+                    html += `   Error: ${results.envCheck.error}\n`;
+                }
+                if (results.envCheck.data && results.envCheck.data.criticalMissing) {
+                    html += `   Missing: ${results.envCheck.data.criticalMissing.join(', ')}\n`;
+                }
+            }
+            
+            // API Tests
+            html += '\n<strong>2. API Endpoints:</strong>\n';
+            results.apiTests.forEach(test => {
+                const icon = test.ok ? '✅' : '❌';
+                html += `${icon} ${test.table}: Status ${test.status}`;
+                if (test.ok) {
+                    html += ` (${test.count} records)`;
+                } else if (test.error) {
+                    html += ` - ${test.error}`;
+                }
+                html += '\n';
+            });
+            
+            // Summary
+            const passedTests = results.apiTests.filter(t => t.ok).length;
+            html += `\n<strong>Summary:</strong> ${passedTests}/${results.apiTests.length} API tests passed\n`;
+            
+            if (allPassed) {
+                html += '\n<strong>✅ Your production site is fully functional!</strong>\n';
+                html += 'You can now use your application without any issues.';
+            } else {
+                html += '\n<strong>⚠️ Action Required:</strong>\n';
+                html += '1. Make sure you redeployed after adding environment variables\n';
+                html += '2. Wait 2-3 minutes for deployment to complete\n';
+                html += '3. Clear browser cache (Ctrl+Shift+R)\n';
+                html += '4. Run this test again';
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+        
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            setTimeout(runFullTest, 500);
+        });
+    </script>
+</body>
+</html>

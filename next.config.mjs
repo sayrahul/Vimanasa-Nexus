@@ -3,9 +3,6 @@ const nextConfig = {
   // Environment variables are automatically available with NEXT_PUBLIC_ prefix
   // No need to explicitly define them here
   
-  // Enable standalone output for better deployment compatibility
-  output: 'standalone',
-  
   // Ensure environment variables are available at runtime
   env: {
     NEXT_PUBLIC_ADMIN_USER: process.env.NEXT_PUBLIC_ADMIN_USER,

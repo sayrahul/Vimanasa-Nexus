@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production API Test - Vimanasa Nexus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-badge.ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Production API Diagnostic Tool</h1>
+            <p>Test your Vimanasa Nexus production deployment</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>1️⃣ Environment Variables Check</h2>
+            <p>Verify that all required environment variables are configured correctly.</p>
+            <button class="button" onclick="checkEnvironment()">Check Environment</button>
+            <div id="env-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2️⃣ Database API Endpoints Test</h2>
+            <p>Test all database API endpoints to ensure they return 200 OK.</p>
+            <button class="button" onclick="testAllEndpoints()">Test All Endpoints</button>
+            <button class="button" onclick="testSingleEndpoint('workforce')">Test Workforce</button>
+            <button class="button" onclick="testSingleEndpoint('clients')">Test Clients</button>
+            <button class="button" onclick="testSingleEndpoint('partners')">Test Partners</button>
+            <div id="api-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3️⃣ Quick Fix Guide</h2>
+            <div id="fix-guide">
+                <p><strong>If you see 500 errors, follow these steps:</strong></p>
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                    <li>Go to your hosting platform dashboard (Vercel/Netlify/Cloudflare)</li>
+                    <li>Navigate to: <strong>Settings → Environment Variables</strong></li>
+                    <li>Add this variable:
+                        <div style="background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace;">
+                            <strong>Name:</strong> SUPABASE_SERVICE_ROLE_KEY<br>
+                            <strong>Value:</strong> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56d3d3aHVmcHJkdWx0dXl6ZXprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODA1OTg0NiwiZXhwIjoyMDkzNjM1ODQ2fQ.KdjN1PTGSbZhLfFRrgHZeoX2ktcNhHMYahG9goR7iOg
+                        </div>
+                    </li>
+                    <li>Save and <strong>redeploy</strong> your application</li>
+                    <li>Wait 2-3 minutes for deployment to complete</li>
+                    <li>Refresh this page and test again</li>
+                </ol>
+                <p style="margin-top: 15px;"><strong>📖 For detailed instructions, see:</strong> <code>PRODUCTION_500_ERROR_FIX.md</code></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkEnvironment() {
+            const resultDiv = document.getElementById('env-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Checking environment variables...</div>';
+            
+            try {
+                const response = await fetch('/api/check-env');
+                const data = await response.json();
+                
+                let html = '<div class="result ' + (data.status === 'OK' ? 'success' : 'error') + '">';
+                html += '<strong>Status:</strong> ' + data.status + '\n';
+                html += '<strong>Message:</strong> ' + data.message + '\n\n';
+                html += '<strong>Environment:</strong> ' + data.environment + '\n\n';
+                html += '<strong>Checks:</strong>\n';
+                
+                for (const [key, value] of Object.entries(data.checks)) {
+                    const status = value.exists ? '✅' : '❌';
+                    html += `  ${status} ${key}: ${value.value}\n`;
+                }
+                
+                if (data.criticalMissing && data.criticalMissing.length > 0) {
+                    html += '\n<strong>⚠️ MISSING CRITICAL VARIABLES:</strong>\n';
+                    data.criticalMissing.forEach(v => {
+                        html += `  ❌ ${v}\n`;
+                    });
+                }
+                
+                html += '\n<strong>Timestamp:</strong> ' + data.timestamp;
+                html += '</div>';
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="result error">❌ Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testSingleEndpoint(table) {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing ' + table + ' endpoint...</div>';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('/api/database?table=' + table);
+                const endTime = Date.now();
+                const data = await response.json();
+                
+                let html = '<div class="result ' + (response.ok ? 'success' : 'error') + '">';
+                html += '<strong>Endpoint:</strong> /api/database?table=' + table + '\n';
+                html += '<strong>Status:</strong> ' + response.status + ' ' + response.statusText + '\n';
+                html += '<strong>Response Time:</strong> ' + (endTime - startTime) + 'ms\n\n';
+                
+                if (response.ok) {
+                    html += '<strong>✅ SUCCESS!</strong>\n';
+                    html += '<strong>Data Count:</strong> ' + (data.count || 0) + ' records\n';
+                    html += '<strong>Response:</strong>\n' + JSON.stringify(data, null, 2);
+                } else {
+                    html += '<strong>❌ FAILED!</strong>\n';
+                    html += '<strong>Error:</strong> ' + (data.error || 'Unknown error') + '\n';
+                    html += '<strong>Message:</strong> ' + (data.message || 'No message') + '\n';
+                    html += '<strong>Full Response:</strong>\n' + JSON.stringify(data, null, 2);
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="result error">❌ Network Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testAllEndpoints() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing all endpoints...</div>';
+            
+            const tables = ['workforce', 'clients', 'partners', 'payroll', 'leave', 'finance', 'expenses', 'compliance', 'attendance'];
+            const results = [];
+            
+            for (const table of tables) {
+                try {
+                    const startTime = Date.now();
+                    const response = await fetch('/api/database?table=' + table);
+                    const endTime = Date.now();
+                    const data = await response.json();
+                    
+                    results.push({
+                        table,
+                        status: response.status,
+                        ok: response.ok,
+                        time: endTime - startTime,
+                        count: data.count || 0,
+                        error: data.error || null
+                    });
+                } catch (error) {
+                    results.push({
+                        table,
+                        status: 0,
+                        ok: false,
+                        time: 0,
+                        count: 0,
+                        error: error.message
+                    });
+                }
+            }
+            
+            const allSuccess = results.every(r => r.ok);
+            let html = '<div class="result ' + (allSuccess ? 'success' : 'error') + '">';
+            html += '<strong>Overall Status:</strong> ' + (allSuccess ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED') + '\n\n';
+            
+            results.forEach(r => {
+                const icon = r.ok ? '✅' : '❌';
+                html += `${icon} ${r.table.padEnd(15)} | Status: ${r.status} | Time: ${r.time}ms | Records: ${r.count}`;
+                if (r.error) html += ` | Error: ${r.error}`;
+                html += '\n';
+            });
+            
+            const successCount = results.filter(r => r.ok).length;
+            html += '\n<strong>Summary:</strong> ' + successCount + '/' + results.length + ' endpoints working';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // Auto-run environment check on page load
+        window.addEventListener('load', () => {
+            checkEnvironment();
+        });
+    </script>
+</body>
+</html>
