@@ -3,6 +3,21 @@ import { toDB, toFrontend } from '@/lib/dataMapper';
 
 export const runtime = 'edge';
 
+// CORS headers for all responses
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS(req) {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
 // Map frontend tabs to database tables
 const tableMapping = {
   workforce: 'employees',
@@ -29,7 +44,10 @@ export async function GET(req) {
       return Response.json({ 
         error: 'Validation Error',
         message: 'Table name is required' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders 
+      });
     }
 
     if (!supabaseAdmin) {
@@ -46,6 +64,8 @@ export async function GET(req) {
         success: true, 
         data: [], 
         count: 0 
+      }, {
+        headers: corsHeaders
       });
     }
 
@@ -72,6 +92,8 @@ export async function GET(req) {
             success: true, 
             data: toFrontend(table, fallbackData) || [], 
             count: fallbackData?.length || 0 
+          }, {
+            headers: corsHeaders
           });
         }
         throw error;
@@ -81,6 +103,8 @@ export async function GET(req) {
         success: true, 
         data: toFrontend(table, data) || [], 
         count: data?.length || 0 
+      }, {
+        headers: corsHeaders
       });
     } catch (orderError) {
       // Fallback: fetch without ordering
@@ -94,6 +118,8 @@ export async function GET(req) {
         success: true, 
         data: toFrontend(table, data) || [], 
         count: data?.length || 0 
+      }, {
+        headers: corsHeaders
       });
     }
   } catch (error) {
@@ -108,6 +134,8 @@ export async function GET(req) {
         success: true, 
         data: [], 
         count: 0 
+      }, {
+        headers: corsHeaders
       });
     }
 
@@ -123,7 +151,10 @@ export async function GET(req) {
       error: 'Database Error',
       message: error.message,
       details: { table: dbTable }
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 }
 
@@ -139,7 +170,10 @@ export async function POST(req) {
       return Response.json({ 
         error: 'Validation Error',
         message: 'Table name and data are required' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders 
+      });
     }
 
     if (!supabaseAdmin) {
@@ -147,7 +181,10 @@ export async function POST(req) {
       return Response.json({ 
         error: 'Configuration Error',
         message: 'Supabase is not configured' 
-      }, { status: 500 });
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
     }
 
     const dbTable = tableMapping[table] || table;
@@ -175,6 +212,8 @@ export async function POST(req) {
       success: true, 
       data: toFrontend(table, data[0]),
       message: 'Data added successfully' 
+    }, {
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('[API] Database Error (POST):', {
@@ -184,7 +223,10 @@ export async function POST(req) {
     return Response.json({ 
       error: 'Database Error',
       message: error.message
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 }
 
@@ -197,14 +239,20 @@ export async function PUT(req) {
       return Response.json({ 
         error: 'Validation Error',
         message: 'Table name, ID, and data are required' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders 
+      });
     }
 
     if (!supabaseAdmin) {
       return Response.json({ 
         error: 'Configuration Error',
         message: 'Supabase is not configured' 
-      }, { status: 500 });
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
     }
 
     const dbTable = tableMapping[table] || table;
@@ -223,13 +271,18 @@ export async function PUT(req) {
       success: true, 
       data: toFrontend(table, data[0]),
       message: 'Data updated successfully' 
+    }, {
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Database Error (PUT):', error);
     return Response.json({ 
       error: 'Database Error',
       message: error.message
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 }
 
@@ -242,14 +295,20 @@ export async function DELETE(req) {
       return Response.json({ 
         error: 'Validation Error',
         message: 'Table name and ID are required' 
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: corsHeaders 
+      });
     }
 
     if (!supabaseAdmin) {
       return Response.json({ 
         error: 'Configuration Error',
         message: 'Supabase is not configured' 
-      }, { status: 500 });
+      }, { 
+        status: 500,
+        headers: corsHeaders 
+      });
     }
 
     const dbTable = tableMapping[table] || table;
@@ -264,12 +323,17 @@ export async function DELETE(req) {
     return Response.json({ 
       success: true, 
       message: 'Data deleted successfully' 
+    }, {
+      headers: corsHeaders
     });
   } catch (error) {
     console.error('Database Error (DELETE):', error);
     return Response.json({ 
       error: 'Database Error',
       message: error.message
-    }, { status: 500 });
+    }, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 }
