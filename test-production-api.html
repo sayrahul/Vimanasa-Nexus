@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production API Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #4CAF50;
+            background: #f1f8f4;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+            background: #fef1f1;
+            color: #d32f2f;
+        }
+        .warning {
+            border-left: 4px solid #ff9800;
+            background: #fff8f1;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.loading {
+            background: #2196F3;
+            color: white;
+        }
+        .status.success {
+            background: #4CAF50;
+            color: white;
+        }
+        .status.failed {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Production API Diagnostic Tool</h1>
+        <p>This tool helps diagnose issues with your deployed Vimanasa Nexus application.</p>
+
+        <div class="test-section">
+            <h3>1. Configure Your Production URL</h3>
+            <input type="text" id="baseUrl" placeholder="Enter your production URL (e.g., https://your-site.pages.dev)" value="">
+            <button onclick="saveUrl()">Save URL</button>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test API Endpoints</h3>
+            <button onclick="testEndpoint('clients')">Test Clients API</button>
+            <button onclick="testEndpoint('workforce')">Test Workforce API</button>
+            <button onclick="testEndpoint('partners')">Test Partners API</button>
+            <button onclick="testEndpoint('payroll')">Test Payroll API</button>
+            <button onclick="testAllEndpoints()">Test All Endpoints</button>
+            <div id="apiResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Check Environment Variables</h3>
+            <button onclick="checkEnvVars()">Check Env Vars</button>
+            <div id="envResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Direct Supabase Connection</h3>
+            <p>Enter your Supabase credentials to test direct connection:</p>
+            <input type="text" id="supabaseUrl" placeholder="Supabase URL" value="https://nzwwwhufprdultuyzezk.supabase.co">
+            <input type="text" id="supabaseKey" placeholder="Supabase Anon Key" value="">
+            <button onclick="testSupabaseDirect()">Test Direct Connection</button>
+            <div id="supabaseResult" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Network Diagnostics</h3>
+            <button onclick="runNetworkDiagnostics()">Run Diagnostics</button>
+            <div id="networkResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let baseUrl = '';
+
+        function saveUrl() {
+            baseUrl = document.getElementById('baseUrl').value.trim();
+            if (!baseUrl) {
+                alert('Please enter a valid URL');
+                return;
+            }
+            if (!baseUrl.startsWith('http')) {
+                baseUrl = 'https://' + baseUrl;
+            }
+            baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+            localStorage.setItem('productionUrl', baseUrl);
+            alert('URL saved: ' + baseUrl);
+        }
+
+        function loadUrl() {
+            const saved = localStorage.getItem('productionUrl');
+            if (saved) {
+                document.getElementById('baseUrl').value = saved;
+                baseUrl = saved;
+            }
+        }
+
+        async function testEndpoint(table) {
+            if (!baseUrl) {
+                alert('Please configure your production URL first');
+                return;
+            }
+
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<span class="status loading">Testing ${table}...</span>`;
+
+            try {
+                const url = `${baseUrl}/api/database?table=${table}&timestamp=${Date.now()}`;
+                console.log('Testing URL:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<span class="status success">✅ SUCCESS</span>\n\n` +
+                        `Endpoint: ${table}\n` +
+                        `Status: ${response.status}\n` +
+                        `Records: ${data.count || data.data?.length || 0}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<span class="status failed">❌ FAILED</span>\n\n` +
+                        `Endpoint: ${table}\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.error || 'Unknown error'}\n` +
+                        `Message: ${data.message || 'No message'}\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<span class="status failed">❌ ERROR</span>\n\n` +
+                    `Endpoint: ${table}\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This usually means:\n` +
+                    `1. The URL is incorrect\n` +
+                    `2. CORS is blocking the request\n` +
+                    `3. The API endpoint doesn't exist\n` +
+                    `4. Network connectivity issue`;
+            }
+        }
+
+        async function testAllEndpoints() {
+            const tables = ['clients', 'workforce', 'partners', 'payroll', 'finance', 'attendance', 'leave', 'expenses', 'compliance', 'invoices'];
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<span class="status loading">Testing all endpoints...</span>';
+
+            let results = [];
+            for (const table of tables) {
+                try {
+                    const url = `${baseUrl}/api/database?table=${table}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    results.push({
+                        table,
+                        status: response.status,
+                        success: response.ok,
+                        count: data.count || data.data?.length || 0,
+                        error: data.error || null
+                    });
+                } catch (error) {
+                    results.push({
+                        table,
+                        status: 'ERROR',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.length - successCount;
+
+            resultDiv.className = failCount === 0 ? 'result success' : 'result warning';
+            resultDiv.innerHTML = `<span class="status ${failCount === 0 ? 'success' : 'failed'}">` +
+                `${successCount}/${results.length} endpoints working</span>\n\n` +
+                results.map(r => 
+                    `${r.success ? '✅' : '❌'} ${r.table.padEnd(15)} | Status: ${r.status} | Records: ${r.count || 0}${r.error ? ' | Error: ' + r.error : ''}`
+                ).join('\n');
+        }
+
+        async function checkEnvVars() {
+            if (!baseUrl) {
+                alert('Please configure your production URL first');
+                return;
+            }
+
+            const resultDiv = document.getElementById('envResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<span class="status loading">Checking environment variables...</span>';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/check-env`);
+                const data = await response.json();
+
+                resultDiv.className = 'result ' + (data.allConfigured ? 'success' : 'error');
+                resultDiv.innerHTML = `<span class="status ${data.allConfigured ? 'success' : 'failed'}">` +
+                    `${data.allConfigured ? '✅ All Configured' : '❌ Missing Variables'}</span>\n\n` +
+                    `Environment Variables Status:\n\n` +
+                    Object.entries(data.variables || {}).map(([key, value]) => 
+                        `${value ? '✅' : '❌'} ${key}`
+                    ).join('\n');
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<span class="status failed">❌ ERROR</span>\n\n` +
+                    `Could not check environment variables.\n` +
+                    `Error: ${error.message}`;
+            }
+        }
+
+        async function testSupabaseDirect() {
+            const supabaseUrl = document.getElementById('supabaseUrl').value.trim();
+            const supabaseKey = document.getElementById('supabaseKey').value.trim();
+
+            if (!supabaseUrl || !supabaseKey) {
+                alert('Please enter both Supabase URL and Anon Key');
+                return;
+            }
+
+            const resultDiv = document.getElementById('supabaseResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<span class="status loading">Testing direct Supabase connection...</span>';
+
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/clients?select=*`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<span class="status success">✅ SUCCESS</span>\n\n` +
+                        `Direct Supabase connection working!\n` +
+                        `Status: ${response.status}\n` +
+                        `Records found: ${Array.isArray(data) ? data.length : 0}\n\n` +
+                        `Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<span class="status failed">❌ FAILED</span>\n\n` +
+                        `Status: ${response.status}\n` +
+                        `Error: ${data.message || 'Unknown error'}\n\n` +
+                        `Possible issues:\n` +
+                        `1. Invalid Supabase anon key\n` +
+                        `2. Table 'clients' doesn't exist\n` +
+                        `3. RLS policies blocking access\n` +
+                        `4. Supabase project is paused\n\n` +
+                        `Full Response:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<span class="status failed">❌ ERROR</span>\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This usually means:\n` +
+                    `1. Invalid Supabase URL\n` +
+                    `2. CORS issue\n` +
+                    `3. Network connectivity problem`;
+            }
+        }
+
+        async function runNetworkDiagnostics() {
+            const resultDiv = document.getElementById('networkResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '<span class="status loading">Running diagnostics...</span>';
+
+            let diagnostics = [];
+
+            // Check if running on HTTPS
+            diagnostics.push(`Protocol: ${window.location.protocol}`);
+            diagnostics.push(`Current URL: ${window.location.href}`);
+            diagnostics.push(`User Agent: ${navigator.userAgent}`);
+            diagnostics.push(`Online: ${navigator.onLine ? 'Yes' : 'No'}`);
+
+            // Check localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                diagnostics.push(`LocalStorage: ✅ Working`);
+            } catch (e) {
+                diagnostics.push(`LocalStorage: ❌ Not available`);
+            }
+
+            // Check if fetch API is available
+            diagnostics.push(`Fetch API: ${typeof fetch !== 'undefined' ? '✅ Available' : '❌ Not available'}`);
+
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `<span class="status success">Diagnostics Complete</span>\n\n` +
+                diagnostics.join('\n');
+        }
+
+        // Load saved URL on page load
+        window.onload = loadUrl;
+    </script>
+</body>
+</html>
