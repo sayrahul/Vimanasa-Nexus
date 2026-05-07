@@ -18,6 +18,7 @@ import StatutoryCompliance from '@/components/StatutoryCompliance';
 import ExportMenu from '@/components/ExportMenu';
 import WorkforceDirectory from '@/components/WorkforceDirectory';
 import PartnerDirectory from '@/components/PartnerDirectory';
+import SharePlatform from '@/components/SharePlatform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
@@ -1066,6 +1067,7 @@ function DashboardView({ data, allData }) {
           <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
         </div>
         <div className="flex items-center gap-4 text-xs sm:text-sm">
+          <SharePlatform />
           <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors" title="Notifications">
             <Bell size={24} />
             {(stats.pendingLeave > 0 || stats.overdueInvoices > 0) && (
