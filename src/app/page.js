@@ -14,7 +14,7 @@ import ExpenseManager from '@/components/ExpenseManager';
 import PayrollActions from '@/components/PayrollActions';
 import ExportMenu from '@/components/ExportMenu';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react';
+import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
@@ -318,6 +318,15 @@ export default function DashboardLayout() {
 
   const handleSave = async (formData) => {
     try {
+      // Validation for "fsf" category in finance/expenses
+      if (formType === 'finance' || formType === 'expenses') {
+        const category = formData.Category || formData.category;
+        if (category && category.trim().length < 3) {
+          toast.error('❌ Category name must be at least 3 characters long.');
+          return;
+        }
+      }
+      
       if (editingItem && editingItem.id) {
         // Update existing item
         const updatedData = data[formType].map(item => 
@@ -519,7 +528,7 @@ export default function DashboardLayout() {
                       title="Workforce" 
                       subtitle="Manage employees and site assignments" 
                       data={data.workforce} 
-                      columns={['ID', 'Employee', 'Role', 'Status']} 
+                      columns={['ID', 'Employee', 'Role', 'Assigned Client', 'Status', 'Docs']} 
                       onAdd={() => handleAddNew('workforce')} 
                       onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} 
                       onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} 
@@ -833,9 +842,15 @@ function DashboardView({ data, allData }) {
     pendingLeave: allData?.leaveRequests?.filter(r => r.Status === 'Pending').length || 0,
     pendingExpenses: allData?.expenses?.filter(e => e.Status === 'Pending').length || 0,
     complianceDue: allData?.compliance?.filter(c => c.Status === 'Pending').length || 0,
+    overdueInvoices: allData?.invoices?.filter(i => i.Status === 'Overdue').length || 0,
   };
   
   const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
+
+  // Calculate Days Since Last Payroll
+  const lastPayrollRecord = allData?.payroll?.length > 0 ? [...allData.payroll].sort((a, b) => new Date(b.Date || 0) - new Date(a.Date || 0))[0] : null;
+  const daysSincePayroll = lastPayrollRecord && lastPayrollRecord.Date ? Math.floor((Date.now() - new Date(lastPayrollRecord.Date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
 
   // Calculate financial summary
   const financialSummary = {
@@ -861,7 +876,15 @@ function DashboardView({ data, allData }) {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
           <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
         </div>
-        <div className="flex items-center gap-2 text-xs sm:text-sm">
+        <div className="flex items-center gap-4 text-xs sm:text-sm">
+          <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors" title="Notifications">
+            <Bell size={24} />
+            {(stats.pendingLeave > 0 || stats.overdueInvoices > 0) && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center">
+                {stats.pendingLeave + stats.overdueInvoices}
+              </span>
+            )}
+          </button>
           <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-2 rounded-xl font-bold">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             Live Data
@@ -907,7 +930,7 @@ function DashboardView({ data, allData }) {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <MiniStatCard 
           label="Pending Leave" 
           value={stats.pendingLeave}
@@ -931,6 +954,21 @@ function DashboardView({ data, allData }) {
           value={`${profitMargin}%`}
           color="green"
         />
+        {daysSincePayroll > 30 ? (
+          <div className="bg-red-50 border-2 border-red-500 p-4 rounded-xl shadow-sm relative overflow-hidden animate-pulse">
+            <div className="absolute top-0 right-0 p-1 bg-red-500 rounded-bl-lg">
+              <AlertTriangle size={14} className="text-white" />
+            </div>
+            <p className="text-xs font-bold uppercase tracking-wider text-red-700">Days Since Payroll</p>
+            <p className="text-2xl font-black mt-1 text-red-600">{daysSincePayroll}</p>
+          </div>
+        ) : (
+          <MiniStatCard 
+            label="Days Since Payroll" 
+            value={daysSincePayroll}
+            color="blue"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -992,11 +1030,12 @@ function DashboardView({ data, allData }) {
               }}
             />
             <QuickActionCard 
-              icon={Download} 
-              label="Export Reports" 
+              icon={CheckSquare} 
+              label="Pending Approvals" 
               color="slate"
+              count={stats.pendingLeave + stats.pendingExpenses}
               onClick={() => {
-                toast.info('Export functionality - Select a specific section to export data');
+                toast.info('Viewing pending approvals');
               }}
             />
           </div>
@@ -1240,6 +1279,14 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                             </div>
                           )}
                           <span className="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">{row[col] || 'N/A'}</span>
+                        </div>
+                      ) : col.toLowerCase() === 'docs' ? (
+                        <div className="flex items-center justify-center">
+                          {row['Aadhar Doc URL'] && row['PAN Doc URL'] ? (
+                            <CheckCircle size={18} className="text-green-500" title="All documents uploaded" />
+                          ) : (
+                            <XCircle size={18} className="text-red-500" title="Missing documents" />
+                          )}
                         </div>
                       ) : (
                         <span className="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">{row[col] || 'N/A'}</span>
