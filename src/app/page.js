@@ -9,6 +9,7 @@ import ClientInvoicing from '@/components/ClientInvoicing';
 import GenericForm from '@/components/GenericForm';
 import AttendanceManager from '@/components/AttendanceManager';
 import LeaveManager from '@/components/LeaveManager';
+import DeploymentManager from '@/components/DeploymentManager';
 import DashboardCharts from '@/components/DashboardCharts';
 import ExpenseManager from '@/components/ExpenseManager';
 import PayrollActions from '@/components/PayrollActions';
@@ -517,6 +518,7 @@ export default function DashboardLayout() {
                   mainTab="placements" 
                   tabs={[
                     { id: 'workforce', label: 'Workforce Directory' },
+                    { id: 'deployment', label: 'Deployment Manager' },
                     { id: 'attendance', label: 'Attendance Tracking' },
                     { id: 'leave', label: 'Leave Requests' }
                   ]} 
@@ -543,6 +545,22 @@ export default function DashboardLayout() {
                         } catch (e) {
                           toast.error('Failed to generate document');
                         }
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {subTabs.placements === 'deployment' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <DeploymentManager 
+                      employees={data.workforce}
+                      clients={data.clients}
+                      onSave={async (employee) => {
+                        try {
+                          await axios.put('/api/database', { table: 'workforce', id: employee.id, data: employee });
+                          toast.success(`✅ ${employee.Employee} deployment updated!`);
+                          fetchData('workforce');
+                        } catch (error) { toast.error('❌ Failed to update deployment.'); }
                       }}
                     />
                   </motion.div>
