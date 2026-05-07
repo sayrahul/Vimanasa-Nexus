@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:gemini": "node test-gemini.js",
-    "list:models": "node list-models.js"
+    "list:models": "node list-models.js",
+    "pages:build": "npx @cloudflare/next-on-pages"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -43,6 +44,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
