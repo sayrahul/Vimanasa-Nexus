@@ -570,6 +570,8 @@ export default function DashboardLayout() {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <AttendanceManager 
                       employees={data.workforce}
+                      attendanceData={data.attendance}
+                      leaveRequests={data.leaveRequests}
                       onSave={async (record) => {
                         try {
                           await axios.post('/api/database', { table: 'attendance', data: record });
