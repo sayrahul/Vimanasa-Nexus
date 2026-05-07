@@ -14,11 +14,24 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
     'Status': employee?.['Status'] || 'Active',
     'Phone': employee?.['Phone'] || '',
     'Email': employee?.['Email'] || '',
+    'DOB': employee?.['DOB'] || '',
+    'Address': employee?.['Address'] || '',
+    'Emergency Contact': employee?.['Emergency Contact'] || '',
+    'Date of Joining': employee?.['Date of Joining'] || new Date().toISOString().split('T')[0],
+    
+    // Identity Documents
     'Aadhar': employee?.['Aadhar'] || '',
     'PAN': employee?.['PAN'] || '',
     'Photo URL': employee?.['Photo URL'] || '',
     'Aadhar Doc URL': employee?.['Aadhar Doc URL'] || '',
     'PAN Doc URL': employee?.['PAN Doc URL'] || '',
+    
+    // Bank & Statutory Details
+    'Bank Account': employee?.['Bank Account'] || '',
+    'IFSC Code': employee?.['IFSC Code'] || '',
+    'Bank Name': employee?.['Bank Name'] || '',
+    'PF Number': employee?.['PF Number'] || '',
+    'ESIC Number': employee?.['ESIC Number'] || '',
     
     // Deployment Info
     'Deployment Status': employee?.['Deployment Status'] || 'On Bench',
@@ -187,6 +200,47 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={formData['DOB']}
+                        onChange={(e) => handleChange('DOB', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Date of Joining *</label>
+                      <input
+                        type="date"
+                        value={formData['Date of Joining']}
+                        onChange={(e) => handleChange('Date of Joining', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Residential Address</label>
+                    <textarea
+                      value={formData['Address']}
+                      onChange={(e) => handleChange('Address', e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none resize-none"
+                      rows="2"
+                      placeholder="Full residential address"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Emergency Contact (Name & Phone)</label>
+                    <input
+                      type="text"
+                      value={formData['Emergency Contact']}
+                      onChange={(e) => handleChange('Emergency Contact', e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      placeholder="Relation - +91 XXXXXXXXXX"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Aadhar Number</label>
                       <input
                         type="text"
@@ -204,6 +258,70 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                         onChange={(e) => handleChange('PAN', e.target.value)}
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
                         placeholder="ABCDE1234F"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank & Statutory Details */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Shield size={20} className="text-blue-600" />
+                  Bank & Statutory Information
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Bank Name</label>
+                      <input
+                        type="text"
+                        value={formData['Bank Name']}
+                        onChange={(e) => handleChange('Bank Name', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="HDFC Bank"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Account Number</label>
+                      <input
+                        type="text"
+                        value={formData['Bank Account']}
+                        onChange={(e) => handleChange('Bank Account', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="Account Number"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">IFSC Code</label>
+                    <input
+                      type="text"
+                      value={formData['IFSC Code']}
+                      onChange={(e) => handleChange('IFSC Code', e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      placeholder="HDFC0001234"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">PF Account Number</label>
+                      <input
+                        type="text"
+                        value={formData['PF Number']}
+                        onChange={(e) => handleChange('PF Number', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="Optional - For Payroll"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">ESIC Number</label>
+                      <input
+                        type="text"
+                        value={formData['ESIC Number']}
+                        onChange={(e) => handleChange('ESIC Number', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="Optional - For Payroll"
                       />
                     </div>
                   </div>

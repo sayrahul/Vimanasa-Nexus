@@ -835,7 +835,8 @@ function DashboardView({ data, allData }) {
   // Calculate real-time stats from actual data
   const stats = {
     staff: allData?.workforce?.length || 0,
-    deployed: allData?.workforce?.filter(e => e.Status === 'Active' || e['Employee Status'] === 'Active').length || 0,
+    deployed: allData?.workforce?.filter(e => e['Deployment Status'] === 'Deployed' || (!e['Deployment Status'] && e['Assigned Client'])).length || 0,
+    bench: allData?.workforce?.filter(e => e['Deployment Status'] === 'On Bench' || (!e['Deployment Status'] && !e['Assigned Client'])).length || 0,
     clients: allData?.partners?.length || 0,
     payroll: allData?.payroll?.[0]?.['Total Payout'] || allData?.payroll?.[0]?.['Monthly Billing'] || '₹0',
     onLeave: allData?.workforce?.filter(e => e.Status === 'On Leave').length || 0,
@@ -911,7 +912,7 @@ function DashboardView({ data, allData }) {
           trend={`${deploymentRate}%`} 
           icon={TrendingUp}
           color="green"
-          subtitle="Deployment rate"
+          subtitle={`${stats.bench} on bench`}
         />
         <StatsCard 
           label="Active Partners" 
