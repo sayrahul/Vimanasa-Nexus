@@ -23,7 +23,8 @@ const menuItems = [
   { icon: Building2, label: 'Clients', id: 'clients' },
   { icon: Users, label: 'Placements', id: 'placements' },
   { icon: Wallet, label: 'Finance', id: 'finance' },
-  { icon: ShieldCheck, label: 'Reports', id: 'reports' },
+  { icon: ShieldCheck, label: 'Compliance', id: 'compliance' },
+  { icon: Receipt, label: 'Reports', id: 'reports' },
   { icon: SettingsIcon, label: 'Settings', id: 'settings' },
 ];
 

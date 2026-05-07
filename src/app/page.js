@@ -13,6 +13,7 @@ import DeploymentManager from '@/components/DeploymentManager';
 import DashboardCharts from '@/components/DashboardCharts';
 import ExpenseManager from '@/components/ExpenseManager';
 import PayrollEngine from '@/components/PayrollEngine';
+import StatutoryCompliance from '@/components/StatutoryCompliance';
 import ExportMenu from '@/components/ExportMenu';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
@@ -52,7 +53,9 @@ export default function DashboardLayout() {
     clients: 'clients',
     placements: 'workforce',
     finance: 'overview',
-    reports: 'compliance'
+    compliance: 'calendar',
+    reports: 'hr',
+    settings: 'company'
   });
 
   const handleSubTabChange = (mainTab, newSubTab) => {
@@ -471,6 +474,7 @@ export default function DashboardLayout() {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                     <ClientManagement
                       clients={data.clients}
+                      employees={data.workforce}
                       onAdd={async (clientData) => {
                         try {
                           await axios.post('/api/database', { table: 'clients', data: clientData });
@@ -718,6 +722,37 @@ export default function DashboardLayout() {
               </div>
             )}
 
+            {activeTab === 'compliance' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Compliance Shield</h1>
+                    <p className="text-slate-500 mt-1">Manage statutory filings and deadlines</p>
+                  </div>
+                </div>
+                <SubNavigation 
+                  mainTab="compliance" 
+                  tabs={[
+                    { id: 'calendar', label: 'Compliance Calendar' }
+                  ]} 
+                />
+                {subTabs.compliance === 'calendar' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <StatutoryCompliance 
+                      compliances={data.compliance} 
+                      onSave={async (record) => {
+                        try {
+                          await axios.post('/api/database', { table: 'compliance', data: record });
+                          toast.success('✅ Compliance record saved!');
+                          fetchData('compliance');
+                        } catch (error) { toast.error('❌ Failed to save compliance record.'); }
+                      }} 
+                    />
+                  </motion.div>
+                )}
+              </div>
+            )}
+
             {activeTab === 'reports' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
@@ -896,6 +931,18 @@ function DashboardView({ data, allData }) {
   const profitMargin = financialSummary.totalIncome > 0 
     ? Math.round((profit / financialSummary.totalIncome) * 100) 
     : 0;
+
+  // Calculate Birthdays this week
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  
+  const upcomingBirthdays = allData?.workforce?.filter(emp => {
+    if (!emp['DOB']) return false;
+    const dob = new Date(emp['DOB']);
+    const dobThisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+    return dobThisYear >= today && dobThisYear <= nextWeek;
+  }) || [];
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
@@ -1107,41 +1154,73 @@ function DashboardView({ data, allData }) {
         </div>
       </div>
 
-      {/* Financial Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-bold text-green-900">Total Income</h4>
-            <ArrowUpRight className="text-green-600" size={20} />
+      {/* Financial Overview & Mini Chart */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-8">
+        <h3 className="font-bold text-xl text-slate-800 mb-6">Monthly P&L Snapshot</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-bold text-green-900">Total Income</h4>
+              <ArrowUpRight className="text-green-600" size={20} />
+            </div>
+            <p className="text-3xl font-black text-green-900">
+              ₹{(financialSummary.totalIncome / 100000).toFixed(2)}L
+            </p>
           </div>
-          <p className="text-3xl font-black text-green-900">
-            ₹{(financialSummary.totalIncome / 100000).toFixed(2)}L
-          </p>
-          <p className="text-xs text-green-600 mt-1 font-medium">This month</p>
-        </div>
-        
-        <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-2xl border border-red-100">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-bold text-red-900">Total Expenses</h4>
-            <ArrowDownRight className="text-red-600" size={20} />
+          
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-2xl border border-red-100 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-bold text-red-900">Total Expenses</h4>
+              <ArrowDownRight className="text-red-600" size={20} />
+            </div>
+            <p className="text-3xl font-black text-red-900">
+              ₹{(financialSummary.totalExpense / 100000).toFixed(2)}L
+            </p>
           </div>
-          <p className="text-3xl font-black text-red-900">
-            ₹{(financialSummary.totalExpense / 100000).toFixed(2)}L
-          </p>
-          <p className="text-xs text-red-600 mt-1 font-medium">This month</p>
-        </div>
-        
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-100">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-bold text-blue-900">Net Profit</h4>
-            <TrendingUp className="text-blue-600" size={20} />
+          
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-100 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-bold text-blue-900">Net Profit</h4>
+              <TrendingUp className="text-blue-600" size={20} />
+            </div>
+            <p className="text-3xl font-black text-blue-900">
+              ₹{(profit / 100000).toFixed(2)}L
+            </p>
+            <p className="text-xs text-blue-600 mt-1 font-medium">{profitMargin}% margin</p>
           </div>
-          <p className="text-3xl font-black text-blue-900">
-            ₹{(profit / 100000).toFixed(2)}L
-          </p>
-          <p className="text-xs text-blue-600 mt-1 font-medium">{profitMargin}% margin</p>
+
+          <div className="p-4 rounded-2xl flex flex-col justify-center items-center">
+            <div className="w-full flex h-8 bg-slate-100 rounded-full overflow-hidden">
+               <div className="bg-green-500 h-full transition-all" style={{width: `${financialSummary.totalIncome > 0 ? (financialSummary.totalIncome / (financialSummary.totalIncome + financialSummary.totalExpense)) * 100 : 50}%`}}></div>
+               <div className="bg-red-500 h-full transition-all" style={{width: `${financialSummary.totalExpense > 0 ? (financialSummary.totalExpense / (financialSummary.totalIncome + financialSummary.totalExpense)) * 100 : 50}%`}}></div>
+            </div>
+            <div className="flex justify-between w-full mt-2 text-xs font-bold px-2">
+              <span className="text-green-600">Revenue</span>
+              <span className="text-red-600">Expense</span>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Birthdays Card */}
+      {upcomingBirthdays.length > 0 && (
+        <div className="bg-gradient-to-r from-pink-500 to-purple-500 p-6 rounded-3xl text-white shadow-lg mt-6">
+          <h3 className="font-black text-xl mb-4">🎉 Upcoming Birthdays This Week</h3>
+          <div className="flex flex-wrap gap-4">
+            {upcomingBirthdays.map((emp, i) => (
+              <div key={i} className="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-2xl flex items-center gap-3">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-pink-600">
+                  {emp.Employee.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-bold">{emp.Employee}</p>
+                  <p className="text-xs text-pink-100">{new Date(emp['DOB']).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

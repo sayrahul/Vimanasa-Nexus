@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ClientManagement({ clients, onAdd, onEdit, onDelete }) {
+export default function ClientManagement({ clients, employees, onAdd, onEdit, onDelete }) {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
 
@@ -40,6 +40,7 @@ export default function ClientManagement({ clients, onAdd, onEdit, onDelete }) {
             <ClientCard
               key={idx}
               client={client}
+              employees={employees}
               onEdit={() => handleEdit(client)}
               onDelete={() => onDelete(client, idx)}
             />
@@ -72,11 +73,23 @@ export default function ClientManagement({ clients, onAdd, onEdit, onDelete }) {
   );
 }
 
-function ClientCard({ client, onEdit, onDelete }) {
+function ClientCard({ client, employees, onEdit, onDelete }) {
+  const [showEmployees, setShowEmployees] = useState(false);
+
   const deployedCount = client['Deployed Staff'] || 0;
   const status = client.Status || 'Active';
 
+  // Contract expiry warning
+  const contractEnd = client['Contract End'] ? new Date(client['Contract End']) : null;
+  const today = new Date();
+  const daysUntilExpiry = contractEnd ? Math.floor((contractEnd - today) / (1000 * 60 * 60 * 24)) : null;
+  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
+  const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
+
+  const deployedStaff = employees?.filter(emp => emp['Assigned Client'] === client['Client Name'] && emp['Deployment Status'] === 'Deployed') || [];
+
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -97,7 +110,20 @@ function ClientCard({ client, onEdit, onDelete }) {
           </span>
         </div>
         <h3 className="font-black text-lg text-slate-900 mb-1">{client['Client Name']}</h3>
-        <p className="text-xs text-slate-500 font-medium">{client['Client ID']}</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-slate-500 font-medium">{client['Client ID']}</p>
+          
+          {isExpiringSoon && (
+            <p className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-md inline-block w-fit mt-1">
+              ⚠️ Contract expires in {daysUntilExpiry} days
+            </p>
+          )}
+          {isExpired && (
+            <p className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-md inline-block w-fit mt-1">
+              ❌ Contract Expired
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Details */}
@@ -131,7 +157,12 @@ function ClientCard({ client, onEdit, onDelete }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users size={16} className="text-blue-600" />
-              <span className="text-sm font-bold text-slate-700">{deployedCount} Deployed</span>
+              <button 
+                onClick={() => setShowEmployees(true)}
+                className="text-sm font-bold text-slate-700 hover:text-blue-600 hover:underline transition-colors cursor-pointer"
+              >
+                {deployedStaff.length} Deployed
+              </button>
             </div>
             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -153,6 +184,51 @@ function ClientCard({ client, onEdit, onDelete }) {
         </div>
       </div>
     </motion.div>
+
+    {showEmployees && (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div>
+              <h3 className="text-xl font-black text-slate-800">Deployed Employees</h3>
+              <p className="text-sm text-slate-500">{client['Client Name']}</p>
+            </div>
+            <button onClick={() => setShowEmployees(false)} className="p-2 hover:bg-slate-200 rounded-xl transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-6 overflow-y-auto flex-1">
+            {deployedStaff.length > 0 ? (
+              <div className="space-y-3">
+                {deployedStaff.map((emp, i) => (
+                  <div key={i} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 text-blue-600 font-bold rounded-lg flex items-center justify-center">
+                        {emp.Employee.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-800">{emp.Employee}</p>
+                        <p className="text-xs text-slate-500">{emp['Role at Site'] || emp.Role}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-bold text-slate-400">BILL RATE</p>
+                      <p className="text-sm font-bold text-slate-700">₹{emp['Total Bill Rate']}/day</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                <Users size={48} className="mx-auto mb-3 opacity-20" />
+                <p className="font-medium">No active employees deployed here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
