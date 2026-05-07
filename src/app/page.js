@@ -1230,18 +1230,29 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
                         }`}>
                           {row[col] || 'N/A'}
                         </span>
+                      ) : col.toLowerCase() === 'employee' ? (
+                        <div className="flex items-center gap-3">
+                          {row['Photo URL'] ? (
+                            <img src={row['Photo URL']} alt="" className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                              {String(row[col] || '?').charAt(0)}
+                            </div>
+                          )}
+                          <span className="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">{row[col] || 'N/A'}</span>
+                        </div>
                       ) : (
                         <span className="text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap">{row[col] || 'N/A'}</span>
                       )}
                     </td>
                   ))}
                   <td className="px-3 sm:px-6 lg:px-8 py-4 sm:py-5 lg:py-6 sticky right-0 bg-white/95 backdrop-blur-md shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 group-hover:bg-blue-50/90 transition-colors">
-                    <div className="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity items-center">
+                    <div className="flex gap-2 items-center">
                       {tab === 'workforce' && onGenerateDoc && (
-                        <div className="flex gap-1 border-r border-slate-200 pr-2 mr-1">
-                          <button onClick={() => onGenerateDoc(row, 'offer')} title="Generate Offer Letter" className="p-1 sm:p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><FileText size={14}/></button>
-                          <button onClick={() => onGenerateDoc(row, 'joining')} title="Generate Joining Letter" className="p-1 sm:p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg"><FileText size={14}/></button>
-                          <button onClick={() => onGenerateDoc(row, 'experience')} title="Generate Experience Letter" className="p-1 sm:p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg"><FileText size={14}/></button>
+                        <div className="flex gap-1.5 border-r border-slate-200 pr-3 mr-1">
+                          <button onClick={() => onGenerateDoc(row, 'offer')} title="Offer Letter" className="px-2 py-1 text-[10px] sm:text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-100 flex items-center gap-1"><FileText size={12}/> Offer</button>
+                          <button onClick={() => onGenerateDoc(row, 'joining')} title="Joining Letter" className="px-2 py-1 text-[10px] sm:text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-100 flex items-center gap-1"><FileText size={12}/> Joining</button>
+                          <button onClick={() => onGenerateDoc(row, 'experience')} title="Experience Letter" className="px-2 py-1 text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors border border-purple-100 flex items-center gap-1"><FileText size={12}/> Experience</button>
                         </div>
                       )}
                       <button 
@@ -1536,4 +1547,5 @@ function Login({ onLogin }) {
     </div>
   );
 }
+
 

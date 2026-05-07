@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { X, User, Building2, DollarSign, MapPin, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { X, User, Building2, DollarSign, MapPin, Clock, Shield, AlertTriangle, FileText, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function EmployeeDeploymentForm({ employee, clients, onSave, onCancel, userRole }) {
@@ -16,6 +16,9 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
     'Email': employee?.['Email'] || '',
     'Aadhar': employee?.['Aadhar'] || '',
     'PAN': employee?.['PAN'] || '',
+    'Photo URL': employee?.['Photo URL'] || '',
+    'Aadhar Doc URL': employee?.['Aadhar Doc URL'] || '',
+    'PAN Doc URL': employee?.['PAN Doc URL'] || '',
     
     // Deployment Info
     'Deployment Status': employee?.['Deployment Status'] || 'On Bench',
@@ -201,6 +204,57 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                         onChange={(e) => handleChange('PAN', e.target.value)}
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
                         placeholder="ABCDE1234F"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents & Media */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <FileText size={20} className="text-blue-600" />
+                  Documents & Media
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Profile Photo (URL or Base64)</label>
+                    <div className="flex gap-3">
+                      {formData['Photo URL'] ? (
+                        <img src={formData['Photo URL']} alt="Profile" className="w-12 h-12 rounded-xl object-cover border border-slate-200" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                          <Image size={20} />
+                        </div>
+                      )}
+                      <input
+                        type="url"
+                        value={formData['Photo URL']}
+                        onChange={(e) => handleChange('Photo URL', e.target.value)}
+                        className="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="https://example.com/photo.jpg"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">Aadhar Document (URL)</label>
+                      <input
+                        type="url"
+                        value={formData['Aadhar Doc URL']}
+                        onChange={(e) => handleChange('Aadhar Doc URL', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="https://drive.google.com/..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">PAN Document (URL)</label>
+                      <input
+                        type="url"
+                        value={formData['PAN Doc URL']}
+                        onChange={(e) => handleChange('PAN Doc URL', e.target.value)}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        placeholder="https://drive.google.com/..."
                       />
                     </div>
                   </div>
@@ -438,3 +492,5 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
     </div>
   );
 }
+
+
