@@ -97,17 +97,32 @@ export async function GET(req) {
       });
     }
   } catch (error) {
+    const { searchParams } = new URL(req.url);
+    const table = searchParams.get('table');
+    const dbTable = tableMapping[table] || table;
+
+    // Handle "Table not found" (Postgres code 42P01)
+    if (error.code === '42P01' || (error.message && error.message.includes('relation') && error.message.includes('does not exist'))) {
+      console.warn(`[API] Table "${dbTable}" does not exist yet. Returning empty data for frontend.`);
+      return Response.json({ 
+        success: true, 
+        data: [], 
+        count: 0 
+      });
+    }
+
     console.error('[API] Database Error (GET):', {
       message: error.message,
       code: error.code,
       details: error.details,
       hint: error.hint,
-      table: tableMapping[table] || table
+      table: dbTable
     });
+
     return Response.json({ 
       error: 'Database Error',
       message: error.message,
-      details: { table: tableMapping[table] || table }
+      details: { table: dbTable }
     }, { status: 500 });
   }
 }

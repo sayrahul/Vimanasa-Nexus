@@ -12,9 +12,9 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-// Client for server-side operations (uses service role key, bypasses RLS)
-export const supabaseAdmin = supabaseUrl && process.env.SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY)
+// Client for server-side operations (uses service role key if available, else anon key)
+export const supabaseAdmin = supabaseUrl && (process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey)
+  ? createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey)
   : null;
 
 // Helper function to check if Supabase is configured
