@@ -13,8 +13,11 @@ import DeploymentManager from '@/components/DeploymentManager';
 import DashboardCharts from '@/components/DashboardCharts';
 import ExpenseManager from '@/components/ExpenseManager';
 import PayrollEngine from '@/components/PayrollEngine';
+import FinanceLedger from '@/components/FinanceLedger';
 import StatutoryCompliance from '@/components/StatutoryCompliance';
 import ExportMenu from '@/components/ExportMenu';
+import WorkforceDirectory from '@/components/WorkforceDirectory';
+import PartnerDirectory from '@/components/PartnerDirectory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
@@ -428,7 +431,7 @@ export default function DashboardLayout() {
         onToggleAutoSync={toggleAutoSync}
       />
       
-      <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:ml-64 pt-24 lg:pt-12 p-4 sm:p-6 lg:p-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -504,7 +507,12 @@ export default function DashboardLayout() {
                 
                 {subTabs.clients === 'partners' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                    <TableView title="Partners" subtitle="Active client sites and service partners" data={data.partners} columns={['Site ID', 'Partner Name', 'Location', 'Headcount']} onAdd={() => handleAddNew('partners')} onEdit={(item, idx) => handleEdit(item, 'partners', idx)} onDelete={(item, idx) => handleDelete(item, 'partners', idx)} tab="partners" />
+                    <PartnerDirectory 
+                      partners={data.partners}
+                      onAdd={() => handleAddNew('partners')} 
+                      onEdit={(item, idx) => handleEdit(item, 'partners', idx)} 
+                      onDelete={(item, idx) => handleDelete(item, 'partners', idx)} 
+                    />
                   </motion.div>
                 )}
               </div>
@@ -530,15 +538,12 @@ export default function DashboardLayout() {
 
                 {subTabs.placements === 'workforce' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    <TableView 
-                      title="Workforce" 
-                      subtitle="Manage employees and site assignments" 
-                      data={data.workforce} 
-                      columns={['ID', 'Employee', 'Role', 'Assigned Client', 'Status', 'Docs']} 
+                    <WorkforceDirectory 
+                      employees={data.workforce} 
+                      clients={data.clients}
                       onAdd={() => handleAddNew('workforce')} 
                       onEdit={(item, idx) => handleEdit(item, 'workforce', idx)} 
                       onDelete={(item, idx) => handleDelete(item, 'workforce', idx)} 
-                      tab="workforce" 
                       onGenerateDoc={async (item, type) => {
                         try {
                           toast.info(`Generating ${type} letter...`);
@@ -575,7 +580,7 @@ export default function DashboardLayout() {
                     <AttendanceManager 
                       employees={data.workforce}
                       attendanceData={data.attendance}
-                      leaveRequests={data.leaveRequests}
+                      leaveRequests={data.leave}
                       onSave={async (record) => {
                         try {
                           await axios.post('/api/database', { table: 'attendance', data: record });
@@ -591,7 +596,7 @@ export default function DashboardLayout() {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <LeaveManager 
                       employees={data.workforce}
-                      leaveRequests={data.leaveRequests}
+                      leaveRequests={data.leave}
                       onSave={async (record) => {
                         try {
                           await axios.post('/api/database', { table: 'leave', data: record });
@@ -645,7 +650,12 @@ export default function DashboardLayout() {
 
                 {subTabs.finance === 'overview' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    <TableView title="Finance Ledger" subtitle="Revenue, expenses and profit tracking" data={data.finance} columns={['Category', 'Amount', 'Date', 'Type']} onAdd={() => handleAddNew('finance')} onEdit={(item, idx) => handleEdit(item, 'finance', idx)} onDelete={(item, idx) => handleDelete(item, 'finance', idx)} tab="finance" />
+                    <FinanceLedger 
+                      transactions={data.finance}
+                      invoices={data.invoices}
+                      expenses={data.expenses}
+                      payroll={data.payroll}
+                    />
                   </motion.div>
                 )}
 
@@ -809,37 +819,141 @@ export default function DashboardLayout() {
                     <p className="text-slate-500 mt-1">Configure preferences and system parameters</p>
                   </div>
                 </div>
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800 text-lg">Auto-Sync Data</span>
-                      <span className="text-sm text-slate-500">Automatically sync data from cloud every 10 seconds</span>
+                
+                <SubNavigation 
+                  mainTab="settings" 
+                  tabs={[
+                    { id: 'company', label: 'Company Profile' },
+                    { id: 'salary', label: 'Salary Components' },
+                    { id: 'leave', label: 'Leave Policy' },
+                    { id: 'users', label: 'User Management' },
+                    { id: 'system', label: 'System Settings' }
+                  ]} 
+                />
+
+                {subTabs.settings === 'company' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                      <h3 className="text-xl font-bold text-slate-800 mb-6">Company Profile</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
+                          <input type="text" defaultValue="Vimanasa Services LLP" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">GSTIN</label>
+                          <input type="text" defaultValue="27AABCU9603R1ZM" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Company Logo URL</label>
+                          <input type="text" defaultValue="/vimanasa-logo.png" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">Save Company Profile</button>
+                        </div>
+                      </div>
                     </div>
-                    <button
-                      onClick={toggleAutoSync}
-                      className={cn(
-                        "relative inline-flex h-7 w-14 items-center rounded-full transition-colors",
-                        autoSyncEnabled ? "bg-green-500" : "bg-slate-300"
-                      )}
-                    >
-                      <span className={cn(
-                        "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
-                        autoSyncEnabled ? "translate-x-8" : "translate-x-1"
-                      )} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-800 text-lg">System Mode</span>
-                      <span className="text-sm text-slate-500">Database connection active</span>
+                  </motion.div>
+                )}
+
+                {subTabs.settings === 'salary' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                      <h3 className="text-xl font-bold text-slate-800 mb-6">Salary & Allowances Config</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">HRA Percentage (%)</label>
+                          <input type="number" defaultValue="40" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">PF Employer Share (%)</label>
+                          <input type="number" defaultValue="13" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">Save Configurations</button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-bold flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      Supabase PostgreSQL
+                  </motion.div>
+                )}
+
+                {subTabs.settings === 'leave' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                      <h3 className="text-xl font-bold text-slate-800 mb-6">Leave Policy Limits</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Casual Leaves (CL) / Year</label>
+                          <input type="number" defaultValue="12" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Sick Leaves (SL) / Year</label>
+                          <input type="number" defaultValue="6" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Earned Leaves (EL) / Month</label>
+                          <input type="number" defaultValue="1.5" className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">Update Policy</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                )}
+
+                {subTabs.settings === 'users' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8 text-center text-slate-500">
+                      <Users size={48} className="mx-auto mb-4 opacity-20" />
+                      <p className="font-bold text-lg">User Management</p>
+                      <p className="text-sm">Feature coming soon. Manage Admin and Sub-Admin roles here.</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {subTabs.settings === 'system' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+                      <h3 className="text-xl font-bold text-slate-800 mb-6">System Connection</h3>
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800 text-lg">Auto-Sync Data</span>
+                          <span className="text-sm text-slate-500">Automatically sync data from cloud every 10 seconds</span>
+                        </div>
+                        <button
+                          onClick={toggleAutoSync}
+                          className={cn(
+                            "relative inline-flex h-7 w-14 items-center rounded-full transition-colors",
+                            autoSyncEnabled ? "bg-green-500" : "bg-slate-300"
+                          )}
+                        >
+                          <span className={cn(
+                            "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                            autoSyncEnabled ? "translate-x-8" : "translate-x-1"
+                          )} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-slate-50 mb-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800 text-lg">System Mode</span>
+                          <span className="text-sm text-slate-500">Database connection active</span>
+                        </div>
+                        <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-bold flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                          Supabase PostgreSQL
+                        </div>
+                      </div>
+
+                      <div className="mt-8 border-t border-slate-200 pt-6">
+                        <h4 className="font-bold text-slate-800 mb-2 text-red-600 flex items-center gap-2"><AlertTriangle size={18} /> Danger Zone</h4>
+                        <p className="text-sm text-slate-500 mb-4">Actions here are irreversible.</p>
+                        <button className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-bold border border-red-200 hover:bg-red-100 transition-colors">Wipe All Application Data</button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             )}
           </motion.div>

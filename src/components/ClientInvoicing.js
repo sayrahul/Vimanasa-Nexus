@@ -1,12 +1,27 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Mail, Calendar, DollarSign, Building2, CheckCircle, Clock, XCircle, Plus, Eye } from 'lucide-react';
+import { FileText, Download, Mail, Calendar, DollarSign, Building2, CheckCircle, Clock, XCircle, Plus, Eye, Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { generateClientInvoice } from '@/lib/pdfGenerator';
 
 export default function ClientInvoicing({ invoices, clients, employees, attendance, onGenerateInvoice, onUpdateStatus }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [showGenerator, setShowGenerator] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const filteredInvoices = React.useMemo(() => {
+    return (invoices || []).filter(inv => {
+      const matchesSearch = 
+        (inv['Invoice Number'] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (inv['Client Name'] || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'All' || inv.Status === statusFilter;
+      const matchesMonth = !selectedMonth || (inv['Invoice Date'] || inv.date)?.startsWith(selectedMonth);
+
+      return matchesSearch && matchesStatus && matchesMonth;
+    });
+  }, [invoices, searchTerm, statusFilter, selectedMonth]);
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -75,14 +90,35 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
       {/* Invoices List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 bg-slate-50">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <h3 className="text-lg font-bold text-slate-900">Invoice History</h3>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-4 py-2 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
-            />
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <input 
+                type="text" 
+                placeholder="Search invoice # or client..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-64 px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 bg-white"
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Sent">Sent</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+              </select>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 bg-white"
+              />
+            </div>
           </div>
         </div>
 
@@ -99,12 +135,9 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {invoices && invoices.length > 0 ? (
-                invoices
-                  .filter(inv => !selectedMonth || inv.Month?.includes(selectedMonth))
-                  .map((invoice, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+            <tbody className="divide-y divide-slate-100">
+              {filteredInvoices?.length > 0 ? filteredInvoices.map((invoice, idx) => (
+                <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <span className="font-bold text-slate-900">{invoice['Invoice Number']}</span>
                       </td>
@@ -158,7 +191,7 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
                       </td>
                     </tr>
                   ))
-              ) : (
+               : (
                 <tr>
                   <td colSpan={7} className="px-6 py-20 text-center text-slate-400">
                     <FileText size={48} className="mx-auto mb-4 opacity-20" />
@@ -277,8 +310,27 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
       });
     });
 
-    const totalGST = totalBillRate * 0.18; // Flat 18% GST
-    const finalInvoiceAmount = totalBillRate + totalGST;
+    // Calculate Agency Margin based on Client Settings
+    const marginType = selectedClient['Margin Type'] || 'Percentage';
+    const marginRate = parseFloat(selectedClient['Agency Margin %']) || 0;
+    
+    let totalAgencyMargin = 0;
+    if (marginType === 'Percentage') {
+      totalAgencyMargin = totalBillRate * (marginRate / 100);
+    } else if (marginType === 'Flat Fee') {
+      // Calculate total headcount deployed to this client
+      // Only count employees who actually worked (payableDays > 0)
+      const workingEmployees = employeeDetails.length;
+      totalAgencyMargin = marginRate * workingEmployees;
+    }
+
+    const subtotal = totalBillRate + totalAgencyMargin;
+    
+    // Calculate GST dynamically
+    const gstRate = parseFloat(selectedClient['GST Percentage'] !== undefined ? selectedClient['GST Percentage'] : 18) / 100;
+    const totalGST = subtotal * gstRate;
+    const finalInvoiceAmount = subtotal + totalGST;
+    
     const isLossMaking = totalBillRate < totalSalaryCost;
 
     setCalculatedData({
@@ -286,6 +338,9 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
       employees: employeeDetails,
       totalEmployees: employeeDetails.length,
       totalBillRate: totalBillRate.toFixed(2),
+      totalAgencyMargin: totalAgencyMargin.toFixed(2),
+      subtotal: subtotal.toFixed(2),
+      gstRate: (gstRate * 100).toFixed(1),
       totalGST: totalGST.toFixed(2),
       finalAmount: finalInvoiceAmount.toFixed(2),
       totalSalaryCost: totalSalaryCost.toFixed(2),
@@ -304,7 +359,10 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
       'Invoice Date': new Date().toLocaleDateString(),
       'Due Date': formData.dueDate,
       'Total Employees': calculatedData.totalEmployees,
-      'Subtotal': calculatedData.totalBillRate,
+      'Bill Rate Subtotal': calculatedData.totalBillRate,
+      'Agency Margin': calculatedData.totalAgencyMargin,
+      'Subtotal': calculatedData.subtotal,
+      'GST Percentage': calculatedData.gstRate,
       'GST Amount': calculatedData.totalGST,
       'Invoice Amount': calculatedData.finalAmount,
       'Status': 'Pending',
@@ -392,11 +450,19 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
 
               <div className="border-t border-blue-200 pt-4 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Subtotal (Before GST)</span>
+                  <span className="text-sm text-slate-600">Total Resource Billing</span>
                   <span className="text-sm font-bold text-slate-900">₹{parseFloat(calculatedData.totalBillRate).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">GST (18%)</span>
+                  <span className="text-sm text-slate-600">Agency Margin ({calculatedData.client['Margin Type'] === 'Percentage' ? `${calculatedData.client['Agency Margin %']}%` : 'Flat Fee'})</span>
+                  <span className="text-sm font-bold text-slate-900">₹{parseFloat(calculatedData.totalAgencyMargin).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between border-t border-blue-100 pt-2 mt-2">
+                  <span className="text-sm font-bold text-slate-700">Subtotal</span>
+                  <span className="text-sm font-bold text-slate-900">₹{parseFloat(calculatedData.subtotal).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">GST ({calculatedData.gstRate}%)</span>
                   <span className="text-sm font-bold text-slate-900">₹{parseFloat(calculatedData.totalGST).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-blue-200">

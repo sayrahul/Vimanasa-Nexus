@@ -8,9 +8,12 @@ import ExportMenu from '@/components/ExportMenu';
 export default function PayrollEngine({ employees = [], attendanceData = [], onSavePayroll }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [clientFilter, setClientFilter] = useState('All');
 
   // Filter deployed employees
   const activeEmployees = employees.filter(e => e.Status !== 'Inactive');
+  const uniqueClients = [...new Set(activeEmployees.map(e => e['Assigned Client']).filter(Boolean))].sort();
 
   const getDaysInMonth = (yearMonth) => {
     const [year, month] = yearMonth.split('-');
@@ -248,10 +251,27 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
 
       {/* Payroll Processing Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-slate-50">
           <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
             <DollarSign className="text-green-500" /> Employee Salary Breakdown
           </h3>
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <input 
+              type="text" 
+              placeholder="Search employee..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm"
+            />
+            <select
+              value={clientFilter}
+              onChange={(e) => setClientFilter(e.target.value)}
+              className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm font-semibold text-slate-700 bg-white"
+            >
+              <option value="All">All Clients</option>
+              {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
           <div className="flex gap-4">
              <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
                <span className="w-3 h-3 rounded-full bg-green-500"></span> Ready ({payrollData.filter(p => p.isReady).length})
@@ -277,7 +297,13 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {payrollData.map((data, idx) => (
+              {payrollData
+                .filter(data => {
+                  const matchesSearch = (data.Employee || '').toLowerCase().includes(searchTerm.toLowerCase()) || (data.empId || '').toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchesClient = clientFilter === 'All' || data['Assigned Client'] === clientFilter;
+                  return matchesSearch && matchesClient;
+                })
+                .map((data, idx) => (
                 <tr key={idx} className={`hover:bg-slate-50 transition-colors ${!data.isReady ? 'bg-red-50/30' : ''}`}>
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-800">{data.Employee}</div>

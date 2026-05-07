@@ -63,9 +63,10 @@ export function toDB(table, data) {
     case 'attendance':
       return {
         ...(dbData.id && { id: dbData.id }),
-        employee_id: data.employee_id, // Requires actual UUID!
+        employee_id: data.employee_id || data.employeeId, // Requires actual UUID!
         date: data['Date'] || data.date,
         status: (data['Status'] || data.status || 'Present').toLowerCase(),
+        metadata
       };
       
     case 'leave_requests':

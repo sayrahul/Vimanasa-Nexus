@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Download, FileText, Table, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function ExportMenu({ data, filename, title }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -54,8 +56,29 @@ export default function ExportMenu({ data, filename, title }) {
   };
 
   const exportToPDF = () => {
-    toast.info('PDF export coming soon!');
-    setShowMenu(false);
+    try {
+      const doc = new jsPDF('l', 'pt', 'a4'); // Landscape for tables
+      
+      doc.setFontSize(16);
+      doc.text(title || 'Data Export', 40, 40);
+      
+      const columns = Object.keys(data[0] || {}).map(key => ({ header: key, dataKey: key }));
+      
+      doc.autoTable({
+        columns: columns,
+        body: data,
+        startY: 60,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [68, 114, 196] },
+      });
+      
+      doc.save(`${filename}_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF file downloaded successfully!');
+      setShowMenu(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export to PDF');
+    }
   };
 
   const printTable = () => {

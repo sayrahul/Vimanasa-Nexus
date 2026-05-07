@@ -10,11 +10,19 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
   const [attendance, setAttendance] = useState({});
   const [viewMode, setViewMode] = useState('mark'); // 'mark' or 'report'
   const [isLocked, setIsLocked] = useState(false);
+  const [selectedClientFilter, setSelectedClientFilter] = useState('All');
+
+  // Extract unique clients
+  const uniqueClients = [...new Set(employees.map(e => e['Assigned Client']).filter(Boolean))].sort();
 
   // Filter ONLY Deployed Employees
   const deployedEmployees = employees.filter(e => 
     e['Deployment Status'] === 'Deployed' || (!e['Deployment Status'] && e['Assigned Client'])
   );
+
+  const filteredEmployees = selectedClientFilter === 'All' 
+    ? deployedEmployees 
+    : deployedEmployees.filter(e => e['Assigned Client'] === selectedClientFilter);
 
   useEffect(() => {
     // When date changes, check if attendance is already marked and locked
@@ -71,7 +79,7 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
       return;
     }
     const newAttendance = { ...attendance };
-    deployedEmployees.forEach(emp => {
+    filteredEmployees.forEach(emp => {
       const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
       // Only mark present if not already explicitly marked as something else (like On Leave)
       if (!newAttendance[empId]) {
@@ -79,24 +87,28 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
       }
     });
     setAttendance(newAttendance);
-    toast.info('All unmarked employees set to Present.');
+    toast.info(`All unmarked ${selectedClientFilter !== 'All' ? 'filtered ' : ''}employees set to Present.`);
   };
 
   const handleSaveAttendance = async () => {
     if (isLocked) return;
 
-    // Ensure all deployed employees are marked
-    const unmarked = deployedEmployees.filter(emp => !attendance[emp['ID'] || emp.employeeId || emp['Employee ID']]);
+    // Ensure all filtered employees are marked
+    const unmarked = filteredEmployees.filter(emp => !attendance[emp['ID'] || emp.employeeId || emp['Employee ID']]);
     if (unmarked.length > 0) {
-      toast.error(`Please mark attendance for all employees. ${unmarked.length} remaining.`);
+      toast.error(`Please mark attendance for all ${selectedClientFilter !== 'All' ? 'filtered ' : ''}employees. ${unmarked.length} remaining.`);
       return;
     }
 
-    const attendanceRecords = Object.entries(attendance).map(([empId, status]) => {
+    // Only save the currently filtered ones to avoid overwriting or saving empty ones
+    const attendanceRecords = Object.entries(attendance)
+      .filter(([empId]) => filteredEmployees.some(e => (e['ID'] || e.employeeId || e['Employee ID']) === empId))
+      .map(([empId, status]) => {
       const employee = employees.find(e => e['ID'] === empId || e['Employee ID'] === empId || e.employeeId === empId);
       return {
         Date: selectedDate,
         'Employee ID': empId,
+        employee_id: employee?.id,
         'Employee Name': employee?.Employee || employee?.firstName + ' ' + employee?.lastName || 'Unknown',
         Status: status,
         'Marked By': 'Admin',
@@ -108,8 +120,11 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
       for (const record of attendanceRecords) {
         await onSave(record);
       }
-      toast.success(`Attendance successfully locked for ${attendanceRecords.length} employees.`);
-      setIsLocked(true);
+      toast.success(`Attendance successfully saved for ${attendanceRecords.length} employees.`);
+      // If we are filtering, we might not want to lock the WHOLE day yet
+      if (selectedClientFilter === 'All') {
+         setIsLocked(true);
+      }
     } catch (error) {
       toast.error('Failed to save attendance');
       console.error(error);
@@ -127,19 +142,26 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
   };
 
   const getAttendanceStats = () => {
-    const present = Object.values(attendance).filter(s => s === 'Present').length;
-    const absent = Object.values(attendance).filter(s => s === 'Absent').length;
-    const leave = Object.values(attendance).filter(s => s === 'On Leave').length;
-    const halfDay = Object.values(attendance).filter(s => s === 'Half Day').length;
-    return { present, absent, leave, halfDay, total: deployedEmployees.length };
+    let present = 0, absent = 0, leave = 0, halfDay = 0;
+    
+    filteredEmployees.forEach(emp => {
+      const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
+      const status = attendance[empId];
+      if (status === 'Present') present++;
+      if (status === 'Absent') absent++;
+      if (status === 'On Leave') leave++;
+      if (status === 'Half Day') halfDay++;
+    });
+    
+    return { present, absent, leave, halfDay, total: filteredEmployees.length };
   };
 
   const stats = getAttendanceStats();
 
   // Generate Monthly Summary
-  const monthlySummary = deployedEmployees.map(emp => {
+  const monthlySummary = filteredEmployees.map(emp => {
     const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
-    const empRecords = attendanceData.filter(r => r['Employee ID'] === empId && r.Date?.startsWith(selectedMonth));
+    const empRecords = attendanceData.filter(r => (r['Employee ID'] === empId || r.employee_id === emp.id) && r.Date?.startsWith(selectedMonth));
     
     return {
       'Employee ID': empId,
@@ -197,6 +219,20 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
                   className="w-full lg:w-auto px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 bg-slate-50"
                 />
               </div>
+
+              <div className="flex-1 lg:flex-none">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Filter by Client</label>
+                <select
+                  value={selectedClientFilter}
+                  onChange={(e) => setSelectedClientFilter(e.target.value)}
+                  className="w-full lg:w-auto px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 bg-slate-50 min-w-[200px]"
+                >
+                  <option value="All">All Clients</option>
+                  {uniqueClients.map((client, idx) => (
+                    <option key={idx} value={client}>{client}</option>
+                  ))}
+                </select>
+              </div>
               
               <div className="hidden lg:block h-10 w-px bg-slate-200"></div>
 
@@ -246,8 +282,13 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
           {/* Employee List */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="divide-y divide-slate-100">
-              {deployedEmployees.map((employee, idx) => {
-                const empId = employee['ID'] || employee.employeeId || employee['Employee ID'];
+              {filteredEmployees.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 font-medium">
+                  No employees found for this selection.
+                </div>
+              ) : (
+                filteredEmployees.map((employee, idx) => {
+                  const empId = employee['ID'] || employee.employeeId || employee['Employee ID'];
                 const empName = employee.Employee || `${employee.firstName} ${employee.lastName}`;
                 const clientSite = employee['Assigned Client'];
                 const currentStatus = attendance[empId];
@@ -298,15 +339,7 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
                     </div>
                   </div>
                 );
-              })}
-              {deployedEmployees.length === 0 && (
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="text-slate-400" size={24} />
-                  </div>
-                  <p className="text-slate-500 font-medium text-lg">No Deployed Employees</p>
-                  <p className="text-sm text-slate-400 mt-1">Deploy employees from the bench to mark their attendance.</p>
-                </div>
+              })
               )}
             </div>
           </div>

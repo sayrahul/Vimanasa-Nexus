@@ -1,11 +1,25 @@
 "use client";
 import React, { useState } from 'react';
-import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ClientManagement({ clients, employees, onAdd, onEdit, onDelete }) {
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const filteredClients = React.useMemo(() => {
+    return (clients || []).filter(c => {
+      const matchesSearch = 
+        (c['Client Name'] || c['Company Name'] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c['Client ID'] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c['Location'] || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'All' || c.Status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [clients, searchTerm, statusFilter]);
 
   const handleEdit = (client) => {
     setEditingClient(client);
@@ -33,10 +47,33 @@ export default function ClientManagement({ clients, employees, onAdd, onEdit, on
         </button>
       </div>
 
+      {/* Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search clients by name, ID, or location..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="w-full md:w-auto px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold text-slate-700 bg-slate-50"
+        >
+          <option value="All">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+
       {/* Client Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {clients && clients.length > 0 ? (
-          clients.map((client, idx) => (
+        {filteredClients && filteredClients.length > 0 ? (
+          filteredClients.map((client, idx) => (
             <ClientCard
               key={idx}
               client={client}
@@ -246,6 +283,7 @@ function ClientForm({ client, onSave, onCancel }) {
     'Contract End': client?.['Contract End'] || '',
     'Agency Margin %': client?.['Agency Margin %'] || '8.5',
     'Margin Type': client?.['Margin Type'] || 'Percentage',
+    'GST Percentage': client?.['GST Percentage'] || '18',
     'Manages Leaves': client?.['Manages Leaves'] || 'No',
     'Status': client?.['Status'] || 'Active',
     'Deployed Staff': client?.['Deployed Staff'] || '0',
@@ -420,6 +458,18 @@ function ClientForm({ client, onSave, onCancel }) {
                 <option>Percentage</option>
                 <option>Flat Fee</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">GST Percentage (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData['GST Percentage']}
+                onChange={(e) => handleChange('GST Percentage', e.target.value)}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                placeholder="18"
+              />
             </div>
 
             <div>
