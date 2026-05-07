@@ -2,8 +2,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
   DollarSign, TrendingUp, TrendingDown, Filter, Search, Plus, 
-  ArrowUpRight, ArrowDownRight, Briefcase, Calendar, ChevronDown, Download
+  ArrowUpRight, ArrowDownRight, Briefcase, Calendar, ChevronDown, Download, CheckCircle
 } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function FinanceLedger({ transactions = [], invoices = [], expenses = [], payroll = [] }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,7 +100,10 @@ export default function FinanceLedger({ transactions = [], invoices = [], expens
           <h2 className="text-3xl font-black text-slate-900">Financial Ledger</h2>
           <p className="text-slate-500 mt-1">Unified view of revenue, expenses, and net profit</p>
         </div>
-        <button className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg">
+        <button 
+          onClick={() => exportToExcel(filteredLedger, `Finance_Ledger_${monthFilter || 'AllTime'}`, 'Transactions')}
+          className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg"
+        >
           <Download size={20} /> Export Ledger
         </button>
       </div>

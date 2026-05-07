@@ -2,8 +2,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Search, Filter, Plus, Edit2, Trash2, FileText, 
-  MapPin, Briefcase, Mail, Phone, ChevronDown, CheckCircle, XCircle, Clock
+  MapPin, Briefcase, Mail, Phone, ChevronDown, CheckCircle, XCircle, Clock, Download
 } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 
 export default function WorkforceDirectory({ employees = [], clients = [], onAdd, onEdit, onDelete, onGenerateDoc }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,12 +50,20 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
             <h2 className="text-xl font-bold text-slate-900">Workforce Directory</h2>
             <p className="text-sm text-slate-500 mt-1">Manage {employees.length} total employees across all sites.</p>
           </div>
-          <button 
-            onClick={onAdd}
-            className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2"
-          >
-            <Plus size={18} /> Add Employee
-          </button>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button 
+              onClick={() => exportToExcel(filteredEmployees, 'Workforce_Directory', 'Employees')}
+              className="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            >
+              <Download size={18} /> Export
+            </button>
+            <button 
+              onClick={onAdd}
+              className="flex-1 sm:flex-none bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              <Plus size={18} /> Add Employee
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4">

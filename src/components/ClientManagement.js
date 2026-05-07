@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X, Search } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X, Search, Download } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 import { motion } from 'framer-motion';
 
 export default function ClientManagement({ clients, employees, onAdd, onEdit, onDelete }) {
@@ -39,12 +40,20 @@ export default function ClientManagement({ clients, employees, onAdd, onEdit, on
           <h1 className="text-3xl font-black text-slate-900">Client Management</h1>
           <p className="text-slate-500 mt-1">Manage outsourcing clients and deployment sites</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg flex items-center gap-2"
-        >
-          <Plus size={20} /> Add Client
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => exportToExcel(filteredClients, 'Client_Directory', 'Clients')}
+            className="px-6 py-3 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2"
+          >
+            <Download size={20} /> Export
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg flex items-center gap-2"
+          >
+            <Plus size={20} /> Add Client
+          </button>
+        </div>
       </div>
 
       {/* Toolbar */}

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { Share2, Linkedin, Twitter, MessageCircle, Copy, Check } from 'lucide-react';
+import { Share2, MessageCircle, Copy, Check } from 'lucide-react';
+import { FaLinkedinIn, FaXTwitter, FaWhatsapp } from "react-icons/fa6";
 import { toast } from 'react-toastify';
 
 export default function SharePlatform() {
@@ -20,17 +21,17 @@ export default function SharePlatform() {
   const shareLinks = [
     {
       name: 'LinkedIn',
-      icon: <Linkedin size={18} className="text-[#0A66C2]" />,
+      icon: <FaLinkedinIn size={18} className="text-[#0A66C2]" />,
       url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
     },
     {
-      name: 'Twitter',
-      icon: <Twitter size={18} className="text-[#1DA1F2]" />,
+      name: 'X (Twitter)',
+      icon: <FaXTwitter size={18} className="text-[#000000]" />,
       url: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'WhatsApp',
-      icon: <MessageCircle size={18} className="text-[#25D366]" />,
+      icon: <FaWhatsapp size={18} className="text-[#25D366]" />,
       url: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + shareUrl)}`,
     },
   ];

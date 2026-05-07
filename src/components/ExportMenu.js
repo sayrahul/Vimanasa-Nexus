@@ -10,24 +10,15 @@ export default function ExportMenu({ data, filename, title }) {
   const [showMenu, setShowMenu] = useState(false);
 
   const exportToExcel = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
     try {
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, title);
-      
-      // Add styling
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const address = XLSX.utils.encode_col(C) + "1";
-        if (!ws[address]) continue;
-        ws[address].s = {
-          font: { bold: true },
-          fill: { fgColor: { rgb: "4472C4" } },
-          alignment: { horizontal: "center" }
-        };
-      }
-      
-      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, title || 'Data');
+      XLSX.writeFile(wb, `${filename.replace('.csv', '')}_${new Date().toISOString().split('T')[0]}.xlsx`);
       toast.success('Excel file downloaded successfully!');
       setShowMenu(false);
     } catch (error) {
@@ -37,16 +28,18 @@ export default function ExportMenu({ data, filename, title }) {
   };
 
   const exportToCSV = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
     try {
       const ws = XLSX.utils.json_to_sheet(data);
       const csv = XLSX.utils.sheet_to_csv(ws);
-      
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `${filename.replace('.csv', '')}_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
-      
       toast.success('CSV file downloaded successfully!');
       setShowMenu(false);
     } catch (error) {
@@ -56,23 +49,31 @@ export default function ExportMenu({ data, filename, title }) {
   };
 
   const exportToPDF = () => {
+    if (!data || data.length === 0) {
+      toast.warning('No data available to export');
+      return;
+    }
     try {
-      const doc = new jsPDF('l', 'pt', 'a4'); // Landscape for tables
+      const doc = new jsPDF('l', 'pt', 'a4');
+      doc.setFontSize(18);
+      doc.setTextColor(26, 86, 166);
+      doc.text(title || 'Data Export', 40, 45);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 40, 65);
       
-      doc.setFontSize(16);
-      doc.text(title || 'Data Export', 40, 40);
-      
-      const columns = Object.keys(data[0] || {}).map(key => ({ header: key, dataKey: key }));
+      const columns = Object.keys(data[0]).map(key => ({ header: key, dataKey: key }));
       
       doc.autoTable({
         columns: columns,
         body: data,
-        startY: 60,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [68, 114, 196] },
+        startY: 80,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [26, 86, 166], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
       });
       
-      doc.save(`${filename}_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`${filename.replace('.csv', '')}_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('PDF file downloaded successfully!');
       setShowMenu(false);
     } catch (error) {

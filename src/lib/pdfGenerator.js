@@ -245,7 +245,7 @@ We wish them all the best in their future endeavors.`;
   doc.save(`ExperienceLetter_${employee.Employee || employee.employeeId}.pdf`);
 }
 
-export async function generateClientInvoice(client, amount, invoiceNo, items = []) {
+export async function generateClientInvoice(client, amount, invoiceNo, detailedData = null) {
   const doc = new jsPDF('p', 'mm', 'a4');
   const letterhead = await loadLetterhead();
   applyLetterhead(doc, letterhead);
@@ -253,47 +253,86 @@ export async function generateClientInvoice(client, amount, invoiceNo, items = [
   const startY = 65;
   doc.setTextColor(26, 86, 166);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(22);
   doc.text(`TAX INVOICE`, 105, startY, { align: 'center' });
   
   doc.setTextColor(0, 0, 0);
-  
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   
-  doc.text(`Invoice No: ${invoiceNo}`, 20, startY + 15);
-  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, startY + 21);
-  
+  // Left Side - Invoice Info
   doc.setFont('helvetica', 'bold');
-  doc.text(`Billed To:`, 130, startY + 15);
+  doc.text('Invoice Details:', 20, startY + 15);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${client['Client Name'] || client.company_name}`, 130, startY + 21);
-  doc.text(`${client.Location || client.address || 'Address N/A'}`, 130, startY + 27);
+  doc.text(`Invoice No: ${invoiceNo}`, 20, startY + 22);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, startY + 28);
+  doc.text(`Month: ${detailedData?.Month || 'N/A'}`, 20, startY + 34);
   
-  let currentY = startY + 40;
-  
-  if (items.length > 0) {
-    doc.autoTable({
-      startY: currentY,
-      head: [['Description', 'Qty', 'Rate', 'Amount']],
-      body: items.map(item => [item.desc, item.qty, item.rate, item.amount]),
-      foot: [['', '', 'Total', formatCurrency(amount)]],
-      theme: 'grid',
-      headStyles: { fillColor: [37, 99, 235], fontStyle: 'bold' }
-    });
-    currentY = doc.lastAutoTable.finalY + 20;
-  } else {
-    doc.text(`Service: Manpower Provisioning Services`, 20, currentY);
-    doc.text(`Total Amount: ${formatCurrency(amount)}`, 20, currentY + 10);
-    currentY += 30;
+  // Right Side - Client Info
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Bill To:`, 130, startY + 15);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${client['Client Name'] || client.company_name}`, 130, startY + 22);
+  doc.text(`${client.Location || 'Location N/A'}`, 130, startY + 28);
+  if (client['GST Number']) {
+    doc.text(`GSTIN: ${client['GST Number']}`, 130, startY + 34);
   }
   
+  let currentY = startY + 50;
+  
+  const tableBody = [];
+  if (detailedData) {
+    tableBody.push(['Manpower Provisioning - Resource Bill Rate', formatCurrency(detailedData['Bill Rate Subtotal'])]);
+    tableBody.push([`Agency Service Margin (${detailedData['Agency Margin'] > 0 ? 'Applied' : '0%'})`, formatCurrency(detailedData['Agency Margin'])]);
+    tableBody.push(['Subtotal', formatCurrency(detailedData['Subtotal'])]);
+    tableBody.push([`GST (${detailedData['GST Percentage']}%)`, formatCurrency(detailedData['GST Amount'])]);
+  } else {
+    tableBody.push(['Manpower Provisioning Services', formatCurrency(amount)]);
+  }
+
+  doc.autoTable({
+    startY: currentY,
+    head: [['Description', 'Amount']],
+    body: tableBody,
+    theme: 'striped',
+    headStyles: { fillColor: [26, 86, 166], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 10, cellPadding: 5 },
+    columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
+  });
+
+  currentY = doc.lastAutoTable.finalY + 10;
+
+  // Total Box
+  doc.setFillColor(245, 247, 250);
+  doc.rect(130, currentY, 60, 15, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.text(`Payment Details:`, 20, currentY);
+  doc.setFontSize(12);
+  doc.text('Grand Total:', 135, currentY + 10);
+  doc.setTextColor(26, 86, 166);
+  doc.text(formatCurrency(amount), 185, currentY + 10, { align: 'right' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'italic');
+  doc.text(`Amount in Words: ${numberToWords(amount)} Rupees Only`, 20, currentY + 22);
+
+  currentY += 40;
+
+  // Bank Details
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(`Bank Payment Details:`, 20, currentY);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Bank Name: HDFC Bank`, 20, currentY + 7);
-  doc.text(`Account No: 1234567890`, 20, currentY + 14);
-  doc.text(`IFSC Code: HDFC0001234`, 20, currentY + 21);
+  doc.text(`Account Name: Vimanasa Services LLP`, 20, currentY + 7);
+  doc.text(`Bank Name: HDFC Bank`, 20, currentY + 14);
+  doc.text(`Account No: 12345678901234`, 20, currentY + 21);
+  doc.text(`IFSC Code: HDFC0001234`, 20, currentY + 28);
+  doc.text(`Branch: Pune Main Branch`, 20, currentY + 35);
+
+  // Footer note
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text('This is a computer-generated invoice and does not require a physical signature.', 105, 280, { align: 'center' });
   
   doc.save(`Invoice_${invoiceNo}.pdf`);
 }

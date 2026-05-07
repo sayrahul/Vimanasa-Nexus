@@ -802,7 +802,7 @@ export default function DashboardLayout() {
                                  <div className="text-xs text-slate-500">{data[dataset]?.length || 0} Records found</div>
                                </div>
                              </div>
-                             <ExportMenu data={data[dataset] || []} filename={`${dataset}_export.csv`} />
+                             <ExportMenu data={data[dataset] || []} filename={`${dataset}_export`} title={`${dataset.charAt(0).toUpperCase() + dataset.slice(1)} Master Data`} />
                            </div>
                         ))}
                       </div>

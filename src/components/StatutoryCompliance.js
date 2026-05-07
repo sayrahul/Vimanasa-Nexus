@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { Calendar, CheckCircle, Clock, UploadCloud, FileText, AlertTriangle, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Calendar, CheckCircle, Clock, UploadCloud, FileText, AlertTriangle, ChevronRight, ShieldCheck, Download } from 'lucide-react';
+import { exportToExcel } from '@/lib/excelExport';
 import { toast } from 'react-toastify';
 
 export default function StatutoryCompliance({ compliances = [], onSave }) {
@@ -79,14 +80,22 @@ export default function StatutoryCompliance({ compliances = [], onSave }) {
           </h2>
           <p className="text-slate-500 mt-1">Track and file PF, ESIC, GST, and Tax returns</p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-          <Calendar className="text-slate-400" size={20} />
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="font-bold text-slate-700 outline-none bg-transparent"
-          />
+        <div className="flex gap-3">
+          <button
+            onClick={() => exportToExcel(compliances, `Compliance_Report_${selectedMonth}`, 'Compliance')}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2"
+          >
+            <Download size={20} /> Export Report
+          </button>
+          <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <Calendar className="text-slate-400" size={20} />
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="font-bold text-slate-700 outline-none bg-transparent"
+            />
+          </div>
         </div>
       </div>
 

@@ -166,9 +166,14 @@ export default function ClientInvoicing({ invoices, clients, employees, attendan
                         <div className="flex gap-2">
                           <button
                             onClick={async () => await generateClientInvoice(
-                              { 'Client Name': invoice['Client Name'] }, 
+                              { 
+                                'Client Name': invoice['Client Name'],
+                                'Location': clients?.find(c => c['Client Name'] === invoice['Client Name'])?.Location,
+                                'GST Number': clients?.find(c => c['Client Name'] === invoice['Client Name'])?.['GST Number']
+                              }, 
                               invoice['Invoice Amount'], 
-                              invoice['Invoice Number']
+                              invoice['Invoice Number'],
+                              invoice
                             )}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Download PDF"
