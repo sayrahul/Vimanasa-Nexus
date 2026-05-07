@@ -227,7 +227,8 @@ export const sheetsAPI = {
    * @returns {Promise<Array>}
    */
   get: async (sheetName) => {
-    const response = await apiClient.get(`/api/gsheets?sheet=${sheetName}`);
+    const table = sheetName.toLowerCase();
+    const response = await apiClient.get(`/api/database?table=${table}`);
     return response.data || [];
   },
 
@@ -238,9 +239,10 @@ export const sheetsAPI = {
    * @returns {Promise<Object>}
    */
   add: async (sheetName, values) => {
-    return await apiClient.post('/api/gsheets', {
-      sheet: sheetName,
-      values,
+    const table = sheetName.toLowerCase();
+    return await apiClient.post('/api/database', {
+      table,
+      data: values,
     });
   },
 
@@ -251,11 +253,12 @@ export const sheetsAPI = {
    * @param {Array} values
    * @returns {Promise<Object>}
    */
-  update: async (sheetName, rowIndex, values) => {
-    return await apiClient.put('/api/gsheets', {
-      sheet: sheetName,
-      rowIndex,
-      values,
+  update: async (sheetName, id, values) => {
+    const table = sheetName.toLowerCase();
+    return await apiClient.put('/api/database', {
+      table,
+      id,
+      data: values,
     });
   },
 
@@ -265,10 +268,11 @@ export const sheetsAPI = {
    * @param {number} rowIndex
    * @returns {Promise<Object>}
    */
-  delete: async (sheetName, rowIndex) => {
-    return await apiClient.delete('/api/gsheets', {
-      sheet: sheetName,
-      rowIndex,
+  delete: async (sheetName, id) => {
+    const table = sheetName.toLowerCase();
+    return await apiClient.delete('/api/database', {
+      table,
+      id,
     });
   },
 };
