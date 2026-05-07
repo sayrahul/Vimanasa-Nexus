@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage",
     "test:gemini": "node test-gemini.js",
     "list:models": "node list-models.js",
-    "pages:build": "npx @cloudflare/next-on-pages && mkdir -p dist && cp -r .vercel/output/static/* dist/"
+    "pages:build": "npx @cloudflare/next-on-pages && mkdir -p dist && cp -r .vercel/output/static/* dist/ && (cp .vercel/output/_worker.js dist/ 2>/dev/null || echo 'Worker already in dist or different location')"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
