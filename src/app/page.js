@@ -12,7 +12,7 @@ import LeaveManager from '@/components/LeaveManager';
 import DeploymentManager from '@/components/DeploymentManager';
 import DashboardCharts from '@/components/DashboardCharts';
 import ExpenseManager from '@/components/ExpenseManager';
-import PayrollActions from '@/components/PayrollActions';
+import PayrollEngine from '@/components/PayrollEngine';
 import ExportMenu from '@/components/ExportMenu';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
@@ -647,10 +647,17 @@ export default function DashboardLayout() {
 
                 {subTabs.finance === 'payroll' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    <div className="flex justify-end mb-6">
-                      <PayrollActions employees={data.workforce} />
-                    </div>
-                    <TableView title="Payroll Registry" subtitle="Salary processing and disbursement status" data={data.payroll} columns={['Month', 'Total Payout', 'Pending', 'Status']} onAdd={() => handleAddNew('payroll')} onEdit={(item, idx) => handleEdit(item, 'payroll', idx)} onDelete={(item, idx) => handleDelete(item, 'payroll', idx)} tab="payroll" />
+                    <PayrollEngine 
+                      employees={data.workforce}
+                      attendanceData={data.attendance}
+                      onSavePayroll={async (record) => {
+                        try {
+                          await axios.post('/api/database', { table: 'payroll', data: record });
+                          toast.success('✅ Payroll processed and saved successfully!');
+                          fetchData('payroll');
+                        } catch (error) { toast.error('❌ Failed to save payroll data.'); }
+                      }}
+                    />
                   </motion.div>
                 )}
 
