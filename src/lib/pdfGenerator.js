@@ -5,10 +5,10 @@ import 'jspdf-autotable';
 const loadLetterhead = () => {
   return new Promise((resolve) => {
     const img = new Image();
-    img.src = '/letterhead.jpg';
+    img.src = '/vimanasa_letterhead.jpg';
     img.onload = () => resolve(img);
     img.onerror = () => {
-      console.warn("Letterhead not found at /letterhead.jpg");
+      console.warn("Letterhead not found at /vimanasa_letterhead.jpg");
       resolve(null);
     };
   });
@@ -27,11 +27,11 @@ export async function generateSalarySlip(employee, month, year) {
   applyLetterhead(doc, letterhead);
   
   // Start drawing below the letterhead header area (approx 45mm down)
-  const startY = 55;
+  const startY = 65;
   
   // Salary Slip Title
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(16);
+  doc.setTextColor(26, 86, 166); // Vimanasa Blue
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text('SALARY SLIP', 105, startY, { align: 'center' });
   
@@ -122,18 +122,25 @@ export async function generateOfferLetter(employee) {
   const letterhead = await loadLetterhead();
   applyLetterhead(doc, letterhead);
   
-  const startY = 60;
+  const startY = 65;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
+  doc.setTextColor(100, 100, 100);
   doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, startY, { align: 'right' });
   
+  doc.setTextColor(26, 86, 166); // Vimanasa Blue
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(`To,`, 20, startY + 10);
-  doc.text(`${employee.firstName || employee.Employee}`, 20, startY + 16);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Subject: Offer of Employment`, 20, startY + 28);
+  doc.text(`OFFER OF EMPLOYMENT`, 105, startY + 15, { align: 'center' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`To,`, 20, startY + 30);
+  doc.text(`${employee.firstName || employee.Employee}`, 20, startY + 36);
   
-  doc.text(`Dear ${employee.firstName || employee.Employee},`, 20, startY + 40);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Dear ${employee.firstName || employee.Employee},`, 20, startY + 48);
   
   const body = `We are pleased to offer you the position of ${employee.Role || employee.designation} at Vimanasa Services LLP. We were impressed with your credentials and believe you will be a valuable addition to our team.
 
@@ -144,12 +151,13 @@ Please review the attached terms and conditions of your employment. If you choos
 We look forward to welcoming you to Vimanasa Services LLP.`;
 
   const splitBody = doc.splitTextToSize(body, 170);
-  doc.text(splitBody, 20, startY + 50);
+  doc.text(splitBody, 20, startY + 58);
   
   doc.setFont('helvetica', 'bold');
-  doc.text(`Sincerely,`, 20, startY + 110);
-  doc.text(`Human Resources`, 20, startY + 125);
-  doc.text(`Vimanasa Services LLP`, 20, startY + 131);
+  doc.text(`Sincerely,`, 20, startY + 120);
+  doc.setTextColor(26, 86, 166);
+  doc.text(`Authorized Signatory`, 20, startY + 135);
+  doc.text(`Vimanasa Services LLP`, 20, startY + 141);
   
   doc.save(`OfferLetter_${employee.Employee || employee.employeeId}.pdf`);
 }
@@ -159,20 +167,27 @@ export async function generateJoiningLetter(employee) {
   const letterhead = await loadLetterhead();
   applyLetterhead(doc, letterhead);
   
-  const startY = 60;
+  const startY = 65;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
+  doc.setTextColor(100, 100, 100);
   doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, startY, { align: 'right' });
   
+  doc.setTextColor(26, 86, 166); // Vimanasa Blue
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text(`JOINING LETTER`, 105, startY + 15, { align: 'center' });
   
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.text(`To,`, 20, startY + 30);
+  doc.text(`To,`, 20, startY + 35);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${employee.firstName || employee.Employee}`, 20, startY + 36);
-  doc.text(`Emp ID: ${employee.employeeId || employee['ID']}`, 20, startY + 42);
+  doc.text(`${employee.firstName || employee.Employee}`, 20, startY + 41);
+  doc.setFontSize(10);
+  doc.text(`Emp ID: ${employee.employeeId || employee['ID']}`, 20, startY + 47);
   
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   const body = `This is to certify that ${employee.firstName || employee.Employee} has officially joined Vimanasa Services LLP in the capacity of ${employee.Role || employee.designation} with effect from ${employee['Date of Joining'] || new Date().toLocaleDateString()}.
 
@@ -181,11 +196,12 @@ You have been deployed at ${employee['Assigned Client'] || 'our headquarters'} s
 We wish you a long and successful career with us.`;
 
   const splitBody = doc.splitTextToSize(body, 170);
-  doc.text(splitBody, 20, startY + 55);
+  doc.text(splitBody, 20, startY + 65);
   
   doc.setFont('helvetica', 'bold');
-  doc.text(`Authorized Signatory`, 20, startY + 110);
-  doc.text(`Vimanasa Services LLP`, 20, startY + 116);
+  doc.setTextColor(26, 86, 166);
+  doc.text(`Authorized Signatory`, 20, startY + 120);
+  doc.text(`Vimanasa Services LLP`, 20, startY + 126);
   
   doc.save(`JoiningLetter_${employee.Employee || employee.employeeId}.pdf`);
 }
@@ -195,17 +211,23 @@ export async function generateExperienceLetter(employee) {
   const letterhead = await loadLetterhead();
   applyLetterhead(doc, letterhead);
   
-  const startY = 60;
+  const startY = 65;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
+  doc.setTextColor(100, 100, 100);
   doc.text(`Date: ${new Date().toLocaleDateString()}`, 190, startY, { align: 'right' });
   
+  doc.setTextColor(26, 86, 166);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text(`EXPERIENCE CERTIFICATE`, 105, startY + 15, { align: 'center' });
   
-  doc.setFont('helvetica', 'normal');
-  doc.text(`TO WHOMSOEVER IT MAY CONCERN`, 105, startY + 30, { align: 'center' });
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`TO WHOMSOEVER IT MAY CONCERN`, 105, startY + 35, { align: 'center' });
   
+  doc.setFont('helvetica', 'normal');
   const body = `This is to certify that ${employee.firstName || employee.Employee} was employed with Vimanasa Services LLP from ${employee['Date of Joining'] || 'N/A'} to ${new Date().toLocaleDateString()}. 
 
 During their tenure, they held the position of ${employee.Role || employee.designation}. We found them to be highly professional, diligent, and hardworking. They executed all assigned duties to our full satisfaction.
@@ -213,11 +235,12 @@ During their tenure, they held the position of ${employee.Role || employee.desig
 We wish them all the best in their future endeavors.`;
 
   const splitBody = doc.splitTextToSize(body, 170);
-  doc.text(splitBody, 20, startY + 50);
+  doc.text(splitBody, 20, startY + 55);
   
   doc.setFont('helvetica', 'bold');
-  doc.text(`Authorized Signatory`, 20, startY + 110);
-  doc.text(`Vimanasa Services LLP`, 20, startY + 116);
+  doc.setTextColor(26, 86, 166);
+  doc.text(`Authorized Signatory`, 20, startY + 115);
+  doc.text(`Vimanasa Services LLP`, 20, startY + 121);
   
   doc.save(`ExperienceLetter_${employee.Employee || employee.employeeId}.pdf`);
 }
@@ -227,10 +250,13 @@ export async function generateClientInvoice(client, amount, invoiceNo, items = [
   const letterhead = await loadLetterhead();
   applyLetterhead(doc, letterhead);
   
-  const startY = 55;
+  const startY = 65;
+  doc.setTextColor(26, 86, 166);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.text(`TAX INVOICE`, 105, startY, { align: 'center' });
+  
+  doc.setTextColor(0, 0, 0);
   
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
