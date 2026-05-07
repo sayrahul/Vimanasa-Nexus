@@ -231,41 +231,65 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
       emp => emp['Assigned Client'] === selectedClient['Client Name'] && emp['Deployment Status'] === 'Deployed'
     ) || [];
 
+    // Get attendance records for the selected month
+    const monthAttendance = attendance?.filter(a => a.Date?.startsWith(formData.month)) || [];
+
     // Calculate total billing
     let totalBillRate = 0;
-    let totalGST = 0;
     let employeeDetails = [];
+    let totalSalaryCost = 0; // For profit margin calculation
 
     deployedEmployees.forEach(emp => {
+      const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
+      
+      // Calculate Payable Days for this employee
+      const empAttendance = monthAttendance.filter(a => a['Employee ID'] === empId || a.employeeId === empId);
+      const present = empAttendance.filter(a => a.Status === 'Present').length;
+      const leaves = empAttendance.filter(a => a.Status === 'On Leave').length;
+      const halfDays = empAttendance.filter(a => a.Status === 'Half Day').length;
+      
+      const payableDays = present + leaves + (halfDays * 0.5);
+      
+      if (payableDays === 0) return; // Skip if they didn't work
+
       const billRate = parseFloat(emp['Total Bill Rate']) || 0;
-      const gst = parseFloat(emp['GST Amount']) || 0;
-      const finalAmount = parseFloat(emp['Final Invoice Amount']) || 0;
+      const amount = billRate * payableDays;
 
-      // For simplicity, assuming 26 working days per month
-      // In production, this should calculate from actual attendance
-      const workingDays = 26;
-
-      totalBillRate += billRate * workingDays;
-      totalGST += gst * workingDays;
+      // Estimate salary cost
+      const basicSalaryRaw = parseFloat(emp['Basic Salary']) || 0;
+      const hraRaw = parseFloat(emp['HRA']) || 0;
+      const allowancesRaw = parseFloat(emp['Allowances']) || 0;
+      const totalPayRate = basicSalaryRaw + hraRaw + allowancesRaw;
+      
+      const [year, month] = formData.month.split('-');
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const estimatedSalary = (totalPayRate / daysInMonth) * payableDays;
+      
+      totalSalaryCost += estimatedSalary;
+      totalBillRate += amount;
 
       employeeDetails.push({
         name: emp.Employee,
-        role: emp.Role,
-        days: workingDays,
+        role: emp['Role at Site'] || emp.Role,
+        days: payableDays,
         ratePerDay: billRate,
-        amount: billRate * workingDays,
+        amount: amount,
       });
     });
 
+    const totalGST = totalBillRate * 0.18; // Flat 18% GST
     const finalInvoiceAmount = totalBillRate + totalGST;
+    const isLossMaking = totalBillRate < totalSalaryCost;
 
     setCalculatedData({
       client: selectedClient,
       employees: employeeDetails,
-      totalEmployees: deployedEmployees.length,
+      totalEmployees: employeeDetails.length,
       totalBillRate: totalBillRate.toFixed(2),
       totalGST: totalGST.toFixed(2),
       finalAmount: finalInvoiceAmount.toFixed(2),
+      totalSalaryCost: totalSalaryCost.toFixed(2),
+      isLossMaking: isLossMaking
     });
   };
 
