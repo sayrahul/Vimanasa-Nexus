@@ -5,6 +5,8 @@
 
 import { authenticateUser, createToken } from '@/lib/auth';
 
+export const runtime = 'edge';
+
 export async function POST(request) {
   try {
     const body = await request.json();

@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { toDB, toFrontend } from '@/lib/dataMapper';
 
+export const runtime = 'edge';
+
 // Map frontend tabs to database tables
 const tableMapping = {
   workforce: 'employees',

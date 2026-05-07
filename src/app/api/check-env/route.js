@@ -1,5 +1,4 @@
-// Diagnostic API to check environment variables
-// This helps debug login issues on production
+export const runtime = 'edge';
 
 export async function GET(req) {
   return Response.json({
