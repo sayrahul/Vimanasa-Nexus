@@ -80,33 +80,50 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
     }
   };
 
-  const handleConvertToEmployee = (candidate) => {
-    // Automatically mark as Hired in database
-    handleUpdateStatus(candidate, 'hired');
+  const handleConvertToEmployee = async (candidate) => {
+    setIsUpdating(true);
+    try {
+      // 1. Create the Employee Record in Workforce
+      const employeeData = {
+        'Employee ID': `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        'Employee': candidate['Full Name'],
+        'Phone': candidate['Phone'],
+        'Email': candidate['Email'] || '',
+        'Aadhar': candidate['Aadhar'] || '',
+        'PAN': candidate['PAN'] || '',
+        'Photo Link': candidate['Photo Link'] || '',
+        'Role': candidate['Job Title'],
+        'Status': 'Active',
+        'Assigned Client': 'Pending Assignment',
+        'Basic Salary': candidate['Expected Salary'] || '0',
+        'Date of Birth': candidate['Date of Birth'] || '',
+        'Site Location': candidate['Address'] || 'Unassigned'
+      };
 
-    // Navigate to Placements -> Workforce sub-tab
-    const event = new CustomEvent('navigate-tab', { 
-      detail: { 
-        tab: 'placements', 
-        subTab: 'workforce',
-        data: {
-          'Employee': candidate['Full Name'],
-          'Phone': candidate['Phone'],
-          'Email': candidate['Email'],
-          'Aadhar': candidate['Aadhar'],
-          'PAN': candidate['PAN'],
-          'Photo URL': candidate['Photo Link'],
-          'Role': candidate['Job Title'],
-          'DOB': candidate['Date of Birth'],
-          'Address': candidate['Address'],
-          'candidate_id': candidate.id
-        },
-        action: 'add'
-      } 
-    });
-    window.dispatchEvent(event);
-    onNavigate('placements');
-    setShowDrawer(false);
+      const empResponse = await apiClient.post('/api/database', {
+        table: 'workforce',
+        data: employeeData
+      });
+
+      if (empResponse.success) {
+        // 2. Automatically mark as Hired in database
+        await handleUpdateStatus(candidate, 'hired');
+        toast.success(`Successfully converted ${candidate['Full Name']} to Employee!`);
+        
+        // 3. Refresh data
+        onUpdate('workforce');
+        onUpdate('candidates');
+
+        // 4. Navigate to Placements
+        onNavigate('placements');
+        setShowDrawer(false);
+      }
+    } catch (error) {
+      console.error('Conversion error:', error);
+      toast.error('Failed to convert candidate to employee');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const getStatusColor = (status) => {

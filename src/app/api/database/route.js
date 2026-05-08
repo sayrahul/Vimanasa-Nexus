@@ -15,18 +15,23 @@ const corsHeaders = {
  * Verify authentication for the request
  */
 async function verifyRequest(request, table, method) {
+  console.log(`[AUTH] Verifying ${method} for ${table}`);
+  
   // PUBLIC ACCESS RULE: Allow anyone to apply (insert into candidates)
   if (table === 'candidates' && method === 'POST') {
+    console.log('[AUTH] Public POST allowed for candidates');
     return { success: true, public: true };
   }
 
   // PUBLIC ACCESS RULE: Allow anyone to see open jobs
   if (table === 'job_openings' && method === 'GET') {
+    console.log('[AUTH] Public GET allowed for job_openings');
     return { success: true, public: true };
   }
 
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.warn('[AUTH] ❌ No Bearer token found in headers');
     return { success: false, error: 'Unauthorized', message: 'No token provided', status: 401 };
   }
 
@@ -34,9 +39,11 @@ async function verifyRequest(request, table, method) {
   const payload = await verifyToken(token);
 
   if (!payload) {
+    console.error('[AUTH] ❌ Token verification failed (Invalid or Expired)');
     return { success: false, error: 'Unauthorized', message: 'Invalid or expired token', status: 401 };
   }
 
+  console.log(`[AUTH] ✅ Authorized: ${payload.username} (${payload.role})`);
   return { success: true, payload };
 }
 
