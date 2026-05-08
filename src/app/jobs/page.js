@@ -152,7 +152,10 @@ export default function CareersPage() {
       </section>
 
       {/* Footer / CTA */}
-      <section className="bg-slate-900 py-20 px-4 text-center text-white rounded-t-[4rem]">
+      <section className="bg-slate-900 py-20 px-4 text-center text-white rounded-t-[4rem] relative">
+        <div className="absolute top-4 left-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full">
+          Live Probe: {loading ? '⌛ Loading...' : `✅ ${jobs.length} Positions Found`}
+        </div>
         <h2 className="text-3xl font-black mb-6">Didn't find what you were looking for?</h2>
         <p className="text-slate-400 max-w-xl mx-auto mb-10 font-medium">
           Send us your resume for general consideration and we'll keep you in mind for future openings.
