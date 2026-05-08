@@ -83,7 +83,10 @@ async function apiRequest(endpoint, options = {}) {
     // Handle 401 Unauthorized - token expired or invalid
     if (response.status === 401) {
       removeToken();
-      window.location.href = '/'; // Redirect to login
+      // Only redirect if not already on the home page to prevent loops
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.href = '/'; 
+      }
       throw await parseApiError(response);
     }
 

@@ -3,7 +3,7 @@ export const runtime = 'edge';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
   Phone, 
@@ -14,20 +14,33 @@ import {
   Briefcase, 
   CheckCircle,
   ArrowRight,
+  ArrowLeft,
   Upload,
-  CreditCard
+  CreditCard,
+  Sparkles,
+  Award,
+  BookOpen,
+  Camera,
+  Building2,
+  ShieldCheck,
+  DollarSign,
+  Clock,
+  IndianRupee,
+  Layout
 } from 'lucide-react';
-import { apiClient } from '@/lib/apiClient';
 import { toast } from 'react-hot-toast';
 
 function ApplyForm() {
   const searchParams = useSearchParams();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState([]);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [step, setStep] = useState(1);
   
   const [formData, setFormData] = useState({
-    jobTitle: searchParams.get('job') || 'General Application',
-    jobId: searchParams.get('jobId') || 'GEN-001',
+    jobTitle: 'General Application',
+    jobId: 'GEN-001',
     fullName: '',
     phone: '',
     email: '',
@@ -46,17 +59,72 @@ function ApplyForm() {
     photoUrl: ''
   });
 
+  // Fetch available jobs on mount
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        const response = await fetch('/api/database?table=job_openings');
+        const result = await response.json();
+        if (result.success) {
+          const openJobs = (result.data || []).filter(j => 
+            (j.status || 'open').toLowerCase() === 'open'
+          );
+          setAvailableJobs(openJobs);
+          
+          // Check for job ID in URL
+          const urlJobId = searchParams.get('job');
+          if (urlJobId) {
+            const selectedJob = openJobs.find(j => j.id === urlJobId);
+            if (selectedJob) {
+              setFormData(prev => ({
+                ...prev,
+                jobTitle: selectedJob.title,
+                jobId: selectedJob.id
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      } finally {
+        setIsLoadingJobs(false);
+      }
+    }
+    fetchJobs();
+  }, [searchParams]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (name === 'jobSelection') {
+      const selectedJob = availableJobs.find(j => j.id === value);
+      if (selectedJob) {
+        setFormData(prev => ({
+          ...prev,
+          jobTitle: selectedJob.title,
+          jobId: selectedJob.id
+        }));
+      } else if (value === 'general') {
+        setFormData(prev => ({
+          ...prev,
+          jobTitle: 'General Application',
+          jobId: 'GEN-001'
+        }));
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const nextStep = () => setStep(prev => prev + 1);
+  const prevStep = () => setStep(prev => prev - 1);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Direct POST to candidates table (Public Access allowed in API)
       const response = await fetch('/api/database', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,24 +172,25 @@ function ApplyForm() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white p-8 sm:p-12 rounded-[2.5rem] shadow-2xl shadow-blue-100 max-w-lg w-full text-center border border-slate-100"
+          className="bg-white/10 backdrop-blur-3xl p-12 rounded-[3.5rem] shadow-2xl max-w-xl w-full text-center border border-white/20 relative"
         >
-          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={48} />
+          <div className="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-green-500/20">
+            <CheckCircle size={56} />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 mb-4">Application Received!</h1>
-          <p className="text-slate-500 mb-8 leading-relaxed">
-            Thank you for applying to <strong>Vimanasa Services LLP</strong>. We have received your application for <strong>{formData.jobTitle}</strong> and our recruitment team will contact you shortly.
+          <h1 className="text-4xl font-black text-white mb-4">You're All Set!</h1>
+          <p className="text-blue-100 mb-10 text-lg font-medium leading-relaxed">
+            Your application for <span className="text-white font-black underline decoration-blue-500">{formData.jobTitle}</span> has been received. Our team will review it and get back to you shortly.
           </p>
           <button 
-            onClick={() => window.location.href = 'https://vimanasa.com'}
-            className="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
+            onClick={() => window.location.href = '/jobs'}
+            className="w-full bg-white text-slate-900 font-black py-5 rounded-2xl hover:bg-blue-50 transition-all shadow-xl text-lg"
           >
-            Back to Website
+            Explore More Jobs
           </button>
         </motion.div>
       </div>
@@ -129,168 +198,187 @@ function ApplyForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto">
-        <header className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-16 w-auto" />
+    <div className="min-h-screen bg-slate-900 py-12 px-4 relative overflow-hidden flex flex-col justify-center">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/30 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/30 rounded-full blur-[120px] animate-pulse delay-1000" />
+      </div>
+
+      <div className="max-w-3xl mx-auto w-full relative z-10">
+        <header className="text-center mb-10">
+          <motion.div initial={{ y: -20 }} animate={{ y: 0 }} className="flex justify-center mb-6">
+            <div className="bg-white p-4 rounded-2xl shadow-xl">
+              <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-12 w-auto" />
+            </div>
+          </motion.div>
+          <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-black text-white tracking-tight uppercase">Apply for Excellence</motion.h1>
+          <p className="text-blue-200 mt-2 font-medium">Step {step} of 3: {step === 1 ? 'Personal Profile' : step === 2 ? 'Professional Journey' : 'Identity & Verification'}</p>
+          
+          {/* Progress Bar */}
+          <div className="mt-6 max-w-xs mx-auto h-2 bg-white/10 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: `${(step / 3) * 100}%` }} 
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+            />
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Candidate Application</h1>
-          <p className="text-slate-500 mt-3 text-lg font-medium">Join the Vimanasa Services LLP team</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100">
-          {/* Section 1: Position */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Briefcase size={20} /></div>
-              <h2 className="text-xl font-bold text-slate-800">Position Applied For</h2>
-            </div>
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">Applying for Role</p>
-              <p className="text-xl font-bold text-slate-900">{formData.jobTitle}</p>
-              <p className="text-xs text-slate-500 mt-1">ID: {formData.jobId}</p>
-            </div>
-          </section>
+        <div className="bg-white/5 backdrop-blur-2xl p-8 md:p-12 rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden relative">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div 
+                key="step1"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
+                className="space-y-8"
+              >
+                <div className="space-y-6">
+                  <div className="relative">
+                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" size={20} />
+                    <select 
+                      name="jobSelection" 
+                      value={formData.jobId} 
+                      onChange={handleChange}
+                      className="w-full pl-12 pr-4 py-5 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all appearance-none"
+                    >
+                      <option className="bg-slate-900" value="general">General Application</option>
+                      {availableJobs.map(job => (
+                        <option className="bg-slate-900" key={job.id} value={job.id}>{job.title}</option>
+                      ))}
+                    </select>
+                  </div>
 
-          {/* Section 2: Personal */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><User size={20} /></div>
-              <h2 className="text-xl font-bold text-slate-800">Personal Information</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Full Name *</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="fullName" value={formData.fullName} onChange={handleChange} required className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="John Doe" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input icon={User} name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Full Name" />
+                    <Input icon={Phone} name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone Number" />
+                    <Input icon={Mail} name="email" value={formData.email} onChange={handleChange} placeholder="Email Address" type="email" />
+                    <Input icon={Calendar} name="dob" value={formData.dob} onChange={handleChange} placeholder="Date of Birth" type="date" />
+                  </div>
+                  
+                  <div className="relative">
+                    <MapPin className="absolute left-4 top-5 text-blue-400" size={20} />
+                    <textarea 
+                      name="address" 
+                      value={formData.address} 
+                      onChange={handleChange} 
+                      rows={3} 
+                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-500" 
+                      placeholder="Current Address" 
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Phone Number *</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="phone" value={formData.phone} onChange={handleChange} required className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="+91 00000 00000" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="email" value={formData.email} onChange={handleChange} type="email" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="john@example.com" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Date of Birth</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="dob" value={formData.dob} onChange={handleChange} type="date" className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" />
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 space-y-2">
-              <label className="text-sm font-bold text-slate-700">Current Address</label>
-              <div className="relative">
-                <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
-                <textarea name="address" value={formData.address} onChange={handleChange} rows={3} className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="Enter your full address" />
-              </div>
-            </div>
-          </section>
+                
+                <button type="button" onClick={nextStep} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3">
+                  Continue to Career Details <ArrowRight size={20} />
+                </button>
+              </motion.div>
+            )}
 
-          {/* Section 3: Identity */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CreditCard size={20} /></div>
-              <h2 className="text-xl font-bold text-slate-800">Identity & Documents</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Aadhar Number</label>
-                <input name="aadhar" value={formData.aadhar} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="0000 0000 0000" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">PAN Number</label>
-                <input name="pan" value={formData.pan} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="ABCDE1234F" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Resume URL (Drive Link)</label>
-                <div className="relative">
-                  <Upload className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="resumeUrl" value={formData.resumeUrl} onChange={handleChange} className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="Paste link to your resume" />
+            {step === 2 && (
+              <motion.div 
+                key="step2"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
+                className="space-y-8"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input icon={Building2} name="employer" value={formData.employer} onChange={handleChange} placeholder="Current Employer" />
+                  <Input icon={Award} name="experience" value={formData.experience} onChange={handleChange} placeholder="Years of Experience" type="number" />
+                  <Input icon={IndianRupee} name="currentSalary" value={formData.currentSalary} onChange={handleChange} placeholder="Current Salary (₹)" />
+                  <Input icon={Sparkles} name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} placeholder="Expected Salary (₹)" />
+                  <Input icon={Clock} name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} placeholder="Notice Period (Days)" type="number" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Photo URL (Drive Link)</label>
                 <div className="relative">
-                  <Upload className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input name="photoUrl" value={formData.photoUrl} onChange={handleChange} className="w-full pl-12 pr-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="Paste link to your photo" />
+                  <BookOpen className="absolute left-4 top-5 text-blue-400" size={20} />
+                  <textarea 
+                    name="skills" 
+                    value={formData.skills} 
+                    onChange={handleChange} 
+                    rows={3} 
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-500" 
+                    placeholder="Key Skills (e.g. Management, Security, CCTV)" 
+                  />
                 </div>
-              </div>
-            </div>
-          </section>
 
-          {/* Section 4: Professional */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><FileText size={20} /></div>
-              <h2 className="text-xl font-bold text-slate-800">Professional Experience</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-bold text-slate-700">Current / Last Employer</label>
-                <input name="employer" value={formData.employer} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="Company Name" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Total Experience (Years)</label>
-                <input name="experience" value={formData.experience} onChange={handleChange} type="number" className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Current Salary (₹)</label>
-                <input name="currentSalary" value={formData.currentSalary} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="50,000" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Expected Salary (₹)</label>
-                <input name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="60,000" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700">Notice Period (Days)</label>
-                <input name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} type="number" className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="30" />
-              </div>
-            </div>
-            <div className="mt-6 space-y-2">
-              <label className="text-sm font-bold text-slate-700">Skills (Comma separated)</label>
-              <input name="skills" value={formData.skills} onChange={handleChange} className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium" placeholder="Security, Management, CCTV, etc." />
-            </div>
-          </section>
+                <div className="flex gap-4">
+                  <button type="button" onClick={prevStep} className="flex-1 bg-white/10 hover:bg-white/20 text-white font-black py-5 rounded-2xl transition-all border border-white/10">
+                    Back
+                  </button>
+                  <button type="button" onClick={nextStep} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3">
+                    Next: Verification <ArrowRight size={20} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
-          <div className="pt-8 border-t border-slate-100">
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-3 text-lg"
-            >
-              {loading ? (
-                <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>Submit Application <ArrowRight size={20} /></>
-              )}
-            </button>
-            <p className="text-center text-slate-400 text-xs mt-4">
-              By submitting, you agree to our recruitment terms and data privacy policy.
-            </p>
-          </div>
-        </form>
+            {step === 3 && (
+              <motion.div 
+                key="step3"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
+                className="space-y-8"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input icon={CreditCard} name="aadhar" value={formData.aadhar} onChange={handleChange} placeholder="Aadhar Number" />
+                  <Input icon={ShieldCheck} name="pan" value={formData.pan} onChange={handleChange} placeholder="PAN Number" />
+                  <Input icon={FileText} name="resumeUrl" value={formData.resumeUrl} onChange={handleChange} placeholder="Resume Drive Link" />
+                  <Input icon={Camera} name="photoUrl" value={formData.photoUrl} onChange={handleChange} placeholder="Photo Drive Link" />
+                </div>
+
+                <div className="p-6 bg-blue-500/10 rounded-[2rem] border border-blue-500/20 flex gap-4 items-center">
+                  <div className="p-3 bg-blue-500 rounded-full text-white"><Sparkles size={24} /></div>
+                  <p className="text-sm text-blue-100 font-medium">Double-check your Drive links to ensure our team can view your documents!</p>
+                </div>
+
+                <div className="flex gap-4">
+                  <button type="button" onClick={prevStep} className="flex-1 bg-white/10 hover:bg-white/20 text-white font-black py-5 rounded-2xl transition-all border border-white/10">
+                    Back
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={handleSubmit} 
+                    disabled={loading}
+                    className="flex-[2] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3"
+                  >
+                    {loading ? (
+                      <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>Finalize Application <CheckCircle size={20} /></>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Input({ icon: Icon, placeholder, ...props }) {
+  return (
+    <div className="relative group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-white transition-colors">
+        <Icon size={20} />
+      </div>
+      <input 
+        {...props} 
+        placeholder={placeholder}
+        className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 focus:bg-white/15 transition-all placeholder:text-slate-500" 
+      />
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading Immersive Experience...</div>}>
       <ApplyForm />
     </Suspense>
   );

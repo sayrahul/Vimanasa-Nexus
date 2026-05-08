@@ -5,25 +5,54 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('[Supabase] Missing configuration:', {
-    url: !!supabaseUrl,
-    anonKey: !!supabaseAnonKey
-  });
-}
+// Global variables to hold the singleton instances
+let supabaseInstance = null;
+let supabaseAdminInstance = null;
 
-// Client for browser (uses anon key with RLS)
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+/**
+ * Singleton getter for the standard Supabase client
+ */
+export const getSupabase = () => {
+  if (supabaseInstance) return supabaseInstance;
 
-// Client for server-side operations
-// Priority: Service Role Key > Anon Key
-const adminKey = supabaseServiceRoleKey || supabaseAnonKey;
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+    return supabaseInstance;
+  }
+  
+  return null;
+};
 
-export const supabaseAdmin = supabaseUrl && adminKey
-  ? createClient(supabaseUrl, adminKey)
-  : null;
+export const supabase = typeof window !== 'undefined' ? getSupabase() : null;
+
+/**
+ * Singleton getter for the Admin Supabase client
+ */
+export const getSupabaseAdmin = () => {
+  if (supabaseAdminInstance) return supabaseAdminInstance;
+
+  const adminKey = supabaseServiceRoleKey || supabaseAnonKey;
+  if (supabaseUrl && adminKey) {
+    supabaseAdminInstance = createClient(supabaseUrl, adminKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+    return supabaseAdminInstance;
+  }
+  
+  return null;
+};
+
+export const supabaseAdmin = getSupabaseAdmin();
 
 // Helper function to check if Supabase is configured
 export const isSupabaseConfigured = () => {

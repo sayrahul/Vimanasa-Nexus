@@ -20,6 +20,11 @@ async function verifyRequest(request, table, method) {
     return { success: true, public: true };
   }
 
+  // PUBLIC ACCESS RULE: Allow anyone to see open jobs
+  if (table === 'job_openings' && method === 'GET') {
+    return { success: true, public: true };
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { success: false, error: 'Unauthorized', message: 'No token provided', status: 401 };
@@ -54,7 +59,8 @@ const tableMapping = {
   attendance: 'attendance',
   leave: 'leave_requests',
   expenses: 'expense_claims',
-  invoices: 'client_invoices'
+  invoices: 'client_invoices',
+  job_openings: 'job_openings'
 };
 
 export async function GET(req) {

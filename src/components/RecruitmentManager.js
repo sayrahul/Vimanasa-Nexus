@@ -20,7 +20,11 @@ import {
   ArrowRight,
   ChevronRight,
   Download,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  Edit2,
+  X,
+  ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/apiClient';
@@ -77,11 +81,14 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
   };
 
   const handleConvertToEmployee = (candidate) => {
-    // Navigate to Workforce tab and pass candidate data
-    // This uses the existing pattern in page.js to pre-fill forms
+    // Automatically mark as Hired in database
+    handleUpdateStatus(candidate, 'hired');
+
+    // Navigate to Placements -> Workforce sub-tab
     const event = new CustomEvent('navigate-tab', { 
       detail: { 
-        tab: 'workforce', 
+        tab: 'placements', 
+        subTab: 'workforce',
         data: {
           'Employee': candidate['Full Name'],
           'Phone': candidate['Phone'],
@@ -92,13 +99,13 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
           'Role': candidate['Job Title'],
           'DOB': candidate['Date of Birth'],
           'Address': candidate['Address'],
-          'candidate_id': candidate.id // To mark as converted later
+          'candidate_id': candidate.id
         },
         action: 'add'
       } 
     });
     window.dispatchEvent(event);
-    onNavigate('workforce');
+    onNavigate('placements');
     setShowDrawer(false);
   };
 
@@ -139,6 +146,15 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
             )}
           >
             Pipeline
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('openings')}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
+              activeSubTab === 'openings' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+            )}
+          >
+            Openings
           </button>
         </div>
       </div>
@@ -248,7 +264,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeSubTab === 'pipeline' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {['Pending', 'Shortlisted', 'Rejected'].map(status => (
             <div key={status} className="bg-slate-50/50 p-4 rounded-[2rem] border border-slate-200 min-h-[500px]">
@@ -292,6 +308,11 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
             </div>
           ))}
         </div>
+      ) : (
+        <JobOpeningsList 
+          jobs={data?.job_openings || []} 
+          onUpdate={() => onUpdate('job_openings')} 
+        />
       )}
 
       {/* Candidate Profile Drawer */}
@@ -461,6 +482,176 @@ function DetailItem({ label, value }) {
     <div>
       <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{label}</p>
       <p className="font-bold text-slate-800 break-words">{value || 'N/A'}</p>
+    </div>
+  );
+}
+
+function JobOpeningsList({ jobs, onUpdate }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [newJob, setNewJob] = useState({
+    title: '',
+    department: '',
+    location: 'Remote',
+    type: 'Full-time',
+    salary_range: '',
+    description: '',
+    requirements: '',
+    status: 'open'
+  });
+
+  const handleSaveJob = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const response = await apiClient.post('/api/database', {
+        table: 'job_openings',
+        data: newJob
+      });
+      if (response.success) {
+        toast.success('Job opening created successfully!');
+        setShowAddForm(false);
+        setNewJob({ title: '', department: '', location: 'Remote', type: 'Full-time', salary_range: '', description: '', requirements: '', status: 'open' });
+        onUpdate();
+      }
+    } catch (error) {
+      toast.error('Failed to create job opening');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleStatus = async (job) => {
+    const newStatus = job.status === 'open' ? 'closed' : 'open';
+    try {
+      const response = await apiClient.put('/api/database', {
+        table: 'job_openings',
+        id: job.id,
+        data: { ...job, status: newStatus }
+      });
+      if (response.success) {
+        toast.success(`Job status updated to ${newStatus}`);
+        onUpdate();
+      }
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Active Openings ({jobs.length})</h3>
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
+        >
+          <Plus size={18} /> New Opening
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {jobs.length > 0 ? jobs.map(job => (
+          <div key={job.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h4 className="font-black text-slate-900 text-lg leading-tight">{job.title}</h4>
+                <p className="text-sm text-slate-500 font-medium">{job.department} • {job.location}</p>
+              </div>
+              <button 
+                onClick={() => toggleStatus(job)}
+                className={cn(
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all",
+                  job.status === 'open' ? "bg-green-50 text-green-600 border-green-100" : "bg-slate-100 text-slate-400 border-slate-200"
+                )}
+              >
+                {job.status}
+              </button>
+            </div>
+            <div className="flex gap-4 text-xs font-bold text-slate-500 mb-4">
+              <div className="flex items-center gap-1"><Clock size={14} /> {job.type}</div>
+              <div className="flex items-center gap-1"><DollarSign size={14} /> {job.salary_range}</div>
+            </div>
+            <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase">Shared Link: /apply?job={job.id}</p>
+              <button className="text-blue-600 hover:text-blue-700">
+                <Edit2 size={16} />
+              </button>
+            </div>
+          </div>
+        )) : (
+          <div className="col-span-full py-12 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 italic">
+            No job openings created yet.
+          </div>
+        )}
+      </div>
+
+      {/* Add Job Modal */}
+      <AnimatePresence>
+        {showAddForm && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]"
+              onClick={() => setShowAddForm(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl z-[111] overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Create Job Opening</h3>
+                  <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-slate-100 rounded-full transition-all"><X size={24} className="text-slate-400" /></button>
+                </div>
+                
+                <form onSubmit={handleSaveJob} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Job Title</label>
+                      <input required className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Department</label>
+                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.department} onChange={e => setNewJob({...newJob, department: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Location</label>
+                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Type</label>
+                      <select className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.type} onChange={e => setNewJob({...newJob, type: e.target.value})}>
+                        <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Salary Range</label>
+                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.salary_range} onChange={e => setNewJob({...newJob, salary_range: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Description</label>
+                    <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Requirements</label>
+                    <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.requirements} onChange={e => setNewJob({...newJob, requirements: e.target.value})} />
+                  </div>
+                  
+                  <div className="pt-6">
+                    <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50">
+                      {isSaving ? 'Saving...' : 'Publish Opening'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

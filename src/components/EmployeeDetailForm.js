@@ -72,11 +72,17 @@ export default function EmployeeDetailForm({ employee, onSave, onCancel }) {
 
   useEffect(() => {
     if (employee) {
+      // Helper to split full name if only 'Employee' or 'name' is provided
+      const fullName = employee['Employee'] || employee.name || '';
+      const nameParts = fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
       // Map employee data to form fields
       setFormData({
-        employeeId: employee['Employee ID'] || employee.employeeId || '',
-        firstName: employee['First Name'] || employee.firstName || '',
-        lastName: employee['Last Name'] || employee.lastName || '',
+        employeeId: employee['Employee ID'] || employee.employeeId || `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+        firstName: employee['First Name'] || employee.firstName || firstName,
+        lastName: employee['Last Name'] || employee.lastName || lastName,
         email: employee['Email'] || employee.email || '',
         phone: employee['Phone'] || employee.phone || '',
         alternatePhone: employee['Alternate Phone'] || employee.alternatePhone || '',
@@ -84,16 +90,16 @@ export default function EmployeeDetailForm({ employee, onSave, onCancel }) {
         gender: employee['Gender'] || employee.gender || '',
         maritalStatus: employee['Marital Status'] || employee.maritalStatus || '',
         
-        currentAddress: employee['Current Address'] || employee.currentAddress || '',
+        currentAddress: employee['Current Address'] || employee['Address'] || employee.currentAddress || '',
         permanentAddress: employee['Permanent Address'] || employee.permanentAddress || '',
         city: employee['City'] || employee.city || '',
         state: employee['State'] || employee.state || '',
         pincode: employee['Pincode'] || employee.pincode || '',
         
-        designation: employee['Designation'] || employee.designation || '',
+        designation: employee['Designation'] || employee['Role'] || employee.designation || '',
         department: employee['Department'] || employee.department || '',
-        dateOfJoining: employee['Date of Joining'] || employee.dateOfJoining || '',
-        employmentType: employee['Employment Type'] || employee.employmentType || '',
+        dateOfJoining: employee['Date of Joining'] || new Date().toISOString().split('T')[0],
+        employmentType: employee['Employment Type'] || employee.employmentType || 'Full-time',
         workLocation: employee['Work Location'] || employee.workLocation || '',
         reportingManager: employee['Reporting Manager'] || employee.reportingManager || '',
         employeeStatus: employee['Status'] || employee.employeeStatus || 'Active',
@@ -101,9 +107,9 @@ export default function EmployeeDetailForm({ employee, onSave, onCancel }) {
         bankName: employee['Bank Name'] || employee.bankName || '',
         accountNumber: employee['Account Number'] || employee.accountNumber || '',
         ifscCode: employee['IFSC Code'] || employee.ifscCode || '',
-        panNumber: employee['PAN Number'] || employee.panNumber || '',
+        panNumber: employee['PAN Number'] || employee['PAN'] || employee.panNumber || '',
         
-        aadharNumber: employee['Aadhar Number'] || employee.aadharNumber || '',
+        aadharNumber: employee['Aadhar Number'] || employee['Aadhar'] || employee.aadharNumber || '',
         pfNumber: employee['PF Number'] || employee.pfNumber || '',
         esiNumber: employee['ESI Number'] || employee.esiNumber || '',
         uanNumber: employee['UAN Number'] || employee.uanNumber || '',
@@ -126,6 +132,13 @@ export default function EmployeeDetailForm({ employee, onSave, onCancel }) {
         previousDesignation: employee['Previous Designation'] || employee.previousDesignation || '',
         yearsOfExperience: employee['Years of Experience'] || employee.yearsOfExperience || '',
       });
+    } else {
+      // For brand new employees, generate an ID and set default date
+      setFormData(prev => ({
+        ...prev,
+        employeeId: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+        dateOfJoining: new Date().toISOString().split('T')[0]
+      }));
     }
   }, [employee]);
 

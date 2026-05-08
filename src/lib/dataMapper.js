@@ -18,11 +18,11 @@ export function toDB(table, data) {
     case 'workforce':
       return {
         ...(dbData.id && { id: dbData.id }),
-        employee_id: data['ID'] || data.employee_id || `EMP${String(Date.now()).slice(-6)}`,
+        employee_id: data['Employee ID'] || data['ID'] || data.employee_id || `EMP${String(Date.now()).slice(-6)}`,
         name: data['Employee'] || data['First Name'] || data.name,
         email: data['Email'] || data.email,
         phone: data['Phone'] || data.phone,
-        designation: data['Role'] || data.designation,
+        designation: data['Designation'] || data['Role'] || data.designation,
         status: (data['Status'] || data['Employee Status'] || data.status || 'Active').toLowerCase(),
         salary: parseFloat(data['Basic Salary'] || data.salary || 0),
         aadhar_number: data['Aadhar'] || data.aadhar_number,
@@ -167,6 +167,20 @@ export function toDB(table, data) {
         status: (data['Status'] || data.status || 'pending').toLowerCase(),
         admin_notes: data.admin_notes || '',
         ...(data.metadata ? { metadata: data.metadata } : {})
+      };
+
+    case 'job_openings':
+      return {
+        ...(dbData.id && { id: dbData.id }),
+        title: data['Job Title'] || data.title,
+        department: data['Department'] || data.department,
+        location: data['Location'] || data.location || 'Remote',
+        type: data['Job Type'] || data.type || 'Full-time',
+        salary_range: data['Salary Range'] || data.salary_range,
+        description: data['Description'] || data.description,
+        requirements: data['Requirements'] || data.requirements,
+        status: (data['Status'] || data.status || 'open').toLowerCase(),
+        metadata
       };
       
     default:
@@ -332,6 +346,22 @@ export function toFrontend(table, data) {
         'Status': data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : 'Pending',
         'Resume Link': data.resume_url,
         'Photo Link': data.photo_url,
+        ...data,
+        ...(data.metadata || {})
+      };
+      
+    case 'job_openings':
+      return {
+        id: data.id,
+        'Created On': data.created_at,
+        'Job Title': data.title,
+        'Department': data.department,
+        'Location': data.location,
+        'Job Type': data.type,
+        'Salary Range': data.salary_range,
+        'Status': data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : 'Open',
+        'Description': data.description,
+        'Requirements': data.requirements,
         ...data,
         ...(data.metadata || {})
       };

@@ -44,6 +44,8 @@ export default function DashboardLayout() {
     leaveRequests: [],
     expenses: [],
     invoices: [],
+    candidates: [],
+    job_openings: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -127,6 +129,32 @@ export default function DashboardLayout() {
     }
   }, []);
 
+  // Listen for navigation events from other components
+  useEffect(() => {
+    const handleNavigate = (e) => {
+      const { tab, subTab, data: incomingData, action } = e.detail;
+      
+      // Set main tab
+      setActiveTab(tab);
+      
+      // Set sub-tab if provided
+      if (subTab) {
+        setSubTabs(prev => ({ ...prev, [tab]: subTab }));
+      }
+      
+      if (action === 'add') {
+        // Special case for workforce/placements mapping
+        const formTarget = tab === 'placements' ? 'workforce' : tab;
+        setEditingItem(incomingData);
+        setShowForm(true);
+        setFormType(formTarget);
+      }
+    };
+
+    window.addEventListener('navigate-tab', handleNavigate);
+    return () => window.removeEventListener('navigate-tab', handleNavigate);
+  }, []);
+
   const fetchData = useCallback(async (tab, silent = false) => {
     if (!isAuthenticated) return;
     
@@ -194,8 +222,10 @@ export default function DashboardLayout() {
       fetchData('expenses', silent);
       fetchData('compliance', silent);
       fetchData('candidates', silent);
+      fetchData('job_openings', silent);
     } else if (activeTab === 'recruitment') {
       fetchData('candidates', silent);
+      fetchData('job_openings', silent);
     } else if (activeTab === 'clients') {
       fetchData('clients', silent);
       fetchData('partners', silent);
@@ -320,11 +350,9 @@ export default function DashboardLayout() {
       const updatedData = data[tab].filter((_, index) => index !== rowIndex);
       setData(prev => ({ ...prev, [tab]: updatedData }));
       
-      await axios.delete('/api/database', {
-        data: {
-          table: tab,
-          id: itemId
-        }
+      await apiClient.delete('/api/database', {
+        table: tab,
+        id: itemId
       });
       
       toast.success('✅ Entry deleted successfully!');
@@ -358,7 +386,7 @@ export default function DashboardLayout() {
         setData(prev => ({ ...prev, [formType]: updatedData }));
         
         // Update on server
-        await axios.put('/api/database', {
+        await apiClient.put('/api/database', {
           table: formType,
           id: editingItem.id,
           data: formData
@@ -367,7 +395,7 @@ export default function DashboardLayout() {
         toast.success('✅ Entry updated successfully!');
       } else {
         // Add new item
-        const response = await axios.post('/api/database', {
+        const response = await apiClient.post('/api/database', {
           table: formType,
           data: formData
         });
@@ -503,7 +531,7 @@ export default function DashboardLayout() {
                       employees={data.workforce}
                       onAdd={async (clientData) => {
                         try {
-                          await axios.post('/api/database', { table: 'clients', data: clientData });
+                          await apiClient.post('/api/database', { table: 'clients', data: clientData });
                           toast.success('✅ Client added successfully!');
                           fetchData('clients');
                         } catch (error) { toast.error('❌ Failed to add client.'); }
@@ -511,7 +539,7 @@ export default function DashboardLayout() {
                       onEdit={async (clientData, idx) => {
                         try {
                           const client = data.clients[idx];
-                          await axios.put('/api/database', { table: 'clients', id: client.id, data: clientData });
+                          await apiClient.put('/api/database', { table: 'clients', id: client.id, data: clientData });
                           toast.success('✅ Client updated successfully!');
                           fetchData('clients');
                         } catch (error) { toast.error('❌ Failed to update client.'); }
@@ -519,7 +547,7 @@ export default function DashboardLayout() {
                       onDelete={async (client, idx) => {
                         if (!confirm('Delete this client?')) return;
                         try {
-                          await axios.delete('/api/database', { data: { table: 'clients', id: client.id } });
+                          await apiClient.delete('/api/database', { table: 'clients', id: client.id });
                           toast.success('✅ Client deleted successfully!');
                           fetchData('clients');
                         } catch (error) { toast.error('❌ Failed to delete client.'); }
@@ -589,7 +617,7 @@ export default function DashboardLayout() {
                       clients={data.clients}
                       onSave={async (employee) => {
                         try {
-                          await axios.put('/api/database', { table: 'workforce', id: employee.id, data: employee });
+                          await apiClient.put('/api/database', { table: 'workforce', id: employee.id, data: employee });
                           toast.success(`✅ ${employee.Employee} deployment updated!`);
                           fetchData('workforce');
                         } catch (error) { toast.error('❌ Failed to update deployment.'); }
@@ -606,7 +634,7 @@ export default function DashboardLayout() {
                       leaveRequests={data.leave}
                       onSave={async (record) => {
                         try {
-                          await axios.post('/api/database', { table: 'attendance', data: record });
+                          await apiClient.post('/api/database', { table: 'attendance', data: record });
                           toast.success('✅ Attendance recorded successfully!');
                           fetchData('attendance');
                         } catch (error) { toast.error('❌ Failed to save attendance.'); }
@@ -622,14 +650,14 @@ export default function DashboardLayout() {
                       leaveRequests={data.leave}
                       onSave={async (record) => {
                         try {
-                          await axios.post('/api/database', { table: 'leave', data: record });
+                          await apiClient.post('/api/database', { table: 'leave', data: record });
                           toast.success('✅ Leave request submitted!');
                           fetchData('leave');
                         } catch (error) { toast.error('❌ Failed to submit leave request.'); }
                       }}
                       onApprove={async (request, idx) => {
                         try {
-                          await axios.put('/api/database', {
+                          await apiClient.put('/api/database', {
                             table: 'leave', id: request.id,
                             data: { ...request, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() }
                           });
@@ -639,7 +667,7 @@ export default function DashboardLayout() {
                       }}
                       onReject={async (request, idx) => {
                         try {
-                          await axios.put('/api/database', {
+                          await apiClient.put('/api/database', {
                             table: 'leave', id: request.id,
                             data: { ...request, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() }
                           });
@@ -689,7 +717,7 @@ export default function DashboardLayout() {
                       attendanceData={data.attendance}
                       onSavePayroll={async (record) => {
                         try {
-                          await axios.post('/api/database', { table: 'payroll', data: record });
+                          await apiClient.post('/api/database', { table: 'payroll', data: record });
                           toast.success('✅ Payroll processed and saved successfully!');
                           fetchData('payroll');
                         } catch (error) { toast.error('❌ Failed to save payroll data.'); }
@@ -707,14 +735,14 @@ export default function DashboardLayout() {
                       attendance={data.attendance}
                       onGenerateInvoice={async (invoiceData) => {
                         try {
-                          await axios.post('/api/database', { table: 'invoices', data: invoiceData });
+                          await apiClient.post('/api/database', { table: 'invoices', data: invoiceData });
                           toast.success('✅ Invoice generated successfully!');
                           fetchData('invoices');
                         } catch (error) { toast.error('❌ Failed to generate invoice.'); }
                       }}
                       onUpdateStatus={async (invoice, idx, newStatus) => {
                         try {
-                          await axios.put('/api/database', { table: 'invoices', id: invoice.id, data: { ...invoice, status: newStatus } });
+                          await apiClient.put('/api/database', { table: 'invoices', id: invoice.id, data: { ...invoice, status: newStatus } });
                           toast.success('✅ Invoice status updated!');
                           fetchData('invoices');
                         } catch (error) { toast.error('❌ Failed to update status.'); }
@@ -730,21 +758,21 @@ export default function DashboardLayout() {
                       expenses={data.expenses}
                       onSave={async (record) => {
                         try {
-                          await axios.post('/api/database', { table: 'expenses', data: record });
+                          await apiClient.post('/api/database', { table: 'expenses', data: record });
                           toast.success('✅ Expense claim submitted!');
                           fetchData('expenses');
                         } catch (error) { toast.error('❌ Failed to submit expense claim.'); }
                       }}
                       onApprove={async (expense, idx) => {
                         try {
-                          await axios.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() } });
                           toast.success('✅ Expense claim approved');
                           fetchData('expenses');
                         } catch (error) { toast.error('❌ Failed to approve expense claim.'); }
                       }}
                       onReject={async (expense, idx) => {
                         try {
-                          await axios.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() } });
                           toast.success('✅ Expense claim rejected');
                           fetchData('expenses');
                         } catch (error) { toast.error('❌ Failed to reject expense claim.'); }
@@ -775,7 +803,7 @@ export default function DashboardLayout() {
                       compliances={data.compliance} 
                       onSave={async (record) => {
                         try {
-                          await axios.post('/api/database', { table: 'compliance', data: record });
+                          await apiClient.post('/api/database', { table: 'compliance', data: record });
                           toast.success('✅ Compliance record saved!');
                           fetchData('compliance');
                         } catch (error) { toast.error('❌ Failed to save compliance record.'); }
