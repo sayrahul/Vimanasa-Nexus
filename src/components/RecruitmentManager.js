@@ -2,29 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, 
-  Search, 
-  Plus, 
-  Filter, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  MoreVertical,
-  Mail,
-  Phone,
-  Calendar,
-  Briefcase,
-  FileText,
-  UserPlus,
-  ArrowRight,
-  ChevronRight,
-  Download,
-  AlertCircle,
-  DollarSign,
-  Edit2,
-  X,
-  ArrowUpRight
+  Users, Search, Plus, Filter, Eye, CheckCircle, XCircle, Clock, 
+  MoreVertical, Mail, Phone, Calendar, Briefcase, FileText, 
+  UserPlus, ArrowRight, ChevronRight, Download, AlertCircle, 
+  DollarSign, Edit2, X, ArrowUpRight, Trash2, MapPin, Building
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/apiClient';
@@ -41,12 +22,6 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const candidates = data?.candidates || [];
   const jobs = data?.job_openings || [];
-
-  console.log('--- RECRUITMENT HUB DATA ---');
-  console.log('Candidates Count:', candidates.length);
-  console.log('Job Openings Count:', jobs.length);
-  console.log('Raw Data Object:', data);
-  console.log('----------------------------');
 
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = 
@@ -68,13 +43,12 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
         data: {
           ...candidate,
           'Status': newStatus,
-          admin_notes: candidate.admin_notes || '',
           reviewed_at: new Date().toISOString()
         }
       });
 
       if (response.success) {
-        toast.success(`Candidate status updated to ${newStatus}`);
+        toast.success(`Status updated to ${newStatus}`);
         onUpdate('candidates');
         if (selectedCandidate?.id === candidate.id) {
           setSelectedCandidate({ ...selectedCandidate, Status: newStatus });
@@ -90,7 +64,6 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
   const handleConvertToEmployee = async (candidate) => {
     setIsUpdating(true);
     try {
-      // 1. Create the Employee Record in Workforce
       const employeeData = {
         'Employee ID': `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         'Employee': candidate['Full Name'],
@@ -113,21 +86,15 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       });
 
       if (empResponse.success) {
-        // 2. Automatically mark as Hired in database
-        await handleUpdateStatus(candidate, 'hired');
-        toast.success(`Successfully converted ${candidate['Full Name']} to Employee!`);
-        
-        // 3. Refresh data
+        await handleUpdateStatus(candidate, 'Hired');
+        toast.success(`Hired ${candidate['Full Name']}!`);
         onUpdate('workforce');
         onUpdate('candidates');
-
-        // 4. Navigate to Placements
         onNavigate('placements');
         setShowDrawer(false);
       }
     } catch (error) {
-      console.error('Conversion error:', error);
-      toast.error('Failed to convert candidate to employee');
+      toast.error('Conversion failed');
     } finally {
       setIsUpdating(false);
     }
@@ -138,364 +105,277 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'shortlisted': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'rejected': return 'bg-red-50 text-red-600 border-red-100';
-      case 'on_hold': return 'bg-slate-50 text-slate-600 border-slate-100';
+      case 'on_hold': case 'on-hold': case 'hold': return 'bg-slate-100 text-slate-600 border-slate-200';
       case 'hired': return 'bg-green-50 text-green-600 border-green-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+      default: return 'bg-slate-50 text-slate-400 border-slate-100';
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 px-2 sm:px-0 pb-10">
+      {/* Premium Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Recruitment Portal</h1>
-          <p className="text-slate-500 mt-1 flex items-center gap-2">
-            Manage job applications and hiring pipeline 
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-black uppercase">
-              {candidates.length} Apps • {jobs.length} Openings
-            </span>
-          </p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            Recruitment Portal <span className="text-blue-600 text-base font-black px-3 py-1 bg-blue-50 rounded-full">HQ</span>
+          </h1>
+          <p className="text-slate-500 mt-2 font-medium">Manage workforce demand and candidate pipeline</p>
         </div>
-        <div className="flex gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button 
-            onClick={() => setActiveSubTab('applications')}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
-              activeSubTab === 'applications' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
-            )}
-          >
-            Applications
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('pipeline')}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
-              activeSubTab === 'pipeline' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
-            )}
-          >
-            Pipeline
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('openings')}
-            className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold transition-all",
-              activeSubTab === 'openings' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
-            )}
-          >
-            Openings
-          </button>
+        
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner w-full lg:w-auto">
+          {['applications', 'pipeline', 'openings'].map(tab => (
+            <button 
+              key={tab}
+              onClick={() => setActiveSubTab(tab)}
+              className={cn(
+                "flex-1 lg:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all capitalize",
+                activeSubTab === tab 
+                  ? "bg-white text-blue-600 shadow-md transform scale-105" 
+                  : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </div>
 
-      {activeSubTab === 'applications' ? (
-        <div className="space-y-4">
-          {/* Filters & Search */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search candidates by name, phone or position..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium"
-              />
-            </div>
-            <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-              {['all', 'pending', 'shortlisted', 'on_hold', 'rejected', 'hired'].map(status => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider border transition-all whitespace-nowrap",
-                    statusFilter === status 
-                      ? "bg-slate-900 text-white border-slate-900 shadow-md" 
-                      : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
-                  )}
-                >
-                  {status.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Applications Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100">
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Candidate</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Position</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Exp / Salary</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredCandidates.length > 0 ? filteredCandidates.map((candidate) => (
-                    <tr key={candidate.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-sm border-2 border-white shadow-sm">
-                            {candidate['Full Name']?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{candidate['Full Name']}</p>
-                            <p className="text-xs text-slate-500 flex items-center gap-1">
-                              <Calendar size={12} /> Applied {new Date(candidate['Applied On']).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-2">
-                          <Briefcase size={14} className="text-slate-400" />
-                          <span className="text-sm font-bold text-slate-700">{candidate['Job Title']}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div>
-                          <p className="text-sm font-bold text-slate-800">{candidate['Experience']}</p>
-                          <p className="text-xs text-slate-500">Exp: {candidate['Expected Salary']}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
-                          getStatusColor(candidate['Status'])
-                        )}>
-                          {candidate['Status'] || 'Pending'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                        <button 
-                          onClick={() => {
-                            setSelectedCandidate(candidate);
-                            setShowDrawer(true);
-                          }}
-                          className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-all"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-20 text-center text-slate-400 italic">
-                        No applications found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      ) : activeSubTab === 'pipeline' ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {['Pending', 'Shortlisted', 'Rejected'].map(status => (
-            <div key={status} className="bg-slate-50/50 p-4 rounded-[2rem] border border-slate-200 min-h-[500px]">
-              <div className="flex items-center justify-between mb-6 px-2">
-                <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm flex items-center gap-2">
-                  <div className={cn("w-2 h-2 rounded-full", 
-                    status === 'Pending' ? "bg-amber-400" : status === 'Shortlisted' ? "bg-blue-500" : "bg-red-500"
-                  )} />
-                  {status}
-                </h3>
-                <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">
-                  {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length}
-                </span>
+      <AnimatePresence mode="wait">
+        {activeSubTab === 'applications' && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+            {/* Intelligent Search & Filter */}
+            <div className="bg-white p-5 rounded-[2.5rem] border border-slate-200 shadow-xl flex flex-col xl:flex-row gap-5 items-center">
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Search by name, role or phone..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-8 focus:ring-blue-50 outline-none transition-all font-bold text-slate-900"
+                />
               </div>
-              <div className="space-y-4">
-                {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).map(candidate => (
-                  <motion.div 
-                    layoutId={candidate.id}
-                    key={candidate.id} 
-                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                    onClick={() => {
-                      setSelectedCandidate(candidate);
-                      setShowDrawer(true);
-                    }}
+              <div className="flex gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 scrollbar-hide">
+                {['all', 'pending', 'shortlisted', 'hold', 'rejected', 'hired'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={cn(
+                      "px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+                      statusFilter === status 
+                        ? "bg-slate-900 text-white border-slate-900 shadow-xl scale-105" 
+                        : "bg-white text-slate-500 border-slate-200 hover:border-blue-400"
+                    )}
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600">
-                        {candidate['Full Name']?.charAt(0).toUpperCase()}
-                      </div>
-                      <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-                    </div>
-                    <p className="font-bold text-slate-900 text-sm mb-1">{candidate['Full Name']}</p>
-                    <p className="text-xs text-slate-500 font-medium mb-3">{candidate['Job Title']}</p>
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
-                      <span>{candidate['Experience']}</span>
-                      <span>{candidate['Expected Salary']}</span>
-                    </div>
-                  </motion.div>
+                    {status}
+                  </button>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <JobOpeningsList 
-          jobs={data?.job_openings || []} 
-          onUpdate={() => onUpdate('job_openings')} 
-        />
-      )}
 
-      {/* Candidate Profile Drawer */}
+            {/* Responsive Table Grid */}
+            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Candidate Info</th>
+                      <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Applied Role</th>
+                      <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">Experience</th>
+                      <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Review</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredCandidates.length > 0 ? filteredCandidates.map((candidate) => (
+                      <tr key={candidate.id} className="group hover:bg-blue-50/30 transition-all cursor-pointer" onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-lg">
+                              {candidate['Full Name']?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-black text-slate-900 text-base">{candidate['Full Name']}</p>
+                              <p className="text-xs text-slate-500 font-bold flex items-center gap-1 mt-1">
+                                <Phone size={12} /> {candidate['Phone']}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-slate-100 rounded-lg text-slate-500"><Briefcase size={14} /></div>
+                            <span className="text-sm font-black text-slate-700">{candidate['Job Title']}</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 hidden sm:table-cell">
+                          <p className="text-sm font-black text-slate-800">{candidate['Experience'] || 'Fresher'}</p>
+                          <p className="text-xs text-slate-400 font-bold mt-0.5">Exp: {candidate['Expected Salary']}</p>
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className={cn(
+                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
+                            getStatusColor(candidate['Status'])
+                          )}>
+                            {candidate['Status'] || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6 text-right">
+                          <button className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all shadow-sm">
+                            <Eye size={20} />
+                          </button>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-32 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-300"><Search size={40} /></div>
+                            <p className="text-slate-400 font-black uppercase tracking-widest text-sm italic">No matching applications found</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeSubTab === 'pipeline' && (
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {['Pending', 'Shortlisted', 'Rejected'].map((status, idx) => (
+              <div key={status} className="bg-slate-100/50 p-6 rounded-[3rem] border border-slate-200/60 flex flex-col min-h-[600px]">
+                <div className="flex items-center justify-between mb-8 px-4">
+                  <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-3">
+                    <span className={cn("w-3 h-3 rounded-full animate-pulse", 
+                      status === 'Pending' ? "bg-amber-400" : status === 'Shortlisted' ? "bg-blue-500" : "bg-red-500"
+                    )} />
+                    {status}
+                  </h3>
+                  <span className="bg-white px-3 py-1 rounded-full text-xs font-black text-slate-400 border border-slate-100 shadow-sm">
+                    {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length}
+                  </span>
+                </div>
+                
+                <div className="space-y-5 flex-1 overflow-y-auto pr-2 scrollbar-hide">
+                  {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).map(candidate => (
+                    <motion.div 
+                      layoutId={candidate.id}
+                      key={candidate.id} 
+                      onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
+                      className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                          {candidate['Full Name']?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="p-1.5 bg-slate-50 text-slate-300 rounded-lg group-hover:text-blue-500"><ArrowUpRight size={16} /></div>
+                      </div>
+                      <p className="font-black text-slate-900 text-base mb-1">{candidate['Full Name']}</p>
+                      <p className="text-xs text-slate-500 font-bold mb-4">{candidate['Job Title']}</p>
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                        <span className="text-[10px] font-black uppercase text-slate-400">{candidate['Experience']}</span>
+                        <span className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{candidate['Expected Salary']}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
+        {activeSubTab === 'openings' && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+            <JobOpeningsList jobs={jobs} onUpdate={onUpdate} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modern Candidate Profile Drawer */}
       <AnimatePresence>
         {showDrawer && selectedCandidate && (
           <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100]" onClick={() => setShowDrawer(false)} />
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
-              onClick={() => setShowDrawer(false)}
-            />
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-white shadow-2xl z-[101] overflow-y-auto"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white shadow-[0_0_50px_rgba(0,0,0,0.1)] z-[101] overflow-y-auto"
             >
-              <div className="p-8">
-                {/* Drawer Header */}
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-3xl bg-blue-600 text-white flex items-center justify-center font-black text-3xl shadow-xl shadow-blue-200">
+              <div className="p-10">
+                <div className="flex justify-between items-start mb-12">
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-4xl shadow-2xl shadow-blue-200 ring-8 ring-blue-50">
                       {selectedCandidate['Full Name']?.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 leading-tight">{selectedCandidate['Full Name']}</h2>
-                      <p className="text-blue-600 font-bold">{selectedCandidate['Job Title']}</p>
-                      <div className={cn(
-                        "mt-2 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider inline-block border",
-                        getStatusColor(selectedCandidate['Status'])
-                      )}>
+                      <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">{selectedCandidate['Full Name']}</h2>
+                      <p className="text-blue-600 font-bold text-lg mt-2">{selectedCandidate['Job Title']}</p>
+                      <div className={cn("mt-4 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-block border", getStatusColor(selectedCandidate['Status']))}>
                         {selectedCandidate['Status'] || 'Pending'}
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setShowDrawer(false)}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-all"
-                  >
-                    <XCircle size={24} className="text-slate-400" />
-                  </button>
+                  <button onClick={() => setShowDrawer(false)} className="p-3 bg-slate-100 text-slate-400 hover:text-slate-900 rounded-2xl transition-all"><X size={24} /></button>
                 </div>
 
-                <div className="space-y-8">
-                  {/* Contact Info */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Phone</p>
-                      <div className="flex items-center gap-2 font-bold text-slate-800">
-                        <Phone size={14} className="text-slate-400" />
-                        {selectedCandidate['Phone']}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Email</p>
-                      <div className="flex items-center gap-2 font-bold text-slate-800 truncate">
-                        <Mail size={14} className="text-slate-400" />
-                        {selectedCandidate['Email'] || 'N/A'}
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                  <div className="space-y-6">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Contact Information</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 text-slate-700 font-bold"><Phone size={18} className="text-blue-500" /> {selectedCandidate['Phone']}</div>
+                      <div className="flex items-center gap-3 text-slate-700 font-bold"><Mail size={18} className="text-blue-500" /> {selectedCandidate['Email'] || 'Not provided'}</div>
+                      <div className="flex items-center gap-3 text-slate-700 font-bold"><MapPin size={18} className="text-blue-500" /> {selectedCandidate['Address'] || 'Mumbai, India'}</div>
                     </div>
                   </div>
-
-                  {/* Identity & Professional */}
-                  <div className="space-y-4">
-                    <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Professional Details</h3>
-                    <div className="grid grid-cols-2 gap-6">
-                      <DetailItem label="Total Experience" value={selectedCandidate['Experience']} />
-                      <DetailItem label="Current Salary" value={selectedCandidate['Current Salary']} />
-                      <DetailItem label="Expected Salary" value={selectedCandidate['Expected Salary']} />
-                      <DetailItem label="Notice Period" value={`${selectedCandidate['Notice Period']} Days`} />
-                      <DetailItem label="Employer" value={selectedCandidate['Current Employer'] || 'N/A'} />
-                      <DetailItem label="Skills" value={selectedCandidate['Skills'] || 'N/A'} />
+                  <div className="space-y-6">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Professional Snapshot</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <DetailBox label="Experience" value={selectedCandidate['Experience']} />
+                      <DetailBox label="Exp. Salary" value={selectedCandidate['Expected Salary']} />
+                      <DetailBox label="Notice" value={selectedCandidate['Notice Period'] ? `${selectedCandidate['Notice Period']} Days` : 'Immediate'} />
+                      <DetailBox label="Location" value="On-Site" />
                     </div>
                   </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs border-b border-slate-100 pb-2">Documents</h3>
-                    <div className="flex gap-4">
-                      {selectedCandidate['Resume Link'] && (
-                        <a 
-                          href={selectedCandidate['Resume Link']} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl font-bold hover:bg-blue-100 transition-all border border-blue-100"
-                        >
-                          <FileText size={18} /> View Resume
-                        </a>
-                      )}
-                      {selectedCandidate['Photo Link'] && (
-                        <a 
-                          href={selectedCandidate['Photo Link']} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold hover:bg-slate-100 transition-all border border-slate-100"
-                        >
-                          <Users size={18} /> View Photo
-                        </a>
-                      )}
-                    </div>
+                <div className="space-y-8 bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Administrative Actions</h3>
+                  
+                  <div className="flex flex-wrap gap-4">
+                    <button 
+                      onClick={() => handleUpdateStatus(selectedCandidate, 'Shortlisted')}
+                      disabled={isUpdating || selectedCandidate['Status'] === 'Shortlisted'}
+                      className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={20} /> Shortlist
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateStatus(selectedCandidate, 'Hold')}
+                      disabled={isUpdating}
+                      className="flex-1 bg-white text-slate-600 border border-slate-200 font-black py-4 rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Clock size={20} /> Put on Hold
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateStatus(selectedCandidate, 'Rejected')}
+                      disabled={isUpdating}
+                      className="flex-1 bg-red-50 text-red-600 border border-red-100 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={20} /> Reject Application
+                    </button>
                   </div>
 
-                  {/* Admin Section */}
-                  <div className="pt-8 border-t border-slate-100 space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">Admin Notes</label>
-                      <textarea 
-                        className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-medium text-sm"
-                        placeholder="Add notes about this candidate..."
-                        rows={4}
-                        value={selectedCandidate.admin_notes || ''}
-                        onChange={(e) => setSelectedCandidate({ ...selectedCandidate, admin_notes: e.target.value })}
-                        onBlur={() => handleUpdateStatus(selectedCandidate, selectedCandidate.Status)}
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      {selectedCandidate.Status?.toLowerCase() !== 'shortlisted' && (
-                        <button 
-                          onClick={() => handleUpdateStatus(selectedCandidate, 'Shortlisted')}
-                          disabled={isUpdating}
-                          className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50"
-                        >
-                          Shortlist
-                        </button>
-                      )}
-                      
-                      {selectedCandidate.Status?.toLowerCase() === 'shortlisted' && (
-                        <button 
-                          onClick={() => handleConvertToEmployee(selectedCandidate)}
-                          className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
-                        >
-                          <UserPlus size={18} /> Convert to Employee
-                        </button>
-                      )}
-
-                      <button 
-                        onClick={() => handleUpdateStatus(selectedCandidate, 'On_Hold')}
-                        disabled={isUpdating}
-                        className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all border border-slate-200 disabled:opacity-50"
-                      >
-                        Hold
-                      </button>
-                      <button 
-                        onClick={() => handleUpdateStatus(selectedCandidate, 'Rejected')}
-                        disabled={isUpdating}
-                        className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-all border border-red-100 disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
+                  {selectedCandidate['Status']?.toLowerCase() === 'shortlisted' && (
+                    <motion.button 
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      onClick={() => handleConvertToEmployee(selectedCandidate)}
+                      className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-2xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 text-lg"
+                    >
+                      <UserPlus size={24} /> FINAL HIRE: CONVERT TO EMPLOYEE
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -506,46 +386,55 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
   );
 }
 
-function DetailItem({ label, value }) {
+function DetailBox({ label, value }) {
   return (
-    <div>
-      <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{label}</p>
-      <p className="font-bold text-slate-800 break-words">{value || 'N/A'}</p>
+    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">{label}</p>
+      <p className="text-sm font-black text-slate-800">{value || 'N/A'}</p>
     </div>
   );
 }
 
 function JobOpeningsList({ jobs, onUpdate }) {
-  console.log('[JOBS-LIST] Rendering with jobs:', jobs.length);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [newJob, setNewJob] = useState({
-    title: '',
-    department: '',
-    location: 'Remote',
-    type: 'Full-time',
-    salary_range: '',
-    description: '',
-    requirements: '',
-    status: 'open'
+  const [formData, setFormData] = useState({
+    title: '', department: '', location: 'Remote', type: 'Full-time', 
+    salary_range: '', description: '', requirements: '', status: 'open'
   });
+
+  const handleOpenForm = (job = null) => {
+    if (job) {
+      setEditingJob(job);
+      setFormData({ ...job });
+    } else {
+      setEditingJob(null);
+      setFormData({ title: '', department: '', location: 'Remote', type: 'Full-time', salary_range: '', description: '', requirements: '', status: 'open' });
+    }
+    setShowForm(true);
+  };
 
   const handleSaveJob = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const response = await apiClient.post('/api/database', {
+      const endpoint = '/api/database';
+      const method = editingJob ? apiClient.put : apiClient.post;
+      const payload = {
         table: 'job_openings',
-        data: newJob
-      });
+        id: editingJob?.id,
+        data: formData
+      };
+
+      const response = await method(endpoint, payload);
       if (response.success) {
-        toast.success('Job opening created successfully!');
-        setShowAddForm(false);
-        setNewJob({ title: '', department: '', location: 'Remote', type: 'Full-time', salary_range: '', description: '', requirements: '', status: 'open' });
+        toast.success(editingJob ? 'Job updated!' : 'Job published!');
+        setShowForm(false);
         onUpdate('job_openings');
       }
     } catch (error) {
-      toast.error('Failed to create job opening');
+      toast.error('Operation failed');
     } finally {
       setIsSaving(false);
     }
@@ -554,134 +443,148 @@ function JobOpeningsList({ jobs, onUpdate }) {
   const toggleStatus = async (job) => {
     const newStatus = job.status === 'open' ? 'closed' : 'open';
     try {
-      const response = await apiClient.put('/api/database', {
+      await apiClient.put('/api/database', {
         table: 'job_openings',
         id: job.id,
         data: { ...job, status: newStatus }
       });
-      if (response.success) {
-        toast.success(`Job status updated to ${newStatus}`);
-        onUpdate('job_openings');
-      }
-    } catch (error) {
-      toast.error('Failed to update status');
+      onUpdate('job_openings');
+      toast.success(`Position ${newStatus === 'open' ? 'Opened' : 'Closed'}`);
+    } catch (e) {
+      toast.error('Status update failed');
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="font-black text-slate-800 uppercase tracking-widest text-sm">Active Openings ({jobs.length})</h3>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-lg">
+        <div>
+          <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm">Talent Demand</h3>
+          <p className="text-slate-400 text-xs font-bold mt-1">Currently managing {jobs.length} active positions</p>
+        </div>
         <button 
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
+          onClick={() => handleOpenForm()}
+          className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 hover:scale-105 transition-all flex items-center gap-2"
         >
-          <Plus size={18} /> New Opening
+          <Plus size={20} /> NEW OPENING
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {jobs.length > 0 ? jobs.map(job => (
-          <div key={job.id} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <div className="flex justify-between items-start mb-4">
+          <div key={job.id} className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Building size={80} /></div>
+            
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <h4 className="font-black text-slate-900 text-lg leading-tight">{job.title}</h4>
-                <p className="text-sm text-slate-500 font-medium">{job.department} • {job.location}</p>
+                <h4 className="font-black text-slate-900 text-xl tracking-tight leading-tight mb-2">{job.title}</h4>
+                <div className="flex gap-3 text-xs font-bold text-slate-400">
+                  <span className="flex items-center gap-1"><MapPin size={12} /> {job.location}</span>
+                  <span className="flex items-center gap-1"><Briefcase size={12} /> {job.department}</span>
+                </div>
               </div>
               <button 
                 onClick={() => toggleStatus(job)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all",
+                  "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
                   job.status === 'open' ? "bg-green-50 text-green-600 border-green-100" : "bg-slate-100 text-slate-400 border-slate-200"
                 )}
               >
                 {job.status}
               </button>
             </div>
-            <div className="flex gap-4 text-xs font-bold text-slate-500 mb-4">
-              <div className="flex items-center gap-1"><Clock size={14} /> {job.type}</div>
-              <div className="flex items-center gap-1"><DollarSign size={14} /> {job.salary_range}</div>
+
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Job Type</p>
+                <p className="text-sm font-black text-slate-800">{job.type}</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Salary Budget</p>
+                <p className="text-sm font-black text-blue-600">{job.salary_range}</p>
+              </div>
             </div>
-            <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase">Shared Link: /apply?job={job.id}</p>
-              <button className="text-blue-600 hover:text-blue-700">
-                <Edit2 size={16} />
+
+            <div className="flex justify-between items-center pt-6 border-t border-slate-50">
+              <div className="text-[10px] font-black text-slate-400 tracking-tighter uppercase">ID: {job.id.slice(0,8)}...</div>
+              <button 
+                onClick={() => handleOpenForm(job)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-slate-100"
+              >
+                <Edit2 size={14} /> Edit Position
               </button>
             </div>
           </div>
         )) : (
-          <div className="col-span-full py-12 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 italic">
-            No job openings created yet.
+          <div className="col-span-full py-20 text-center bg-slate-50 rounded-[3rem] border-4 border-dashed border-slate-200">
+            <p className="text-slate-400 font-black uppercase tracking-widest italic">No active job openings found</p>
           </div>
         )}
       </div>
 
-      {/* Add Job Modal */}
+      {/* Modern Job Editor Modal */}
       <AnimatePresence>
-        {showAddForm && (
+        {showForm && (
           <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[200]" onClick={() => setShowForm(false)} />
             <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110]"
-              onClick={() => setShowAddForm(false)}
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl z-[111] overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl z-[201] overflow-hidden"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Create Job Opening</h3>
-                  <button onClick={() => setShowAddForm(false)} className="p-2 hover:bg-slate-100 rounded-full transition-all"><X size={24} className="text-slate-400" /></button>
+              <form onSubmit={handleSaveJob} className="p-10 space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingJob ? 'Edit Position' : 'Create Position'}</h3>
+                  <button type="button" onClick={() => setShowForm(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-900"><X size={24} /></button>
                 </div>
                 
-                <form onSubmit={handleSaveJob} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Job Title</label>
-                      <input required className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.title} onChange={e => setNewJob({...newJob, title: e.target.value})} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Department</label>
-                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.department} onChange={e => setNewJob({...newJob, department: e.target.value})} />
-                    </div>
+                <div className="grid grid-cols-2 gap-5">
+                  <FormInput label="Job Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} required />
+                  <FormInput label="Department" value={formData.department} onChange={v => setFormData({...formData, department: v})} />
+                  <FormInput label="Location" value={formData.location} onChange={v => setFormData({...formData, location: v})} />
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Type</label>
+                    <select className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-8 focus:ring-blue-50 font-bold" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                      <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
+                    </select>
                   </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Location</label>
-                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Type</label>
-                      <select className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.type} onChange={e => setNewJob({...newJob, type: e.target.value})}>
-                        <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase ml-1">Salary Range</label>
-                      <input className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.salary_range} onChange={e => setNewJob({...newJob, salary_range: e.target.value})} />
-                    </div>
+                  <FormInput label="Salary Range" value={formData.salary_range} onChange={v => setFormData({...formData, salary_range: v})} placeholder="e.g. ₹10L - ₹15L" />
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Status</label>
+                    <select className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-8 focus:ring-blue-50 font-bold" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
+                      <option value="open">Open (Accepting Apps)</option>
+                      <option value="closed">Closed (On Hold)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Job Description</label>
+                    <textarea rows={3} className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-8 focus:ring-blue-50 font-bold text-sm" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Description</label>
-                    <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Requirements</label>
+                    <textarea rows={3} className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-8 focus:ring-blue-50 font-bold text-sm" value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-black text-slate-400 uppercase ml-1">Requirements</label>
-                    <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 font-bold" value={newJob.requirements} onChange={e => setNewJob({...newJob, requirements: e.target.value})} />
-                  </div>
-                  
-                  <div className="pt-6">
-                    <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50">
-                      {isSaving ? 'Saving...' : 'Publish Opening'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                </div>
+
+                <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50">
+                  {isSaving ? 'SYNCING...' : editingJob ? 'UPDATE POSITION' : 'PUBLISH POSITION'}
+                </button>
+              </form>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function FormInput({ label, value, onChange, required = false, placeholder = '' }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">{label}</label>
+      <input required={required} placeholder={placeholder} className="w-full px-5 py-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-8 focus:ring-blue-50 font-bold" value={value} onChange={e => onChange(e.target.value)} />
     </div>
   );
 }
