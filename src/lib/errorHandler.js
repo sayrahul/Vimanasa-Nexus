@@ -163,7 +163,8 @@ export function showError(error, options = {}) {
   });
 
   // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
+  const isDev = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development';
+  if (isDev) {
     console.error(`[${title}]`, error);
   }
 }
