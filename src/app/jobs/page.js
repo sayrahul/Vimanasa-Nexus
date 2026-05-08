@@ -26,7 +26,7 @@ export default function CareersPage() {
   useEffect(() => {
     async function fetchJobs() {
       try {
-        const response = await fetch('/api/database?table=job_openings');
+        const response = await fetch(`/api/database?table=job_openings&t=${Date.now()}`);
         const result = await response.json();
         if (result.success) {
           const openJobs = (result.data || []).filter(j => 

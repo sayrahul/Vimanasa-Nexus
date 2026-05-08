@@ -26,7 +26,7 @@ export default function JobDetailClient({ id }) {
   useEffect(() => {
     async function fetchJob() {
       try {
-        const response = await fetch(`/api/database?table=job_openings`);
+        const response = await fetch(`/api/database?table=job_openings&t=${Date.now()}`);
         const result = await response.json();
         if (result.success) {
           const foundJob = result.data.find(j => j.id === id);
