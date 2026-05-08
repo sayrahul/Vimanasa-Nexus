@@ -491,8 +491,18 @@ export default function DashboardLayout() {
               </div>
             )}
 
+            {console.log('[DASHBOARD] Rendering Tab:', activeTab)}
             {activeTab === 'dashboard' && (
               <>
+                <div className="mb-4 bg-blue-600 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
+                  <span className="font-bold">Navigation Debug Mode:</span>
+                  <button 
+                    onClick={() => setActiveTab('recruitment')}
+                    className="bg-white text-blue-600 px-4 py-2 rounded-lg font-black text-sm hover:bg-blue-50 transition-all"
+                  >
+                    FORCE OPEN RECRUITMENT 🚀
+                  </button>
+                </div>
                 <DashboardView data={data.dashboard} allData={data} />
                 <div className="mt-8">
                   <DashboardCharts data={data} />

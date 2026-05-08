@@ -34,6 +34,7 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout, onSync, las
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleTabChange = (tabId) => {
+    console.log('[SIDEBAR] Tab Clicked:', tabId);
     setActiveTab(tabId);
     setIsMobileMenuOpen(false); // Close mobile menu after selection
   };
