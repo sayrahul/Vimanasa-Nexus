@@ -122,7 +122,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
           <p className="text-slate-500 mt-2 font-medium">Manage workforce demand and candidate pipeline</p>
         </div>
         
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner w-full lg:w-auto overflow-x-auto scrollbar-hide">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full lg:w-auto overflow-x-auto scrollbar-hide">
           {['applications', 'pipeline', 'openings'].map(tab => (
             <button 
               key={tab}
@@ -144,7 +144,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
         {activeSubTab === 'applications' && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
             {/* Intelligent Search & Filter */}
-            <div className="bg-white p-5 rounded-[2.5rem] border border-slate-200 shadow-xl flex flex-col xl:flex-row gap-5 items-center">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-5 items-center">
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input 
@@ -152,7 +152,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                   placeholder="Search by name, role or phone..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:bg-white focus:ring-8 focus:ring-blue-50 outline-none transition-all font-bold text-slate-900"
+                  className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all font-bold text-slate-900"
                 />
               </div>
               <div className="flex gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 scrollbar-hide">
@@ -163,7 +163,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                     className={cn(
                       "px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
                       statusFilter === status 
-                        ? "bg-slate-900 text-white border-slate-900 shadow-xl scale-105" 
+                        ? "bg-slate-900 text-white border-slate-900" 
                         : "bg-white text-slate-500 border-slate-200 hover:border-blue-400"
                     )}
                   >
@@ -174,7 +174,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
             </div>
 
             {/* Responsive Table Grid */}
-            <div className="bg-white rounded-[3rem] border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -221,7 +221,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                           </span>
                         </td>
                         <td className="px-8 py-6 text-right">
-                          <button className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all shadow-sm">
+                          <button className="p-3 bg-white border border-slate-200 text-slate-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all shadow-sm">
                             <Eye size={20} />
                           </button>
                         </td>
@@ -265,7 +265,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                       layoutId={candidate.id}
                       key={candidate.id} 
                       onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
-                      className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+                      className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all cursor-pointer group"
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
@@ -306,7 +306,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
               <div className="p-10">
                 <div className="flex justify-between items-start mb-12">
                   <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-4xl shadow-2xl shadow-blue-200 ring-8 ring-blue-50">
+                    <div className="w-24 h-24 rounded-[1.5rem] bg-gradient-to-tr from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-4xl shadow-lg ring-8 ring-blue-50">
                       {selectedCandidate['Full Name']?.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -347,21 +347,21 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                     <button 
                       onClick={() => handleUpdateStatus(selectedCandidate, 'Shortlisted')}
                       disabled={isUpdating || selectedCandidate['Status'] === 'Shortlisted'}
-                      className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 bg-blue-600 text-white font-black py-4 rounded-xl shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       <CheckCircle size={20} /> Shortlist
                     </button>
                     <button 
                       onClick={() => handleUpdateStatus(selectedCandidate, 'Hold')}
                       disabled={isUpdating}
-                      className="flex-1 bg-white text-slate-600 border border-slate-200 font-black py-4 rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 bg-white text-slate-600 border border-slate-200 font-black py-4 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                     >
                       <Clock size={20} /> Put on Hold
                     </button>
                     <button 
                       onClick={() => handleUpdateStatus(selectedCandidate, 'Rejected')}
                       disabled={isUpdating}
-                      className="flex-1 bg-red-50 text-red-600 border border-red-100 font-black py-4 rounded-2xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 bg-red-50 text-red-600 border border-red-100 font-black py-4 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                     >
                       <XCircle size={20} /> Reject Application
                     </button>
@@ -371,7 +371,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                     <motion.button 
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => handleConvertToEmployee(selectedCandidate)}
-                      className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-2xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 text-lg"
+                      className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 text-lg"
                     >
                       <UserPlus size={24} /> FINAL HIRE: CONVERT TO EMPLOYEE
                     </motion.button>
@@ -457,14 +457,14 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-lg">
+      <div className="flex justify-between items-center bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
         <div>
           <h3 className="font-black text-slate-900 uppercase tracking-widest text-sm">Talent Demand</h3>
           <p className="text-slate-400 text-xs font-bold mt-1">Currently managing {jobs.length} active positions</p>
         </div>
         <button 
           onClick={() => handleOpenForm()}
-          className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 hover:scale-105 transition-all flex items-center gap-2"
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-sm shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"
         >
           <Plus size={20} /> NEW OPENING
         </button>
@@ -472,7 +472,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {jobs.length > 0 ? jobs.map(job => (
-          <div key={job.id} className="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all relative overflow-hidden group">
+          <div key={job.id} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:border-blue-100 transition-all relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Building size={80} /></div>
             
             <div className="flex justify-between items-start mb-6">
@@ -509,7 +509,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
               <div className="text-[10px] font-black text-slate-400 tracking-tighter uppercase">ID: {job.id.slice(0,8)}...</div>
               <button 
                 onClick={() => handleOpenForm(job)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-slate-100"
+                className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-md shadow-slate-100"
               >
                 <Edit2 size={14} /> Edit Position
               </button>
@@ -529,7 +529,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[200]" onClick={() => setShowForm(false)} />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl z-[201] overflow-hidden"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[2rem] shadow-xl z-[201] overflow-hidden"
             >
               <form onSubmit={handleSaveJob} className="p-10 space-y-6">
                 <div className="flex justify-between items-center mb-4">
@@ -568,7 +568,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
                   </div>
                 </div>
 
-                <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50">
+                <button type="submit" disabled={isSaving} className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-md hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">
                   {isSaving ? 'SYNCING...' : editingJob ? 'UPDATE POSITION' : 'PUBLISH POSITION'}
                 </button>
               </form>
