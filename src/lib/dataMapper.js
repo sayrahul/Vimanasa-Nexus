@@ -166,7 +166,7 @@ export function toDB(table, data) {
         photo_url: data['Photo Link'] || data.photo_url,
         status: (data['Status'] || data.status || 'pending').toLowerCase(),
         admin_notes: data.admin_notes || '',
-        metadata
+        ...(data.metadata ? { metadata: data.metadata } : {})
       };
       
     default:

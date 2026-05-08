@@ -260,13 +260,17 @@ export async function POST(req) {
       message: error.message,
       stack: error.stack
     });
-    return Response.json({ 
-      error: 'Database Error',
-      message: error.message
-    }, { 
-      status: 500,
-      headers: corsHeaders 
-    });
+
+    // Special check for metadata column issue
+    if (error.message?.includes('metadata')) {
+      return Response.json({ 
+        success: false, 
+        message: "Database schema mismatch: 'metadata' column missing. Please run the SQL update provided by the assistant.",
+        error: error.message 
+      }, { status: 500, headers: corsHeaders });
+    }
+
+    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
   }
 }
 
@@ -291,27 +295,20 @@ export async function PUT(req) {
       });
     }
 
-    if (!supabaseAdmin) {
-      return Response.json({ 
-        error: 'Configuration Error',
-        message: 'Supabase is not configured' 
-      }, { 
-        status: 500,
-        headers: corsHeaders 
-      });
-    }
-
     const dbTable = tableMapping[table] || table;
     const dbData = toDB(table, updateData);
-    if (dbData.id) delete dbData.id; // Prevent updating the ID column
+    if (dbData.id) delete dbData.id;
 
     const { data, error } = await supabaseAdmin
       .from(dbTable)
       .update(dbData)
       .eq('id', id)
       .select();
-
-    if (error) throw error;
+    
+    if (error) {
+      console.error('[API] Supabase Update Error:', error);
+      throw error;
+    }
 
     return Response.json({ 
       success: true, 
@@ -321,14 +318,15 @@ export async function PUT(req) {
       headers: corsHeaders
     });
   } catch (error) {
-    console.error('Database Error (PUT):', error);
-    return Response.json({ 
-      error: 'Database Error',
-      message: error.message
-    }, { 
-      status: 500,
-      headers: corsHeaders 
-    });
+    console.error('[API] Database Error (PUT):', error);
+    if (error.message?.includes('metadata')) {
+      return Response.json({ 
+        success: false, 
+        message: "Database schema mismatch: 'metadata' column missing.",
+        error: error.message 
+      }, { status: 500, headers: corsHeaders });
+    }
+    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
   }
 }
 
@@ -337,55 +335,33 @@ export async function DELETE(req) {
     const body = await req.json();
     const { table, id } = body;
     
-    // Verify auth
     const auth = await verifyRequest(req, table, 'DELETE');
     if (!auth.success) {
       return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
     }
     
     if (!table || !id) {
-      return Response.json({ 
-        error: 'Validation Error',
-        message: 'Table name and ID are required' 
-      }, { 
-        status: 400,
-        headers: corsHeaders 
-      });
-    }
-
-    if (!supabaseAdmin) {
-      return Response.json({ 
-        error: 'Configuration Error',
-        message: 'Supabase is not configured' 
-      }, { 
-        status: 500,
-        headers: corsHeaders 
-      });
+      return Response.json({ error: 'Validation Error', message: 'Table name and ID are required' }, { status: 400, headers: corsHeaders });
     }
 
     const dbTable = tableMapping[table] || table;
-
-    const { error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from(dbTable)
       .delete()
-      .eq('id', id);
-
+      .eq('id', id)
+      .select();
+    
     if (error) throw error;
 
     return Response.json({ 
       success: true, 
+      data: toFrontend(table, data[0]),
       message: 'Data deleted successfully' 
     }, {
       headers: corsHeaders
     });
   } catch (error) {
-    console.error('Database Error (DELETE):', error);
-    return Response.json({ 
-      error: 'Database Error',
-      message: error.message
-    }, { 
-      status: 500,
-      headers: corsHeaders 
-    });
+    console.error('[API] Database Error (DELETE):', error);
+    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
   }
 }
