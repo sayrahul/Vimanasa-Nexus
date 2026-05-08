@@ -187,7 +187,7 @@ function ApplyForm() {
             Your application for <span className="text-white font-black underline decoration-blue-500">{formData.jobTitle}</span> has been received. Our team will review it and get back to you shortly.
           </p>
           <button 
-            onClick={() => window.location.href = 'https://vimanasa.com/jobs'}
+            onClick={() => window.location.href = '/jobs'}
             className="w-full bg-white text-slate-900 font-black py-5 rounded-2xl hover:bg-blue-50 transition-all shadow-xl text-lg"
           >
             Explore More Jobs
