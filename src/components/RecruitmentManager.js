@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/apiClient';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { cn } from '@/lib/utils';
 
 export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
@@ -48,7 +48,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       });
 
       if (response.success) {
-        toast.success(`Status updated to ${newStatus}`);
+        toast.success(`Status updated to ${newStatus}`, { position: "top-right" });
         onUpdate('candidates');
         if (selectedCandidate?.id === candidate.id) {
           setSelectedCandidate({ ...selectedCandidate, Status: newStatus });
@@ -87,7 +87,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
       if (empResponse.success) {
         await handleUpdateStatus(candidate, 'Hired');
-        toast.success(`Hired ${candidate['Full Name']}!`);
+        toast.success(`Hired ${candidate['Full Name']}!`, { position: "top-right" });
         onUpdate('workforce');
         onUpdate('candidates');
         onNavigate('placements');
@@ -122,15 +122,15 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
           <p className="text-slate-500 mt-2 font-medium">Manage workforce demand and candidate pipeline</p>
         </div>
         
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner w-full lg:w-auto">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner w-full lg:w-auto overflow-x-auto scrollbar-hide">
           {['applications', 'pipeline', 'openings'].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveSubTab(tab)}
               className={cn(
-                "flex-1 lg:flex-none px-6 py-2.5 rounded-xl text-sm font-black transition-all capitalize",
+                "flex-1 px-4 py-2 rounded-lg text-xs font-black transition-all capitalize whitespace-nowrap",
                 activeSubTab === tab 
-                  ? "bg-white text-blue-600 shadow-md transform scale-105" 
+                  ? "bg-white text-blue-600 shadow-sm" 
                   : "text-slate-500 hover:text-slate-800"
               )}
             >
@@ -429,7 +429,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
       const response = await method(endpoint, payload);
       if (response.success) {
-        toast.success(editingJob ? 'Job updated!' : 'Job published!');
+        toast.success(editingJob ? 'Job updated! ✨' : 'Job published! 🚀', { position: "top-right" });
         setShowForm(false);
         onUpdate('job_openings');
       }
@@ -449,7 +449,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
         data: { ...job, status: newStatus }
       });
       onUpdate('job_openings');
-      toast.success(`Position ${newStatus === 'open' ? 'Opened' : 'Closed'}`);
+      toast.success(`Position ${newStatus === 'open' ? 'Opened ✅' : 'Closed 🔒'}`, { position: "top-right" });
     } catch (e) {
       toast.error('Status update failed');
     }
