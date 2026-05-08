@@ -21,7 +21,7 @@ import PartnerDirectory from '@/components/PartnerDirectory';
 import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
@@ -119,6 +119,8 @@ export default function DashboardLayout() {
   }, []);
 
   const fetchData = useCallback(async (tab, silent = false) => {
+    if (!isAuthenticated) return;
+    
     if (!silent) {
       setIsLoading(true);
     } else {
