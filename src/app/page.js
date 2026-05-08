@@ -1311,6 +1311,53 @@ function DashboardView({ data, allData }) {
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
       </div>
+      
+      {/* Hiring & Recruitment Overview */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-8">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-bold text-xl text-slate-800">Hiring Command Center</h3>
+            <p className="text-sm text-slate-500">Manage all incoming candidate applications</p>
+          </div>
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'recruitment' }))}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-200"
+          >
+            Manage Pipeline →
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 relative overflow-hidden">
+            <UserPlus className="absolute -right-4 -bottom-4 text-indigo-100" size={120} />
+            <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Pending Review</p>
+            <p className="text-4xl font-black text-indigo-900">{stats.newApplications}</p>
+            <p className="text-sm text-indigo-600 mt-2">New applications this week</p>
+          </div>
+          
+          <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+            <CheckCircle className="absolute -right-4 -bottom-4 text-emerald-100" size={120} />
+            <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Public Portal</p>
+            <p className="text-xl font-bold text-emerald-900 mt-1 flex items-center gap-2">
+              Status: <span className="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-black animate-pulse">LIVE</span>
+            </p>
+            <a 
+              href="/apply" 
+              target="_blank" 
+              className="mt-4 bg-white text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              Visit Portal <ArrowUpRight size={16} />
+            </a>
+          </div>
+
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col justify-center">
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Hiring Tip</h4>
+            <p className="text-sm text-slate-500 leading-relaxed italic">
+              "You can automatically convert a hired candidate into a workforce member from the recruitment profile."
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Financial Overview & Mini Chart */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-8">

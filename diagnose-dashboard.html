@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
@@ -264,7 +265,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .spinner {
@@ -273,6 +276,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -359,6 +363,18 @@
             progress.style.display = 'block';
             progressBar.style.width = percent + '%';
         }
+        
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('auth_token');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            return fetch(url, { ...options, headers });
+        }
 
         async function checkTable(table) {
             const resultDiv = document.getElementById('tableResult');
@@ -366,15 +382,15 @@
             resultDiv.innerHTML = '<span class="status-badge loading"><span class="spinner">⏳</span> Checking...</span>';
 
             try {
-                const response = await fetch(`/api/database?table=${table}&timestamp=${Date.now()}`);
+                const response = await apiFetch(`/api/database?table=${table}&timestamp=${Date.now()}`);
                 const data = await response.json();
 
                 if (response.ok) {
                     const count = data.count || data.data?.length || 0;
                     const status = count > 0 ? 'success' : 'warning';
                     const icon = count > 0 ? '✅' : '⚠️';
-                    
-                    showResult('tableResult', 
+
+                    showResult('tableResult',
                         `<span class="status-badge ${status}">${icon} ${status.toUpperCase()}</span>\n\n` +
                         `Table: ${table}\n` +
                         `Status: ${response.status}\n` +
@@ -426,15 +442,15 @@
 
             for (const table of REQUIRED_TABLES) {
                 try {
-                    const response = await fetch(`/api/database?table=${table}`);
+                    const response = await apiFetch(`/api/database?table=${table}`);
                     const data = await response.json();
-                    
+
                     diagnosticResults.tablesChecked++;
-                    
+
                     if (response.ok) {
                         const count = data.count || data.data?.length || 0;
                         diagnosticResults.tablesExist++;
-                        
+
                         if (count > 0) {
                             diagnosticResults.tablesWithData++;
                             html += `<div class="table-item exists"><span class="icon">✅</span> ${table} (${count})</div>`;
@@ -495,8 +511,8 @@
                 `;
             }
 
-            const resultType = diagnosticResults.tablesMissing > 0 ? 'error' : 
-                              diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
+            const resultType = diagnosticResults.tablesMissing > 0 ? 'error' :
+                diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
 
             showResult('tableResult', html, resultType);
         }
@@ -556,7 +572,7 @@
                 const vars = data.variables || {};
 
                 let html = `<span class="status-badge ${allConfigured ? 'success' : 'error'}">` +
-                          `${allConfigured ? '✅ ALL CONFIGURED' : '❌ MISSING VARIABLES'}</span>\n\n`;
+                    `${allConfigured ? '✅ ALL CONFIGURED' : '❌ MISSING VARIABLES'}</span>\n\n`;
 
                 html += 'Environment Variables:\n\n';
                 for (const [key, value] of Object.entries(vars)) {
@@ -628,7 +644,7 @@
                 }
 
                 const resultType = diagnosticResults.tablesMissing > 0 ? 'error' :
-                                  diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
+                    diagnosticResults.tablesEmpty === diagnosticResults.tablesChecked ? 'warning' : 'success';
 
                 showResult('diagResult', html, resultType);
 
@@ -639,4 +655,5 @@
         }
     </script>
 </body>
+
 </html>
