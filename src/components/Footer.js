@@ -6,18 +6,18 @@ import { Mail, MapPin, Phone } from "lucide-react";
 
 const FOOTER_LINKS = {
   company: [
-    { label: "About Us", href: "/about" },
-    { label: "Services", href: "/services" },
-    { label: "Portfolio", href: "/portfolio" },
+    { label: "About Us", href: "https://vimanasa.com/about" },
+    { label: "Services", href: "https://vimanasa.com/services" },
+    { label: "Portfolio", href: "https://vimanasa.com/portfolio" },
     { label: "Careers", href: "/jobs" },
-    { label: "Contact", href: "/contact" },
+    { label: "Contact", href: "https://vimanasa.com/contact" },
   ],
   resources: [
-    { label: "Blog", href: "/blog" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Tenders", href: "/tenders" },
-    { label: "Privacy Policy", href: "/privacy-policy" },
-    { label: "Terms & Conditions", href: "/terms-and-conditions" },
+    { label: "Blog", href: "https://vimanasa.com/blog" },
+    { label: "Pricing", href: "https://vimanasa.com/pricing" },
+    { label: "Tenders", href: "https://vimanasa.com/tenders" },
+    { label: "Privacy Policy", href: "https://vimanasa.com/privacy-policy" },
+    { label: "Terms & Conditions", href: "https://vimanasa.com/terms-and-conditions" },
   ],
 };
 

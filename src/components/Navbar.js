@@ -4,16 +4,17 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, User, Briefcase, LayoutGrid, Sparkles } from "lucide-react";
+import { Menu, X, Home, User, Briefcase, LayoutGrid, Sparkles, PhoneCall } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "About Us", href: "/about", icon: User },
-  { name: "Services", href: "/services", icon: LayoutGrid },
-  { name: "Portfolio", href: "/portfolio", icon: Sparkles },
+  { name: "Home", href: "https://vimanasa.com/", icon: Home },
+  { name: "About Us", href: "https://vimanasa.com/about", icon: User },
+  { name: "Services", href: "https://vimanasa.com/services", icon: LayoutGrid },
+  { name: "Portfolio", href: "https://vimanasa.com/portfolio", icon: Sparkles },
   { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Contact", href: "https://vimanasa.com/contact", icon: PhoneCall },
 ];
 
 export function Navbar() {
