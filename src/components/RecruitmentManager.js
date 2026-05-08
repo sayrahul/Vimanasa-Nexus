@@ -512,7 +512,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
         toast.success('Job opening created successfully!');
         setShowAddForm(false);
         setNewJob({ title: '', department: '', location: 'Remote', type: 'Full-time', salary_range: '', description: '', requirements: '', status: 'open' });
-        onUpdate();
+        onUpdate('job_openings');
       }
     } catch (error) {
       toast.error('Failed to create job opening');
@@ -531,7 +531,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
       });
       if (response.success) {
         toast.success(`Job status updated to ${newStatus}`);
-        onUpdate();
+        onUpdate('job_openings');
       }
     } catch (error) {
       toast.error('Failed to update status');
