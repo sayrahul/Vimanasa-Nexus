@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { name: "About Us", href: "https://vimanasa.com/about", icon: User },
   { name: "Services", href: "https://vimanasa.com/services", icon: LayoutGrid },
   { name: "Portfolio", href: "https://vimanasa.com/portfolio", icon: Sparkles },
-  { name: "Jobs", href: "/jobs", icon: Briefcase },
+  { name: "Jobs", href: "https://vimanasa.com/jobs", icon: Briefcase },
   { name: "Contact", href: "https://vimanasa.com/contact", icon: PhoneCall },
 ];
 

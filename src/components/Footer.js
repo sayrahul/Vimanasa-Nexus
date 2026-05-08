@@ -9,7 +9,7 @@ const FOOTER_LINKS = {
     { label: "About Us", href: "https://vimanasa.com/about" },
     { label: "Services", href: "https://vimanasa.com/services" },
     { label: "Portfolio", href: "https://vimanasa.com/portfolio" },
-    { label: "Careers", href: "/jobs" },
+    { label: "Careers", href: "https://vimanasa.com/jobs" },
     { label: "Contact", href: "https://vimanasa.com/contact" },
   ],
   resources: [

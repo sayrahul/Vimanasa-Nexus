@@ -11,6 +11,20 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_GEMINI_API_KEY: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
   },
+  async redirects() {
+    return [
+      {
+        source: '/jobs',
+        destination: 'https://vimanasa.com/jobs',
+        permanent: true,
+      },
+      {
+        source: '/jobs/:id',
+        destination: 'https://vimanasa.com/jobs',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
