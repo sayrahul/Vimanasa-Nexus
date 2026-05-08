@@ -22,7 +22,7 @@ import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus } from 'lucide-react';
-import axios from 'axios';
+import { apiClient, authAPI, setToken, setUser, removeToken } from '@/lib/apiClient';
 import { toast } from 'react-toastify';
 import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
 import { cn } from '@/lib/utils';
@@ -103,16 +103,25 @@ export default function DashboardLayout() {
       
       // Auto-login if less than 7 days have passed
       if (daysSinceLogin < 7) {
-        setIsAuthenticated(true);
-        // Show welcome back message
-        setTimeout(() => {
-          toast.success(`Welcome back, ${savedUsername}! 👋`, {
-            position: "top-right",
-            autoClose: 3000,
+        // Verify token in background
+        authAPI.verify()
+          .then(res => {
+            if (res.success) {
+              setIsAuthenticated(true);
+              toast.success(`Welcome back, ${savedUsername}! 👋`, {
+                position: "top-right",
+                autoClose: 3000,
+              });
+            } else {
+              removeToken();
+            }
+          })
+          .catch(() => {
+            removeToken();
           });
-        }, 500);
       } else {
         // Clear expired session
+        removeToken();
         localStorage.removeItem('vimanasa_login_timestamp');
       }
     }
@@ -128,11 +137,11 @@ export default function DashboardLayout() {
     }
     
     try {
-      // Use Supabase database API
-      const response = await axios.get(`/api/database?table=${tab}&timestamp=${Date.now()}`);
+      // Use authenticated apiClient instead of raw axios
+      const response = await apiClient.get(`/api/database?table=${tab}&timestamp=${Date.now()}`);
       
       // Handle response format with success and data fields
-      const responseData = response.data.data || response.data;
+      const responseData = response.data || response;
       
       let changed = false;
       
@@ -428,8 +437,7 @@ export default function DashboardLayout() {
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         onLogout={() => {
-          localStorage.removeItem('vimanasa_login_timestamp');
-          setIsAuthenticated(false);
+          authAPI.logout();
         }}
         onSync={handleSync}
         lastSyncTime={lastSyncTime}
@@ -1615,35 +1623,30 @@ function Login({ onLogin }) {
     setError('');
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      // Use authAPI to login and get JWT token
+      const response = await authAPI.login(username.trim(), password.trim());
 
-    // Get credentials from environment variables with fallback
-    const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || 'admin';
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Vimanasa@2026';
-
-    // Trim whitespace and check credentials
-    const trimmedUsername = username.trim();
-    const trimmedPassword = password.trim();
-
-    // Check credentials
-    if (trimmedUsername === adminUser && trimmedPassword === adminPassword) {
-      // Handle Remember Me functionality
-      if (rememberMe) {
-        localStorage.setItem('vimanasa_remember_username', trimmedUsername);
-        localStorage.setItem('vimanasa_remember_me', 'true');
-        // Store login timestamp for auto-login
-        localStorage.setItem('vimanasa_login_timestamp', Date.now().toString());
+      if (response.success) {
+        // Handle Remember Me functionality
+        if (rememberMe) {
+          localStorage.setItem('vimanasa_remember_username', username.trim());
+          localStorage.setItem('vimanasa_remember_me', 'true');
+          localStorage.setItem('vimanasa_login_timestamp', Date.now().toString());
+        } else {
+          localStorage.removeItem('vimanasa_remember_username');
+          localStorage.removeItem('vimanasa_remember_me');
+          localStorage.removeItem('vimanasa_login_timestamp');
+        }
+        
+        onLogin();
       } else {
-        // Clear saved credentials if Remember Me is unchecked
-        localStorage.removeItem('vimanasa_remember_username');
-        localStorage.removeItem('vimanasa_remember_me');
-        localStorage.removeItem('vimanasa_login_timestamp');
+        setError(response.message || 'Invalid username or password. Please try again.');
+        setIsLoading(false);
       }
-      
-      onLogin();
-    } else {
-      setError('Invalid username or password. Please try again.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please check your connection.');
       setIsLoading(false);
     }
   };
