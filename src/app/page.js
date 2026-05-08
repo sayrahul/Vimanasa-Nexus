@@ -18,6 +18,7 @@ import StatutoryCompliance from '@/components/StatutoryCompliance';
 import ExportMenu from '@/components/ExportMenu';
 import WorkforceDirectory from '@/components/WorkforceDirectory';
 import PartnerDirectory from '@/components/PartnerDirectory';
+import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle } from 'lucide-react';
@@ -181,6 +182,9 @@ export default function DashboardLayout() {
       fetchData('leave', silent);
       fetchData('expenses', silent);
       fetchData('compliance', silent);
+      fetchData('candidates', silent);
+    } else if (activeTab === 'recruitment') {
+      fetchData('candidates', silent);
     } else if (activeTab === 'clients') {
       fetchData('clients', silent);
       fetchData('partners', silent);
@@ -456,6 +460,14 @@ export default function DashboardLayout() {
                   <DashboardCharts data={data} />
                 </div>
               </>
+            )}
+
+            {activeTab === 'recruitment' && (
+              <RecruitmentManager 
+                data={data} 
+                onUpdate={fetchData} 
+                onNavigate={setActiveTab} 
+              />
             )}
 
             {activeTab === 'clients' && (
@@ -1021,6 +1033,7 @@ function DashboardView({ data, allData }) {
     pendingExpenses: allData?.expenses?.filter(e => e.Status === 'Pending').length || 0,
     complianceDue: allData?.compliance?.filter(c => c.Status === 'Pending').length || 0,
     overdueInvoices: allData?.invoices?.filter(i => i.Status === 'Overdue').length || 0,
+    newApplications: allData?.candidates?.filter(c => (c.Status || 'Pending').toLowerCase() === 'pending').length || 0,
   };
   
   const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
@@ -1160,6 +1173,16 @@ function DashboardView({ data, allData }) {
             color="blue"
           />
         )}
+        <div className="bg-indigo-600 p-4 rounded-xl shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => window.open('/apply', '_blank')}>
+          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform text-white">
+            <Briefcase size={80} />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">Candidate Portal</p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-xl font-black text-white">Open Form</p>
+            <ArrowRight size={20} className="text-white" />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -1170,6 +1193,15 @@ function DashboardView({ data, allData }) {
             <span className="text-xs text-slate-500 font-medium">Click to perform action</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+            <QuickActionCard 
+              icon={UserPlus} 
+              label="Recruitment" 
+              color="indigo"
+              count={stats.newApplications}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'recruitment' }));
+              }}
+            />
             <QuickActionCard 
               icon={Users} 
               label="Add Employee" 

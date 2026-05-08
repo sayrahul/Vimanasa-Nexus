@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { toDB, toFrontend } from '@/lib/dataMapper';
+import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'edge';
 
@@ -9,6 +10,30 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+/**
+ * Verify authentication for the request
+ */
+async function verifyRequest(request, table, method) {
+  // PUBLIC ACCESS RULE: Allow anyone to apply (insert into candidates)
+  if (table === 'candidates' && method === 'POST') {
+    return { success: true, public: true };
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { success: false, error: 'Unauthorized', message: 'No token provided', status: 401 };
+  }
+
+  const token = authHeader.substring(7);
+  const payload = await verifyToken(token);
+
+  if (!payload) {
+    return { success: false, error: 'Unauthorized', message: 'Invalid or expired token', status: 401 };
+  }
+
+  return { success: true, payload };
+}
 
 // Handle OPTIONS request for CORS preflight
 export async function OPTIONS(req) {
@@ -36,6 +61,12 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const table = searchParams.get('table');
+    
+    // Verify auth
+    const auth = await verifyRequest(req, table, 'GET');
+    if (!auth.success) {
+      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+    }
     
     console.log(`[API] GET /api/database?table=${table}`);
     
@@ -166,6 +197,12 @@ export async function POST(req) {
     const body = await req.json();
     const { table, data: insertData } = body;
     
+    // Verify auth
+    const auth = await verifyRequest(req, table, 'POST');
+    if (!auth.success) {
+      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+    }
+    
     console.log(`[API] POST /api/database - table: ${table}`, insertData);
     
     if (!table || !insertData) {
@@ -238,6 +275,12 @@ export async function PUT(req) {
     const body = await req.json();
     const { table, id, data: updateData } = body;
     
+    // Verify auth
+    const auth = await verifyRequest(req, table, 'PUT');
+    if (!auth.success) {
+      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+    }
+    
     if (!table || !id || !updateData) {
       return Response.json({ 
         error: 'Validation Error',
@@ -293,6 +336,12 @@ export async function DELETE(req) {
   try {
     const body = await req.json();
     const { table, id } = body;
+    
+    // Verify auth
+    const auth = await verifyRequest(req, table, 'DELETE');
+    if (!auth.success) {
+      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+    }
     
     if (!table || !id) {
       return Response.json({ 

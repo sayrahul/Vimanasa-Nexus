@@ -6,6 +6,13 @@ import { motion } from 'framer-motion';
 
 export default function DashboardCharts({ data }) {
   const [selectedPeriod, setSelectedPeriod] = useState('6m');
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  if (!isMounted) return <div className="h-[500px] flex items-center justify-center bg-slate-50 rounded-3xl border border-dashed border-slate-200 text-slate-400">Loading charts...</div>;
   
   // Dynamic Chart Calculations
   

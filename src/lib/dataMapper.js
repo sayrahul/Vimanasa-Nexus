@@ -142,6 +142,32 @@ export function toDB(table, data) {
         description: data['Month'] || data.month || data.description,
         metadata
       };
+
+    case 'candidates':
+      return {
+        ...(dbData.id && { id: dbData.id }),
+        job_title: data['Job Title'] || data.job_title,
+        job_id: data['Job ID'] || data.job_id,
+        full_name: data['Full Name'] || data.full_name,
+        phone: data['Phone'] || data.phone,
+        email: data['Email'] || data.email,
+        date_of_birth: data['Date of Birth'] || data.date_of_birth,
+        gender: data['Gender'] || data.gender,
+        address: data['Address'] || data.address,
+        aadhar_number: data['Aadhar'] || data.aadhar_number,
+        pan_number: data['PAN'] || data.pan_number,
+        current_employer: data['Current Employer'] || data.current_employer,
+        total_experience_years: parseInt(data['Experience'] || data.total_experience_years || 0),
+        current_salary: parseFloat(String(data['Current Salary'] || data.current_salary || '0').replace(/[^0-9.]/g, '')),
+        expected_salary: parseFloat(String(data['Expected Salary'] || data.expected_salary || '0').replace(/[^0-9.]/g, '')),
+        notice_period_days: parseInt(data['Notice Period'] || data.notice_period_days || 30),
+        skills: data['Skills'] || data.skills,
+        resume_url: data['Resume Link'] || data.resume_url,
+        photo_url: data['Photo Link'] || data.photo_url,
+        status: (data['Status'] || data.status || 'pending').toLowerCase(),
+        admin_notes: data.admin_notes || '',
+        metadata
+      };
       
     default:
       // If no mapping, just try to send it as is, Supabase will reject invalid columns
@@ -289,6 +315,23 @@ export function toFrontend(table, data) {
         'Due Date': data.due_date,
         'Invoice Amount': data.amount,
         'Status': data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : 'Pending',
+        ...data,
+        ...(data.metadata || {})
+      };
+
+    case 'candidates':
+      return {
+        id: data.id,
+        'Applied On': data.created_at,
+        'Full Name': data.full_name,
+        'Phone': data.phone,
+        'Email': data.email,
+        'Job Title': data.job_title,
+        'Experience': `${data.total_experience_years} Years`,
+        'Expected Salary': `₹${data.expected_salary}`,
+        'Status': data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : 'Pending',
+        'Resume Link': data.resume_url,
+        'Photo Link': data.photo_url,
         ...data,
         ...(data.metadata || {})
       };

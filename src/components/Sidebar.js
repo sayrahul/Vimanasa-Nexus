@@ -12,7 +12,8 @@ import {
   Clock,
   Receipt,
   Menu,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Home', id: 'dashboard' },
   { icon: Building2, label: 'Clients', id: 'clients' },
   { icon: Users, label: 'Placements', id: 'placements' },
+  { icon: UserPlus, label: 'Recruitment', id: 'recruitment' },
   { icon: Wallet, label: 'Finance', id: 'finance' },
   { icon: ShieldCheck, label: 'Compliance', id: 'compliance' },
   { icon: Receipt, label: 'Reports', id: 'reports' },

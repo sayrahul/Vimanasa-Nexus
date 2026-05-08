@@ -45,6 +45,12 @@ export async function POST(request) {
         permissions: user.permissions,
       },
       token,
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
     });
   } catch (error) {
     console.error('Login error:', error);

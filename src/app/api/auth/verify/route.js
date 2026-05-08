@@ -41,6 +41,12 @@ export async function GET(request) {
     return Response.json({
       success: true,
       user,
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }
     });
   } catch (error) {
     console.error('Token verification error:', error);
