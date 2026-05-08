@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Home, User, Briefcase, LayoutGrid, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "./ThemeToggle";
 
 const NAV_LINKS = [
   { name: "Home", href: "/", icon: Home },
@@ -65,7 +64,6 @@ export function Navbar() {
             </Link>
 
             <div className="flex md:hidden items-center gap-3">
-              <ThemeToggle />
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(!isOpen)}
@@ -102,7 +100,6 @@ export function Navbar() {
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
-                <ThemeToggle />
                 <Link href="/apply" className="relative group">
                   <motion.div
                     whileHover={{ scale: 1.05 }}
