@@ -191,6 +191,9 @@ export function toDB(table, data) {
 
 export function toFrontend(table, data) {
   if (!data) return data;
+  
+  console.log(`[MAPPER] Mapping ${table} record:`, data.id || 'no-id');
+  
   if (Array.isArray(data)) return data.map(item => toFrontend(table, item));
   
   // Merge back to frontend expected structure

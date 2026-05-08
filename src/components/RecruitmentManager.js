@@ -40,6 +40,13 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const candidates = data?.candidates || [];
+  const jobs = data?.job_openings || [];
+
+  console.log('--- RECRUITMENT HUB DATA ---');
+  console.log('Candidates Count:', candidates.length);
+  console.log('Job Openings Count:', jobs.length);
+  console.log('Raw Data Object:', data);
+  console.log('----------------------------');
 
   const filteredCandidates = candidates.filter(c => {
     const matchesSearch = 
@@ -143,7 +150,12 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Recruitment Portal</h1>
-          <p className="text-slate-500 mt-1">Manage job applications and hiring pipeline</p>
+          <p className="text-slate-500 mt-1 flex items-center gap-2">
+            Manage job applications and hiring pipeline 
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-black uppercase">
+              {candidates.length} Apps • {jobs.length} Openings
+            </span>
+          </p>
         </div>
         <div className="flex gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button 
@@ -504,6 +516,7 @@ function DetailItem({ label, value }) {
 }
 
 function JobOpeningsList({ jobs, onUpdate }) {
+  console.log('[JOBS-LIST] Rendering with jobs:', jobs.length);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [newJob, setNewJob] = useState({
