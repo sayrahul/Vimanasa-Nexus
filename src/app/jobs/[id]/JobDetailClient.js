@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+
 export default function JobDetailClient({ id }) {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,28 +77,27 @@ export default function JobDetailClient({ id }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <button 
-            onClick={() => window.location.href = '/jobs'}
-            className="flex items-center gap-2 text-slate-600 font-bold hover:text-blue-600 transition-colors"
-          >
-            <ArrowLeft size={20} /> Back to Jobs
-          </button>
-          <img src="/vimanasa-logo.png" alt="Logo" className="h-8 w-auto hidden md:block" />
-          <button 
-            onClick={handleShare}
-            className="flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold hover:bg-slate-200 transition-all"
-          >
-            <Share2 size={18} /> Share
-          </button>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-white flex flex-col">
+      <Navbar />
 
-      <main className="pt-32 pb-24 px-4">
+      <main className="flex-grow pt-40 pb-24 px-4">
         <div className="max-w-4xl mx-auto">
+          {/* Back Button & Share */}
+          <div className="flex items-center justify-between mb-8">
+            <button 
+              onClick={() => window.location.href = '/jobs'}
+              className="flex items-center gap-2 text-slate-600 font-bold hover:text-blue-600 transition-colors"
+            >
+              <ArrowLeft size={20} /> Back to Jobs
+            </button>
+            <button 
+              onClick={handleShare}
+              className="flex items-center gap-2 bg-slate-50 text-slate-700 px-4 py-2 rounded-xl font-bold hover:bg-slate-200 transition-all border border-slate-100"
+            >
+              <Share2 size={18} /> Share
+            </button>
+          </div>
+
           {/* Job Header Card */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -178,6 +180,8 @@ export default function JobDetailClient({ id }) {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

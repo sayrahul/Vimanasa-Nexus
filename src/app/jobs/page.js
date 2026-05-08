@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+
 export default function CareersPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,116 +60,105 @@ export default function CareersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-indigo-600/5" />
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl" />
-        
-        <div className="max-w-7xl mx-auto relative text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-bold mb-6"
-          >
-            <Sparkles size={16} />
-            <span>We're Hiring for 2026!</span>
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight mb-6"
-          >
-            Build your future at <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Vimanasa Nexus</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-slate-600 max-w-2xl mx-auto mb-10 font-medium"
-          >
-            Join a fast-growing ecosystem where talent meets opportunity. Browse our open positions and start your journey today.
-          </motion.p>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Navbar />
+      
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="relative pt-40 pb-20 px-4 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-indigo-600/5" />
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl" />
+          
+          <div className="max-w-7xl mx-auto relative text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-bold mb-6"
+            >
+              <Sparkles size={16} />
+              <span>We're Hiring for 2026!</span>
+            </motion.div>
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight mb-6"
+            >
+              Build your future at <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Vimanasa Nexus</span>
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-slate-600 max-w-2xl mx-auto mb-10 font-medium"
+            >
+              Join a fast-growing ecosystem where talent meets opportunity. Browse our open positions and start your journey today.
+            </motion.p>
 
-          {/* Search & Filter Bar */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="max-w-3xl mx-auto bg-white p-2 rounded-3xl shadow-2xl shadow-blue-100 flex flex-col md:flex-row gap-2 border border-slate-100"
-          >
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Search by job title or department..." 
-                className="w-full pl-12 pr-4 py-4 rounded-2xl outline-none font-bold text-slate-800"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <select 
-                className="px-6 py-4 bg-slate-50 rounded-2xl font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option>All</option>
-                <option>Full-time</option>
-                <option>Part-time</option>
-                <option>Contract</option>
-              </select>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Jobs Listing */}
-      <section className="pb-24 px-4">
-        <div className="max-w-7xl mx-auto">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-80 bg-white rounded-[2.5rem] animate-pulse border border-slate-100" />
-              ))}
-            </div>
-          ) : filteredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredJobs.map((job, index) => (
-                <JobCard key={job.id} job={job} index={index} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Briefcase size={32} className="text-slate-300" />
+            {/* Search & Filter Bar */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="max-w-3xl mx-auto bg-white p-2 rounded-3xl shadow-2xl shadow-blue-100 flex flex-col md:flex-row gap-2 border border-slate-100"
+            >
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Search by job title or department..." 
+                  className="w-full pl-12 pr-4 py-4 rounded-2xl outline-none font-bold text-slate-800"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">No matching jobs found</h3>
-              <p className="text-slate-500">Try adjusting your search or filters to find more opportunities.</p>
-            </div>
-          )}
-        </div>
-      </section>
+              <div className="flex gap-2">
+                <select 
+                  className="px-6 py-4 bg-slate-50 rounded-2xl font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option>All</option>
+                  <option>Full-time</option>
+                  <option>Part-time</option>
+                  <option>Contract</option>
+                </select>
+              </div>
+            </motion.div>
+          </div>
+        </section>
 
-      {/* Footer / CTA */}
-      <section className="bg-slate-900 py-20 px-4 text-center text-white rounded-t-[4rem] relative">
-        <div className="absolute top-4 left-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest bg-slate-800 px-3 py-1 rounded-full">
-          Live Probe: {loading ? '⌛ Loading...' : `✅ ${jobs.length} Positions Found`}
-        </div>
-        <h2 className="text-3xl font-black mb-6">Didn't find what you were looking for?</h2>
-        <p className="text-slate-400 max-w-xl mx-auto mb-10 font-medium">
-          Send us your resume for general consideration and we'll keep you in mind for future openings.
-        </p>
-        <button 
-          onClick={() => window.location.href = '/apply'}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-black transition-all shadow-xl shadow-blue-500/20"
-        >
-          General Application
-        </button>
-      </section>
+        {/* Jobs Listing */}
+        <section className="pb-24 px-4">
+          <div className="max-w-7xl mx-auto">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-80 bg-white rounded-[2.5rem] animate-pulse border border-slate-100" />
+                ))}
+              </div>
+            ) : filteredJobs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredJobs.map((job, index) => (
+                  <JobCard key={job.id} job={job} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Briefcase size={32} className="text-slate-300" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">No matching jobs found</h3>
+                <p className="text-slate-500">Try adjusting your search or filters to find more opportunities.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <Footer />
     </div>
   );
 }
