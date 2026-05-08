@@ -172,7 +172,7 @@ export default function DashboardLayout() {
         toast.error('Failed to fetch data. Please try again.');
       }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const syncCurrentGroup = useCallback((silent = false) => {
     if (activeTab === 'dashboard') {
