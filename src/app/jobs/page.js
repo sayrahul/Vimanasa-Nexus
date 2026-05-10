@@ -32,16 +32,13 @@ export default function CareersPage() {
         const response = await fetch(`/api/database?table=job_openings&t=${Date.now()}`);
         const result = await response.json();
         
-        console.log('[JOBS-PAGE] Fetch result:', result);
-
         if (result.success && result.data) {
           const openJobs = result.data.filter(j => 
             (j.status || 'open').toLowerCase() === 'open'
           );
           setJobs(openJobs);
         } else {
-          // If API fails or returns empty, try a direct public fetch as fallback
-          console.warn('[JOBS-PAGE] API returned no data, checking table directly...');
+          console.warn('[JOBS-PAGE] API returned no job data.');
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);

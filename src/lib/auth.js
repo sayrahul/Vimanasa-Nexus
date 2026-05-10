@@ -5,10 +5,8 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 
-// Use a secure secret key (should be in environment variables)
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'vimanasa-nexus-secret-key-change-in-production'
-);
+const jwtSecret = process.env.JWT_SECRET;
+const SECRET_KEY = jwtSecret ? new TextEncoder().encode(jwtSecret) : null;
 
 // User database (in production, this should be in a real database)
 const USERS = [
@@ -48,7 +46,7 @@ const USERS = [
  * @returns {Object|null} User object without password or null
  */
 export async function authenticateUser(username, password) {
-  // In production, compare with bcrypt hashed password
+  // TODO: Move users to Supabase Auth or a secured users table with hashed passwords.
   const user = USERS.find(
     (u) => u.username === username && verifyPassword(password, u.password)
   );
@@ -69,9 +67,6 @@ export async function authenticateUser(username, password) {
  * @returns {boolean}
  */
 function verifyPassword(plainPassword, hashedPassword) {
-  // TEMPORARY: For demo purposes, use plain text comparison
-  // In production, use: await bcrypt.compare(plainPassword, hashedPassword)
-  
   const passwordMap = {
     'Vimanasa@2026': '$2a$10$rKvqZ8YqXqXqXqXqXqXqXeO',
     'hr123': '$2a$10$hrManagerHashedPassword',
@@ -87,6 +82,10 @@ function verifyPassword(plainPassword, hashedPassword) {
  * @returns {Promise<string>} JWT token
  */
 export async function createToken(user) {
+  if (!SECRET_KEY) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+
   const token = await new SignJWT({
     id: user.id,
     username: user.username,
@@ -108,10 +107,13 @@ export async function createToken(user) {
  */
 export async function verifyToken(token) {
   try {
+    if (!SECRET_KEY) {
+      return null;
+    }
+
     const { payload } = await jwtVerify(token, SECRET_KEY);
     return payload;
   } catch (error) {
-    console.error('Token verification failed:', error);
     return null;
   }
 }

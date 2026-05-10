@@ -263,7 +263,6 @@ export default function DashboardLayout() {
           schema: 'public',
         },
         (payload) => {
-          console.log('[Realtime] Database change detected!', payload);
           // Only fetch if we are not currently editing to prevent UI jumping
           if (!showForm && !isLoading) {
             syncCurrentGroup(true);
@@ -474,7 +473,7 @@ export default function DashboardLayout() {
         onToggleAutoSync={toggleAutoSync}
       />
       
-      <main className="flex-1 lg:ml-64 pt-24 lg:pt-12 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:ml-64 pt-24 pb-28 lg:pt-12 lg:pb-8 p-4 sm:p-6 lg:p-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -491,18 +490,8 @@ export default function DashboardLayout() {
               </div>
             )}
 
-            {console.log('[DASHBOARD] Rendering Tab:', activeTab)}
             {activeTab === 'dashboard' && (
               <>
-                <div className="mb-4 bg-blue-600 p-4 rounded-xl text-white flex justify-between items-center shadow-lg">
-                  <span className="font-bold">Navigation Debug Mode:</span>
-                  <button 
-                    onClick={() => setActiveTab('recruitment')}
-                    className="bg-white text-blue-600 px-4 py-2 rounded-lg font-black text-sm hover:bg-blue-50 transition-all"
-                  >
-                    FORCE OPEN RECRUITMENT 🚀
-                  </button>
-                </div>
                 <DashboardView data={data.dashboard} allData={data} />
                 <div className="mt-8">
                   <DashboardCharts data={data} />
@@ -1594,7 +1583,57 @@ function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, ta
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="space-y-3 p-3 sm:hidden">
+          {filteredData.length > 0 ? filteredData.map((row, i) => {
+            const titleValue = row.Employee || row['Client Name'] || row['Partner Name'] || row.Requirement || row.Category || row.Month || row.ID || `Record ${i + 1}`;
+            const statusColumn = columns.find((col) => col.toLowerCase().includes('status'));
+
+            return (
+              <article key={row.id || i} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-black text-slate-900">{titleValue}</h3>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{row.ID || row['Client ID'] || row['Site ID'] || title}</p>
+                  </div>
+                  {statusColumn && (
+                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase text-slate-600">
+                      {row[statusColumn] || 'N/A'}
+                    </span>
+                  )}
+                </div>
+
+                <dl className="grid grid-cols-2 gap-3">
+                  {columns.filter((col) => col !== statusColumn).slice(0, 4).map((col) => (
+                    <div key={col} className="min-w-0 rounded-xl bg-slate-50 p-3">
+                      <dt className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">{col}</dt>
+                      <dd className="truncate text-sm font-bold text-slate-800">{row[col] || 'N/A'}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+                  {tab === 'workforce' && onGenerateDoc && (
+                    <button onClick={() => onGenerateDoc(row, 'offer')} className="rounded-xl bg-indigo-50 px-3 py-2 text-xs font-black text-indigo-700">
+                      Offer
+                    </button>
+                  )}
+                  <button onClick={() => onEdit(row, i)} className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-black text-blue-700">
+                    Edit
+                  </button>
+                  <button onClick={() => onDelete(row, i)} className="rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-red-700">
+                    Delete
+                  </button>
+                </div>
+              </article>
+            );
+          }) : (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-400">
+              {data ? 'No records found matching your search.' : 'Loading entries...'}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full text-left min-w-[640px]">
             <thead>
               <tr className="bg-slate-50/80">
@@ -1907,14 +1946,6 @@ function Login({ onLogin }) {
               )}
             </button>
 
-            {/* Demo Credentials */}
-            <div className="pt-4 border-t border-slate-200">
-              <p className="text-xs text-slate-500 text-center mb-2 font-medium">Demo Credentials</p>
-              <div className="bg-slate-50 rounded-lg p-3 space-y-1">
-                <p className="text-xs text-slate-600"><span className="font-semibold">Username:</span> admin</p>
-                <p className="text-xs text-slate-600"><span className="font-semibold">Password:</span> Vimanasa@2026</p>
-              </div>
-            </div>
           </form>
 
           {/* Footer */}

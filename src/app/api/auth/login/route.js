@@ -7,8 +7,37 @@ import { authenticateUser, createToken } from '@/lib/auth';
 
 export const runtime = 'edge';
 
+const loginAttempts = new Map();
+
+function getClientKey(request) {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('cf-connecting-ip')
+    || 'unknown';
+}
+
+function isRateLimited(request) {
+  const key = getClientKey(request);
+  const now = Date.now();
+  const current = loginAttempts.get(key);
+
+  if (!current || now > current.resetAt) {
+    loginAttempts.set(key, { count: 1, resetAt: now + 60_000 });
+    return false;
+  }
+
+  current.count += 1;
+  return current.count > 10;
+}
+
 export async function POST(request) {
   try {
+    if (isRateLimited(request)) {
+      return Response.json(
+        { error: 'Rate Limited', message: 'Too many login attempts. Please try again shortly.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { username, password } = body;
 
@@ -30,7 +59,6 @@ export async function POST(request) {
       );
     }
 
-    // Create JWT token
     const token = await createToken(user);
 
     // Return user data and token

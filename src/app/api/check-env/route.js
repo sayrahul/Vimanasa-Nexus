@@ -1,71 +1,67 @@
-// Diagnostic endpoint to check environment variables
+import { verifyToken } from '@/lib/auth';
+
 export const runtime = 'edge';
 
-export async function GET(req) {
-  const diagnostics = {
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'unknown',
-    runtime: 'edge',
-    checks: {
-      supabaseUrl: {
-        exists: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        value: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET',
-        actual: process.env.NEXT_PUBLIC_SUPABASE_URL || null
-      },
-      supabaseAnonKey: {
-        exists: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET (length: ' + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length + ')' : 'NOT SET'
-      },
-      supabaseServiceRoleKey: {
-        exists: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        value: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET (length: ' + process.env.SUPABASE_SERVICE_ROLE_KEY.length + ')' : 'NOT SET ⚠️'
-      },
-      adminUser: {
-        exists: !!process.env.NEXT_PUBLIC_ADMIN_USER,
-        value: process.env.NEXT_PUBLIC_ADMIN_USER || 'NOT SET'
-      },
-      adminPassword: {
-        exists: !!process.env.NEXT_PUBLIC_ADMIN_PASSWORD,
-        value: process.env.NEXT_PUBLIC_ADMIN_PASSWORD ? 'SET' : 'NOT SET'
-      },
-      geminiApiKey: {
-        exists: !!process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-        value: process.env.NEXT_PUBLIC_GEMINI_API_KEY ? 'SET' : 'NOT SET'
-      }
-    },
-    status: 'OK',
-    message: 'Environment diagnostics complete'
-  };
+const REQUIRED_ENV = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'JWT_SECRET',
+];
 
-  // Check if critical variables are missing
-  const criticalMissing = [];
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) criticalMissing.push('NEXT_PUBLIC_SUPABASE_URL');
-  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) criticalMissing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) criticalMissing.push('SUPABASE_SERVICE_ROLE_KEY');
+const responseHeaders = {
+  'Cache-Control': 'no-store',
+  'Access-Control-Allow-Origin': 'https://nexus.vimanasa.com',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
-  if (criticalMissing.length > 0) {
-    diagnostics.status = 'ERROR';
-    diagnostics.message = `Missing critical environment variables: ${criticalMissing.join(', ')}`;
-    diagnostics.criticalMissing = criticalMissing;
-  }
-
-  return Response.json(diagnostics, {
-    status: criticalMissing.length > 0 ? 500 : 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    }
-  });
+function json(body, status = 200) {
+  return Response.json(body, { status, headers: responseHeaders });
 }
 
-export async function OPTIONS(req) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    }
+async function requireAdmin(request) {
+  const authHeader = request.headers.get('authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const payload = await verifyToken(authHeader.substring(7));
+  if (!payload || !['super_admin', 'admin'].includes(payload.role)) {
+    return null;
+  }
+
+  return payload;
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: responseHeaders });
+}
+
+export async function GET(request) {
+  const user = await requireAdmin(request);
+
+  if (!user) {
+    return json({ error: 'Unauthorized', message: 'Admin token required' }, 401);
+  }
+
+  const checks = Object.fromEntries(
+    REQUIRED_ENV.map((key) => [
+      key,
+      {
+        exists: !!process.env[key],
+        value: process.env[key] ? 'SET' : 'NOT SET',
+      },
+    ])
+  );
+  const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+
+  return json({
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'unknown',
+    checks,
+    status: missing.length === 0 ? 'OK' : 'MISSING_CONFIG',
+    missing,
   });
 }

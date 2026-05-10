@@ -174,7 +174,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                       <option>Office Staff</option>
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Phone</label>
                       <input
@@ -198,7 +198,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Date of Birth</label>
                       <input
@@ -239,7 +239,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                       placeholder="Relation - +91 XXXXXXXXXX"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Aadhar Number</label>
                       <input
@@ -271,7 +271,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                   Bank & Statutory Information
                 </h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="col-span-1">
                       <label className="block text-sm font-bold text-slate-700 mb-2">Bank Name</label>
                       <input
@@ -303,7 +303,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                       placeholder="HDFC0001234"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">PF Account Number</label>
                       <input
@@ -354,7 +354,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Aadhar Document (URL)</label>
                       <input
@@ -435,7 +435,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                           placeholder="Pune Office - Gate 2"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Shift Start</label>
                           <input
@@ -524,7 +524,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                         This section is strictly confidential and visible only to Super Admin. Never share with employees or sub-admins.
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Employer PF (12%)</label>
                         <input

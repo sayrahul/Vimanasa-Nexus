@@ -32,8 +32,6 @@ export default function JobDetailClient({ id }) {
         const response = await fetch(`/api/database?table=job_openings&t=${Date.now()}`);
         const result = await response.json();
         
-        console.log('[JOB-DETAIL] Fetch result:', result);
-
         if (result.success && result.data) {
           const foundJob = result.data.find(j => j.id === id);
           setJob(foundJob);

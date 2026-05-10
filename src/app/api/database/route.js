@@ -1,63 +1,20 @@
+import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { toDB, toFrontend } from '@/lib/dataMapper';
 import { verifyToken } from '@/lib/auth';
 
 export const runtime = 'edge';
 
-// CORS headers for all responses
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+const allowedOrigins = new Set([
+  'https://nexus.vimanasa.com',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]);
 
-/**
- * Verify authentication for the request
- */
-async function verifyRequest(request, table, method) {
-  console.log(`[AUTH] Verifying ${method} for ${table}`);
-  
-  // PUBLIC ACCESS RULE: Allow anyone to apply (insert into candidates)
-  if (table === 'candidates' && method === 'POST') {
-    console.log('[AUTH] Public POST allowed for candidates');
-    return { success: true, public: true };
-  }
-
-  // PUBLIC ACCESS RULE: Allow anyone to see open jobs
-  if (table === 'job_openings' && method === 'GET') {
-    console.log('[AUTH] Public GET allowed for job_openings');
-    return { success: true, public: true };
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('[AUTH] ❌ No Bearer token found in headers');
-    return { success: false, error: 'Unauthorized', message: 'No token provided', status: 401 };
-  }
-
-  const token = authHeader.substring(7);
-  const payload = await verifyToken(token);
-
-  if (!payload) {
-    console.error('[AUTH] ❌ Token verification failed (Invalid or Expired)');
-    return { success: false, error: 'Unauthorized', message: 'Invalid or expired token', status: 401 };
-  }
-
-  console.log(`[AUTH] ✅ Authorized: ${payload.username} (${payload.role})`);
-  return { success: true, payload };
-}
-
-// Handle OPTIONS request for CORS preflight
-export async function OPTIONS(req) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-// Map frontend tabs to database tables
 const tableMapping = {
+  dashboard: null,
   workforce: 'employees',
+  employees: 'employees',
   clients: 'clients',
   partners: 'partners',
   payroll: 'payroll',
@@ -65,316 +22,382 @@ const tableMapping = {
   compliance: 'compliance',
   attendance: 'attendance',
   leave: 'leave_requests',
+  leave_requests: 'leave_requests',
   expenses: 'expense_claims',
+  expense_claims: 'expense_claims',
   invoices: 'client_invoices',
-  job_openings: 'job_openings'
+  client_invoices: 'client_invoices',
+  candidates: 'candidates',
+  job_openings: 'job_openings',
 };
 
-export async function GET(req) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const table = searchParams.get('table');
-    
-    // Verify auth
-    const auth = await verifyRequest(req, table, 'GET');
-    if (!auth.success) {
-      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+const tablePermissions = {
+  super_admin: '*',
+  admin: '*',
+  hr_manager: {
+    read: ['dashboard', 'workforce', 'employees', 'clients', 'partners', 'attendance', 'leave', 'leave_requests', 'candidates', 'job_openings'],
+    write: ['workforce', 'employees', 'attendance', 'leave', 'leave_requests', 'candidates', 'job_openings'],
+  },
+  finance_manager: {
+    read: ['dashboard', 'workforce', 'employees', 'clients', 'payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices'],
+    write: ['payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices'],
+  },
+  compliance_officer: {
+    read: ['dashboard', 'workforce', 'employees', 'compliance'],
+    write: ['compliance'],
+  },
+};
+
+const publicRules = [
+  { table: 'job_openings', method: 'GET' },
+  { table: 'candidates', method: 'POST' },
+];
+
+const requestSchema = z.object({
+  table: z.string().min(1),
+  id: z.string().uuid().optional(),
+  data: z.unknown().optional(),
+});
+
+const candidateSchema = z.object({
+  'Full Name': z.string().trim().min(2).max(120),
+  Phone: z.string().trim().min(8).max(20),
+  Email: z.string().trim().email().optional().or(z.literal('')),
+  'Job Title': z.string().trim().min(2).max(160).optional(),
+  'Job ID': z.string().trim().max(80).optional(),
+  PAN: z.string().trim().max(20).optional().or(z.literal('')),
+  Aadhar: z.string().trim().max(20).optional().or(z.literal('')),
+  Status: z.string().trim().max(40).optional(),
+}).passthrough();
+
+const jobSchema = z.object({
+  title: z.string().trim().min(2).max(160).optional(),
+  'Job Title': z.string().trim().min(2).max(160).optional(),
+  department: z.string().trim().max(120).optional(),
+  Department: z.string().trim().max(120).optional(),
+  status: z.enum(['open', 'closed']).optional(),
+  Status: z.string().trim().max(40).optional(),
+}).passthrough().refine((data) => data.title || data['Job Title'], {
+  message: 'Job title is required',
+});
+
+const genericDataSchema = z.object({}).passthrough();
+const rateLimitStore = new Map();
+
+function getHeaders(request) {
+  const origin = request?.headers?.get('origin');
+
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.has(origin) ? origin : 'https://nexus.vimanasa.com',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Cache-Control': 'no-store',
+  };
+}
+
+function json(request, body, status = 200) {
+  return Response.json(body, { status, headers: getHeaders(request) });
+}
+
+function getClientKey(request) {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('cf-connecting-ip')
+    || 'unknown';
+}
+
+function checkRateLimit(request, bucket, limit = 20, windowMs = 60_000) {
+  const key = `${bucket}:${getClientKey(request)}`;
+  const now = Date.now();
+  const current = rateLimitStore.get(key);
+
+  if (!current || now > current.resetAt) {
+    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+
+  if (current.count >= limit) {
+    return false;
+  }
+
+  current.count += 1;
+  return true;
+}
+
+function resolveTable(table) {
+  return Object.prototype.hasOwnProperty.call(tableMapping, table) ? tableMapping[table] : undefined;
+}
+
+function isPublicRequest(table, method) {
+  return publicRules.some((rule) => rule.table === table && rule.method === method);
+}
+
+function hasTableAccess(payload, table, method) {
+  const role = payload?.role || 'employee';
+  const permissions = tablePermissions[role];
+
+  if (permissions === '*') return true;
+  if (!permissions) return false;
+
+  const action = method === 'GET' ? 'read' : 'write';
+  return permissions[action]?.includes(table);
+}
+
+async function verifyRequest(request, table, method) {
+  if (isPublicRequest(table, method)) {
+    return { success: true, public: true };
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { success: false, error: 'Unauthorized', message: 'No token provided', status: 401 };
+  }
+
+  const payload = await verifyToken(authHeader.substring(7));
+  if (!payload) {
+    return { success: false, error: 'Unauthorized', message: 'Invalid or expired token', status: 401 };
+  }
+
+  if (!hasTableAccess(payload, table, method)) {
+    return { success: false, error: 'Forbidden', message: 'Insufficient permissions', status: 403 };
+  }
+
+  return { success: true, payload };
+}
+
+function validatePayload(table, data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { success: false, message: 'Data must be an object' };
+  }
+
+  const schema = table === 'candidates'
+    ? candidateSchema
+    : table === 'job_openings'
+      ? jobSchema
+      : genericDataSchema;
+
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    return {
+      success: false,
+      message: result.error.issues.map((issue) => issue.message).join(', '),
+    };
+  }
+
+  return { success: true, data: result.data };
+}
+
+async function fetchRows(table, dbTable, isPublic) {
+  if (table === 'dashboard') {
+    return { data: [], error: null };
+  }
+
+  let query = supabaseAdmin.from(dbTable).select('*');
+
+  if (isPublic && table === 'job_openings') {
+    query = query.eq('status', 'open');
+  }
+
+  const ordered = await query.order('created_at', { ascending: false });
+  if (!ordered.error) {
+    return ordered;
+  }
+
+  if (ordered.error.message?.includes('column') && ordered.error.message?.includes('does not exist')) {
+    let fallback = supabaseAdmin.from(dbTable).select('*');
+    if (isPublic && table === 'job_openings') {
+      fallback = fallback.eq('status', 'open');
     }
-    
-    console.log(`[API] GET /api/database?table=${table}`);
-    
-    if (!table) {
-      console.error('[API] Error: Table name is required');
-      return Response.json({ 
-        error: 'Validation Error',
-        message: 'Table name is required' 
-      }, { 
-        status: 400,
-        headers: corsHeaders 
-      });
+    return fallback;
+  }
+
+  return ordered;
+}
+
+function handleSchemaError(request, error, table, dbTable) {
+  if (error.code === '42P01' || (error.message?.includes('relation') && error.message?.includes('does not exist'))) {
+    return json(request, { success: true, data: [], count: 0 });
+  }
+
+  return json(request, {
+    success: false,
+    error: 'Database Error',
+    message: error.message,
+    details: { table: dbTable || table },
+  }, 500);
+}
+
+export async function OPTIONS(request) {
+  return new Response(null, { status: 204, headers: getHeaders(request) });
+}
+
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const table = searchParams.get('table');
+    const dbTable = resolveTable(table);
+
+    if (!table || dbTable === undefined) {
+      return json(request, { error: 'Validation Error', message: 'Unsupported or missing table' }, 400);
+    }
+
+    const auth = await verifyRequest(request, table, 'GET');
+    if (!auth.success) {
+      return json(request, { error: auth.error, message: auth.message }, auth.status);
     }
 
     if (!supabaseAdmin) {
-      console.error('[API] Error: Supabase is not configured');
-      return Response.json({ 
-        error: 'Configuration Error',
-        message: 'Supabase is not configured' 
-      }, { 
-        status: 500,
-        headers: corsHeaders
-      });
+      return json(request, { error: 'Configuration Error', message: 'Supabase is not configured' }, 500);
     }
 
-    // Dashboard doesn't have a table - return empty data
-    if (table === 'dashboard') {
-      return Response.json({ 
-        success: true, 
-        data: [], 
-        count: 0 
-      }, {
-        headers: corsHeaders
-      });
+    const { data, error } = await fetchRows(table, dbTable, auth.public);
+    if (error) {
+      return handleSchemaError(request, error, table, dbTable);
     }
 
-    const dbTable = tableMapping[table] || table;
-    console.log(`[API] Mapped table: ${table} -> ${dbTable}`);
-
-    // Try to fetch with created_at ordering first
-    let query = supabaseAdmin.from(dbTable).select('*');
-    
-    // Try ordering by created_at, but fallback if column doesn't exist
-    try {
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) {
-        // If created_at doesn't exist, try without ordering
-        if (error.message.includes('column') && error.message.includes('does not exist')) {
-          const { data: fallbackData, error: fallbackError } = await supabaseAdmin
-            .from(dbTable)
-            .select('*');
-          
-          if (fallbackError) throw fallbackError;
-          
-          return Response.json({ 
-            success: true, 
-            data: toFrontend(table, fallbackData) || [], 
-            count: fallbackData?.length || 0 
-          }, {
-            headers: corsHeaders
-          });
-        }
-        throw error;
-      }
-
-      return Response.json({ 
-        success: true, 
-        data: toFrontend(table, data) || [], 
-        count: data?.length || 0 
-      }, {
-        headers: corsHeaders
-      });
-    } catch (orderError) {
-      // Fallback: fetch without ordering
-      const { data, error } = await supabaseAdmin
-        .from(dbTable)
-        .select('*');
-      
-      if (error) throw error;
-
-      return Response.json({ 
-        success: true, 
-        data: toFrontend(table, data) || [], 
-        count: data?.length || 0 
-      }, {
-        headers: corsHeaders
-      });
-    }
+    return json(request, {
+      success: true,
+      data: toFrontend(table, data) || [],
+      count: data?.length || 0,
+    });
   } catch (error) {
-    const { searchParams } = new URL(req.url);
-    const table = searchParams.get('table');
-    const dbTable = tableMapping[table] || table;
-
-    // Handle "Table not found" (Postgres code 42P01)
-    if (error.code === '42P01' || (error.message && error.message.includes('relation') && error.message.includes('does not exist'))) {
-      console.warn(`[API] Table "${dbTable}" does not exist yet. Returning empty data for frontend.`);
-      return Response.json({ 
-        success: true, 
-        data: [], 
-        count: 0 
-      }, {
-        headers: corsHeaders
-      });
-    }
-
-    console.error('[API] Database Error (GET):', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      table: dbTable
-    });
-
-    return Response.json({ 
-      error: 'Database Error',
-      message: error.message,
-      details: { table: dbTable }
-    }, { 
-      status: 500,
-      headers: corsHeaders 
-    });
+    return json(request, { success: false, message: error.message }, 500);
   }
 }
 
-export async function POST(req) {
+export async function POST(request) {
   try {
-    const body = await req.json();
-    const { table, data: insertData } = body;
-    
-    // Verify auth
-    const auth = await verifyRequest(req, table, 'POST');
-    if (!auth.success) {
-      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
+    if (!checkRateLimit(request, 'api-database-post', 30)) {
+      return json(request, { error: 'Rate Limited', message: 'Too many requests' }, 429);
     }
-    
-    console.log(`[API] POST /api/database - table: ${table}`, insertData);
-    
-    if (!table || !insertData) {
-      console.error('[API] Error: Table name and data are required');
-      return Response.json({ 
-        error: 'Validation Error',
-        message: 'Table name and data are required' 
-      }, { 
-        status: 400,
-        headers: corsHeaders 
-      });
+
+    const parsed = requestSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return json(request, { error: 'Validation Error', message: 'Invalid request body' }, 400);
+    }
+
+    const { table, data: insertData } = parsed.data;
+    const dbTable = resolveTable(table);
+
+    if (!table || dbTable === undefined || table === 'dashboard') {
+      return json(request, { error: 'Validation Error', message: 'Unsupported table' }, 400);
+    }
+
+    const auth = await verifyRequest(request, table, 'POST');
+    if (!auth.success) {
+      return json(request, { error: auth.error, message: auth.message }, auth.status);
     }
 
     if (!supabaseAdmin) {
-      console.error('[API] Error: Supabase is not configured');
-      return Response.json({ 
-        error: 'Configuration Error',
-        message: 'Supabase is not configured' 
-      }, { 
-        status: 500,
-        headers: corsHeaders 
-      });
+      return json(request, { error: 'Configuration Error', message: 'Supabase is not configured' }, 500);
     }
 
-    const dbTable = tableMapping[table] || table;
-    const dbData = toDB(table, insertData);
-    console.log(`[API] Inserting into table: ${dbTable}`, dbData);
+    const validation = validatePayload(table, insertData);
+    if (!validation.success) {
+      return json(request, { error: 'Validation Error', message: validation.message }, 400);
+    }
 
     const { data, error } = await supabaseAdmin
       .from(dbTable)
-      .insert(dbData)
+      .insert(toDB(table, validation.data))
       .select();
 
-    if (error) {
-      console.error('[API] Supabase Insert Error:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-        table: dbTable
-      });
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log(`[API] Successfully inserted into ${dbTable}`);
-    return Response.json({ 
-      success: true, 
-      data: toFrontend(table, data[0]),
-      message: 'Data added successfully' 
-    }, {
-      headers: corsHeaders
+    return json(request, {
+      success: true,
+      data: toFrontend(table, data?.[0]),
+      message: 'Data added successfully',
     });
   } catch (error) {
-    console.error('[API] Database Error (POST):', {
-      message: error.message,
-      stack: error.stack
-    });
-
-    // Special check for metadata column issue
-    if (error.message?.includes('metadata')) {
-      return Response.json({ 
-        success: false, 
-        message: "Database schema mismatch: 'metadata' column missing. Please run the SQL update provided by the assistant.",
-        error: error.message 
-      }, { status: 500, headers: corsHeaders });
-    }
-
-    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
+    return json(request, { success: false, message: error.message }, 500);
   }
 }
 
-export async function PUT(req) {
+export async function PUT(request) {
   try {
-    const body = await req.json();
-    const { table, id, data: updateData } = body;
-    
-    // Verify auth
-    const auth = await verifyRequest(req, table, 'PUT');
-    if (!auth.success) {
-      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
-    }
-    
-    if (!table || !id || !updateData) {
-      return Response.json({ 
-        error: 'Validation Error',
-        message: 'Table name, ID, and data are required' 
-      }, { 
-        status: 400,
-        headers: corsHeaders 
-      });
+    const parsed = requestSchema.extend({
+      id: z.string().uuid(),
+      data: z.unknown(),
+    }).safeParse(await request.json());
+
+    if (!parsed.success) {
+      return json(request, { error: 'Validation Error', message: 'Table, id, and data are required' }, 400);
     }
 
-    const dbTable = tableMapping[table] || table;
-    const dbData = toDB(table, updateData);
-    if (dbData.id) delete dbData.id;
+    const { table, id, data: updateData } = parsed.data;
+    const dbTable = resolveTable(table);
+
+    if (!table || dbTable === undefined || table === 'dashboard') {
+      return json(request, { error: 'Validation Error', message: 'Unsupported table' }, 400);
+    }
+
+    const auth = await verifyRequest(request, table, 'PUT');
+    if (!auth.success) {
+      return json(request, { error: auth.error, message: auth.message }, auth.status);
+    }
+
+    const validation = validatePayload(table, updateData);
+    if (!validation.success) {
+      return json(request, { error: 'Validation Error', message: validation.message }, 400);
+    }
+
+    const dbData = toDB(table, validation.data);
+    delete dbData.id;
 
     const { data, error } = await supabaseAdmin
       .from(dbTable)
       .update(dbData)
       .eq('id', id)
       .select();
-    
-    if (error) {
-      console.error('[API] Supabase Update Error:', error);
-      throw error;
-    }
 
-    return Response.json({ 
-      success: true, 
-      data: toFrontend(table, data[0]),
-      message: 'Data updated successfully' 
-    }, {
-      headers: corsHeaders
+    if (error) throw error;
+
+    return json(request, {
+      success: true,
+      data: toFrontend(table, data?.[0]),
+      message: 'Data updated successfully',
     });
   } catch (error) {
-    console.error('[API] Database Error (PUT):', error);
-    if (error.message?.includes('metadata')) {
-      return Response.json({ 
-        success: false, 
-        message: "Database schema mismatch: 'metadata' column missing.",
-        error: error.message 
-      }, { status: 500, headers: corsHeaders });
-    }
-    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
+    return json(request, { success: false, message: error.message }, 500);
   }
 }
 
-export async function DELETE(req) {
+export async function DELETE(request) {
   try {
-    const body = await req.json();
-    const { table, id } = body;
-    
-    const auth = await verifyRequest(req, table, 'DELETE');
-    if (!auth.success) {
-      return Response.json({ error: auth.error, message: auth.message }, { status: auth.status, headers: corsHeaders });
-    }
-    
-    if (!table || !id) {
-      return Response.json({ error: 'Validation Error', message: 'Table name and ID are required' }, { status: 400, headers: corsHeaders });
+    const parsed = requestSchema.extend({
+      id: z.string().uuid(),
+    }).safeParse(await request.json());
+
+    if (!parsed.success) {
+      return json(request, { error: 'Validation Error', message: 'Table and id are required' }, 400);
     }
 
-    const dbTable = tableMapping[table] || table;
+    const { table, id } = parsed.data;
+    const dbTable = resolveTable(table);
+
+    if (!table || dbTable === undefined || table === 'dashboard') {
+      return json(request, { error: 'Validation Error', message: 'Unsupported table' }, 400);
+    }
+
+    const auth = await verifyRequest(request, table, 'DELETE');
+    if (!auth.success) {
+      return json(request, { error: auth.error, message: auth.message }, auth.status);
+    }
+
     const { data, error } = await supabaseAdmin
       .from(dbTable)
       .delete()
       .eq('id', id)
       .select();
-    
+
     if (error) throw error;
 
-    return Response.json({ 
-      success: true, 
-      data: toFrontend(table, data[0]),
-      message: 'Data deleted successfully' 
-    }, {
-      headers: corsHeaders
+    return json(request, {
+      success: true,
+      data: toFrontend(table, data?.[0]),
+      message: 'Data deleted successfully',
     });
   } catch (error) {
-    console.error('[API] Database Error (DELETE):', error);
-    return Response.json({ success: false, message: error.message }, { status: 500, headers: corsHeaders });
+    return json(request, { success: false, message: error.message }, 500);
   }
 }

@@ -331,7 +331,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                   </div>
                   <div className="space-y-6">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Professional Snapshot</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <DetailBox label="Experience" value={selectedCandidate['Experience']} />
                       <DetailBox label="Exp. Salary" value={selectedCandidate['Expected Salary']} />
                       <DetailBox label="Notice" value={selectedCandidate['Notice Period'] ? `${selectedCandidate['Notice Period']} Days` : 'Immediate'} />
@@ -494,7 +494,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Job Type</p>
                 <p className="text-sm font-black text-slate-800">{job.type}</p>
@@ -529,7 +529,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[200]" onClick={() => setShowForm(false)} />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-[2rem] shadow-xl z-[201] overflow-hidden"
+              className="fixed inset-x-3 top-4 bottom-4 sm:inset-x-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2 w-auto sm:w-full max-w-2xl bg-white rounded-[2rem] shadow-xl z-[201] overflow-y-auto"
             >
               <form onSubmit={handleSaveJob} className="p-10 space-y-6">
                 <div className="flex justify-between items-center mb-4">
@@ -537,7 +537,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
                   <button type="button" onClick={() => setShowForm(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-900"><X size={24} /></button>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <FormInput label="Job Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} required />
                   <FormInput label="Department" value={formData.department} onChange={v => setFormData({...formData, department: v})} />
                   <FormInput label="Location" value={formData.location} onChange={v => setFormData({...formData, location: v})} />
