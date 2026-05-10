@@ -31,17 +31,17 @@ import { supabase } from '@/lib/supabase';
 
 function SubNavigation({ tabs, mainTab, subTabs, onChange }) {
   return (
-    <div className="w-full overflow-x-auto pb-2">
-      <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-4 sm:mb-6 w-fit min-w-min border border-slate-200/60 shadow-sm">
+    <div className="w-full overflow-x-auto pb-4 custom-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
+      <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-2xl mb-2 w-fit min-w-min border border-slate-200/60 shadow-sm">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => onChange(mainTab, tab.id)}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0",
+              "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all duration-200 flex-shrink-0",
               subTabs[mainTab] === tab.id 
-                ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
-                : "text-slate-600 hover:bg-slate-200/50"
+                ? "bg-white text-blue-600 shadow-md shadow-blue-100/50 border border-slate-200/50" 
+                : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-800"
             )}
           >
             {tab.label}
@@ -478,7 +478,7 @@ export default function DashboardLayout() {
         onToggleAutoSync={toggleAutoSync}
       />
       
-      <main className="flex-1 lg:ml-64 pt-24 pb-28 lg:pt-12 lg:pb-8 p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 lg:ml-64 pt-24 pb-28 lg:pt-12 lg:pb-8 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

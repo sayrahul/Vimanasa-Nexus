@@ -32,12 +32,22 @@ export default function JobDetailClient({ id }) {
         const response = await fetch(`/api/database?table=job_openings&t=${Date.now()}`);
         const result = await response.json();
         
+        console.log('[JOB-DETAIL] API Response:', result);
+        console.log('[JOB-DETAIL] Looking for job ID:', id);
+        
         if (result.success && result.data) {
-          const foundJob = result.data.find(j => j.id === id);
+          console.log('[JOB-DETAIL] Available jobs:', result.data.map(j => ({ id: j.id, title: j.title })));
+          
+          // Convert both IDs to strings for comparison
+          const foundJob = result.data.find(j => String(j.id) === String(id));
+          
+          console.log('[JOB-DETAIL] Found job:', foundJob);
           setJob(foundJob);
+        } else {
+          console.warn('[JOB-DETAIL] No job data returned from API');
         }
       } catch (error) {
-        console.error('Error fetching job:', error);
+        console.error('[JOB-DETAIL] Error fetching job:', error);
       } finally {
         setLoading(false);
       }
