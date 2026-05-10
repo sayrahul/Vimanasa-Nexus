@@ -31,21 +31,23 @@ import { supabase } from '@/lib/supabase';
 
 function SubNavigation({ tabs, mainTab, subTabs, onChange }) {
   return (
-    <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-6 overflow-x-auto w-full max-w-fit border border-slate-200/60 shadow-sm">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(mainTab, tab.id)}
-          className={cn(
-            "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200",
-            subTabs[mainTab] === tab.id 
-              ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
-              : "text-slate-600 hover:bg-slate-200/50"
-          )}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div className="w-full overflow-x-auto pb-2">
+      <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-4 sm:mb-6 w-fit min-w-min border border-slate-200/60 shadow-sm">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => onChange(mainTab, tab.id)}
+            className={cn(
+              "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-200 flex-shrink-0",
+              subTabs[mainTab] === tab.id 
+                ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
+                : "text-slate-600 hover:bg-slate-200/50"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -574,7 +576,7 @@ export default function DashboardLayout() {
             )}
 
             {activeTab === 'placements' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Manpower Placements</h1>

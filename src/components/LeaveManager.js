@@ -128,7 +128,7 @@ export default function LeaveManager({ employees, leaveRequests = [], onSave, on
   const rejectedCount = leaveRequests?.filter(r => r.Status === 'Rejected').length || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -153,12 +153,14 @@ export default function LeaveManager({ employees, leaveRequests = [], onSave, on
       </div>
 
       {/* Leave Requests Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-6 border-b border-slate-200 bg-slate-50">
-          <h3 className="text-lg font-bold text-slate-800">Leave Requests</h3>
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="p-4 sm:p-6 border-b border-slate-200 bg-slate-50">
+          <h3 className="text-base sm:text-lg font-bold text-slate-800">Leave Requests</h3>
+          <p className="text-xs text-slate-500 mt-1">Manage employee leave applications</p>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
@@ -245,6 +247,81 @@ export default function LeaveManager({ employees, leaveRequests = [], onSave, on
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden p-3 space-y-3">
+          {leaveRequests?.length > 0 ? leaveRequests.slice().reverse().map((request, idx) => {
+            const balances = calculateBalances(request['Employee ID'] || request.employeeId);
+            const reqType = request['Leave Type'];
+            const remaining = balances?.[reqType]?.remaining;
+
+            return (
+              <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                {/* Employee Info */}
+                <div className="flex items-start justify-between mb-3 pb-3 border-b border-slate-200">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-800 text-sm truncate">{request['Employee Name']}</h4>
+                    <p className="text-xs text-slate-500">{request['Employee ID']}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold border flex-shrink-0 ml-2 ${getStatusColor(request.Status)}`}>
+                    {request.Status}
+                  </span>
+                </div>
+
+                {/* Leave Details */}
+                <div className="space-y-2 mb-3">
+                  <div>
+                    <div className="text-xs text-slate-500 font-bold mb-1">Leave Type</div>
+                    <div className="text-sm font-bold text-slate-700">{request['Leave Type']}</div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs text-slate-500 font-bold mb-1">Duration</div>
+                    <div className="text-sm text-slate-700">
+                      {new Date(request['Start Date']).toLocaleDateString()} - {new Date(request['End Date']).toLocaleDateString()}
+                      <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-bold text-xs">
+                        {request.Days} days
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-slate-500 font-bold mb-1">Reason</div>
+                    <div className="text-sm text-slate-600 italic">"{request.Reason}"</div>
+                  </div>
+
+                  {remaining !== undefined && remaining !== 'N/A' && request.Status === 'Pending' && (
+                    <div className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                      Balance remaining: {remaining} days
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {request.Status === 'Pending' && (
+                  <div className="flex gap-2 pt-3 border-t border-slate-200">
+                    <button
+                      onClick={() => onApprove && onApprove(request, idx)}
+                      className="flex-1 px-3 py-2 text-sm font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 rounded-lg transition-colors flex items-center justify-center gap-1"
+                    >
+                      <CheckCircle size={14} /> Approve
+                    </button>
+                    <button
+                      onClick={() => onReject && onReject(request, idx)}
+                      className="flex-1 px-3 py-2 text-sm font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 rounded-lg transition-colors flex items-center justify-center gap-1"
+                    >
+                      <XCircle size={14} /> Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          }) : (
+            <div className="py-12 text-center text-slate-400">
+              No leave requests found.
+            </div>
+          )}
         </div>
       </div>
 

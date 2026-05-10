@@ -265,72 +265,73 @@ export default function DeploymentManager({ employees, clients, onSave }) {
         </div>
       </div>
       
-      {/* Active Deployments Table */}
+      {/* Active Deployments - Card Grid instead of Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <h3 className="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
               <Building2 className="text-green-600" size={20} /> 
               Active Deployments
             </h3>
+            <p className="text-xs text-slate-500 mt-1">Currently deployed workforce</p>
           </div>
           <div className="bg-green-100 text-green-700 font-black px-3 py-1 rounded-full text-sm">
             {deployedEmployees.length} Deployed
           </div>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4">Client Site</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Deployed Since</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+        <div className="p-3 sm:p-6 bg-slate-50/30">
+          {deployedEmployees.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              <Building2 size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="font-medium">No active deployments</p>
+              <p className="text-sm mt-2">Deploy an employee from the bench to get started</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {deployedEmployees.map((emp) => (
-                <tr key={emp.id || emp.ID} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-xs border border-white shadow-sm overflow-hidden">
-                        {emp['Photo URL'] ? <img src={emp['Photo URL']} alt="" className="w-full h-full object-cover" /> : (emp.Employee || '?').charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-800">{emp.Employee}</div>
-                        <div className="text-xs text-slate-500">{emp.ID}</div>
-                      </div>
+                <div key={emp.id || emp.ID} className="bg-white border border-slate-200 rounded-xl p-4 hover:border-green-300 hover:shadow-md transition-all group">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                      {emp['Photo URL'] ? <img src={emp['Photo URL']} alt="" className="w-full h-full object-cover" /> : (emp.Employee || '?').charAt(0)}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-slate-700">{emp['Assigned Client']}</span>
-                    {emp['Site Location'] && <div className="text-xs text-slate-500">{emp['Site Location']}</div>}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 font-medium">{emp['Role at Site'] || emp.Role}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    {emp['Deployment Date'] ? new Date(emp['Deployment Date']).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleEndDeployment(emp)}
-                      className="opacity-0 group-hover:opacity-100 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-all border border-red-100"
-                    >
-                      End Deployment
-                    </button>
-                  </td>
-                </tr>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-slate-800 text-sm truncate">{emp.Employee}</div>
+                      <div className="text-xs text-slate-500 font-medium">{emp.ID}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Building2 size={12} className="text-blue-500 flex-shrink-0" />
+                      <span className="font-bold text-slate-700 truncate">{emp['Assigned Client']}</span>
+                    </div>
+                    {emp['Site Location'] && (
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+                        <span className="truncate">{emp['Site Location']}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Briefcase size={12} className="text-slate-400 flex-shrink-0" />
+                      <span className="truncate">{emp['Role at Site'] || emp.Role}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Calendar size={12} className="text-slate-400 flex-shrink-0" />
+                      <span>{emp['Deployment Date'] ? new Date(emp['Deployment Date']).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleEndDeployment(emp)}
+                    className="w-full text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-all border border-red-100 opacity-0 group-hover:opacity-100"
+                  >
+                    End Deployment
+                  </button>
+                </div>
               ))}
-              {deployedEmployees.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                    No active deployments. Deploy an employee from the bench.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

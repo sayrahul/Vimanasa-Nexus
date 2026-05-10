@@ -47,6 +47,11 @@ body {
   background: #94a3b8;
 }
 
+/* Smooth scrolling for all containers */
+* {
+  scroll-behavior: smooth;
+}
+
 /* Animation utilities */
 @keyframes fade-in {
   from {
@@ -181,5 +186,26 @@ body {
   
   .stat-card {
     @apply bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer;
+  }
+  
+  /* Responsive table container */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .table-responsive table {
+    @apply min-w-full;
+  }
+  
+  /* Mobile-friendly spacing */
+  @media (max-width: 640px) {
+    .table-responsive table {
+      @apply text-xs;
+    }
+    
+    .table-responsive th,
+    .table-responsive td {
+      @apply px-3 py-2;
+    }
   }
 }

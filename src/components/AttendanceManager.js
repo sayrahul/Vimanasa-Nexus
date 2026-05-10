@@ -178,7 +178,7 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -208,7 +208,7 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
       {viewMode === 'mark' && (
         <>
           {/* Controls */}
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-stretch lg:items-center justify-between bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-4 w-full lg:w-auto">
               <div className="flex-1 lg:flex-none">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date</label>
@@ -279,67 +279,74 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
             <StatCard label="Half Day" value={stats.halfDay} color="amber" icon={Clock} />
           </div>
 
-          {/* Employee List */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="divide-y divide-slate-100">
+          {/* Employee List - Card Layout for Mobile, List for Desktop */}
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="max-h-[600px] overflow-y-auto p-3 sm:p-0">
               {filteredEmployees.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 font-medium">
                   No employees found for this selection.
                 </div>
               ) : (
-                filteredEmployees.map((employee, idx) => {
-                  const empId = employee['ID'] || employee.employeeId || employee['Employee ID'];
-                const empName = employee.Employee || `${employee.firstName} ${employee.lastName}`;
-                const clientSite = employee['Assigned Client'];
-                const currentStatus = attendance[empId];
+                <div className="space-y-3 sm:space-y-0 sm:divide-y sm:divide-slate-100">
+                  {filteredEmployees.map((employee, idx) => {
+                    const empId = employee['ID'] || employee.employeeId || employee['Employee ID'];
+                    const empName = employee.Employee || `${employee.firstName} ${employee.lastName}`;
+                    const clientSite = employee['Assigned Client'];
+                    const currentStatus = attendance[empId];
 
-                return (
-                  <div key={idx} className="p-4 hover:bg-slate-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm border border-white shadow-sm overflow-hidden shrink-0">
-                          {employee['Photo URL'] ? <img src={employee['Photo URL']} alt="" className="w-full h-full object-cover" /> : (empName || '?').charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800">{empName}</p>
-                          <p className="text-xs font-medium text-slate-500">Site: <span className="text-blue-600">{clientSite}</span></p>
+                    return (
+                      <div key={idx} className="bg-white sm:bg-transparent border sm:border-0 border-slate-200 rounded-xl sm:rounded-none p-3 sm:p-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex flex-col gap-3">
+                          {/* Employee Info */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 text-sm border border-white shadow-sm overflow-hidden shrink-0">
+                              {employee['Photo URL'] ? <img src={employee['Photo URL']} alt="" className="w-full h-full object-cover" /> : (empName || '?').charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-slate-800 text-sm truncate">{empName}</p>
+                              <p className="text-xs font-medium text-slate-500">
+                                <span className="hidden sm:inline">Site: </span>
+                                <span className="text-blue-600">{clientSite}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Attendance Buttons */}
+                          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                            <AttendanceButton
+                              label="Present"
+                              active={currentStatus === 'Present'}
+                              color="green"
+                              disabled={isLocked}
+                              onClick={() => handleMarkAttendance(empId, 'Present')}
+                            />
+                            <AttendanceButton
+                              label="Absent"
+                              active={currentStatus === 'Absent'}
+                              color="red"
+                              disabled={isLocked}
+                              onClick={() => handleMarkAttendance(empId, 'Absent')}
+                            />
+                            <AttendanceButton
+                              label="Leave"
+                              active={currentStatus === 'On Leave'}
+                              color="blue"
+                              disabled={isLocked}
+                              onClick={() => handleMarkAttendance(empId, 'On Leave')}
+                            />
+                            <AttendanceButton
+                              label="Half Day"
+                              active={currentStatus === 'Half Day'}
+                              color="amber"
+                              disabled={isLocked}
+                              onClick={() => handleMarkAttendance(empId, 'Half Day')}
+                            />
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap sm:flex-nowrap gap-2">
-                        <AttendanceButton
-                          label="Present"
-                          active={currentStatus === 'Present'}
-                          color="green"
-                          disabled={isLocked}
-                          onClick={() => handleMarkAttendance(empId, 'Present')}
-                        />
-                        <AttendanceButton
-                          label="Absent"
-                          active={currentStatus === 'Absent'}
-                          color="red"
-                          disabled={isLocked}
-                          onClick={() => handleMarkAttendance(empId, 'Absent')}
-                        />
-                        <AttendanceButton
-                          label="Leave"
-                          active={currentStatus === 'On Leave'}
-                          color="blue"
-                          disabled={isLocked}
-                          onClick={() => handleMarkAttendance(empId, 'On Leave')}
-                        />
-                        <AttendanceButton
-                          label="Half Day"
-                          active={currentStatus === 'Half Day'}
-                          color="amber"
-                          disabled={isLocked}
-                          onClick={() => handleMarkAttendance(empId, 'Half Day')}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
@@ -347,21 +354,22 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
       )}
 
       {viewMode === 'report' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-bold text-slate-700">Select Month:</label>
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="p-4 sm:p-6 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              <label className="text-xs sm:text-sm font-bold text-slate-700">Select Month:</label>
               <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 bg-white"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 bg-white text-sm"
               />
             </div>
             <ExportMenu data={monthlySummary} filename={`Attendance_Summary_${selectedMonth}.csv`} />
           </div>
           
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
                 <tr>
@@ -399,6 +407,50 @@ export default function AttendanceManager({ employees = [], attendanceData = [],
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden p-3 space-y-3">
+            {monthlySummary.length === 0 ? (
+              <div className="py-12 text-center text-slate-500">
+                No deployed employees found.
+              </div>
+            ) : (
+              monthlySummary.map((summary, idx) => (
+                <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-3 pb-3 border-b border-slate-200">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-slate-800 text-sm truncate">{summary['Employee Name']}</h4>
+                      <p className="text-xs text-slate-500">{summary['Employee ID']}</p>
+                      <p className="text-xs font-semibold text-blue-600 mt-1">{summary['Client Site']}</p>
+                    </div>
+                    <div className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-center flex-shrink-0 ml-2">
+                      <div className="text-xs font-bold opacity-80">Payable</div>
+                      <div className="text-lg font-black">{summary['Total Payable Days']}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white rounded-lg p-2 border border-green-100">
+                      <div className="text-xs text-slate-500 font-bold">Present</div>
+                      <div className="text-lg font-black text-green-600">{summary['Total Present']}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-red-100">
+                      <div className="text-xs text-slate-500 font-bold">Absent</div>
+                      <div className="text-lg font-black text-red-600">{summary['Total Absent']}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-blue-100">
+                      <div className="text-xs text-slate-500 font-bold">Leave</div>
+                      <div className="text-lg font-black text-blue-600">{summary['Total Leaves']}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-2 border border-amber-100">
+                      <div className="text-xs text-slate-500 font-bold">Half Day</div>
+                      <div className="text-lg font-black text-amber-600">{summary['Total Half Days']}</div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -428,17 +480,17 @@ function StatCard({ label, value, color, icon: Icon }) {
 
 function AttendanceButton({ label, active, color, disabled, onClick }) {
   const colors = {
-    green: active ? 'bg-green-500 text-white shadow-md shadow-green-200' : 'bg-slate-50 text-slate-500 hover:bg-green-50 hover:text-green-600 border border-slate-200',
-    red: active ? 'bg-red-500 text-white shadow-md shadow-red-200' : 'bg-slate-50 text-slate-500 hover:bg-red-50 hover:text-red-600 border border-slate-200',
-    blue: active ? 'bg-blue-500 text-white shadow-md shadow-blue-200' : 'bg-slate-50 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-200',
-    amber: active ? 'bg-amber-500 text-white shadow-md shadow-amber-200' : 'bg-slate-50 text-slate-500 hover:bg-amber-50 hover:text-amber-600 border border-slate-200',
+    green: active ? 'bg-green-500 text-white shadow-md shadow-green-200' : 'bg-slate-50 text-slate-600 hover:bg-green-50 hover:text-green-600 border border-slate-200',
+    red: active ? 'bg-red-500 text-white shadow-md shadow-red-200' : 'bg-slate-50 text-slate-600 hover:bg-red-50 hover:text-red-600 border border-slate-200',
+    blue: active ? 'bg-blue-500 text-white shadow-md shadow-blue-200' : 'bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 border border-slate-200',
+    amber: active ? 'bg-amber-500 text-white shadow-md shadow-amber-200' : 'bg-slate-50 text-slate-600 hover:bg-amber-50 hover:text-amber-600 border border-slate-200',
   };
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all flex-1 sm:flex-none ${colors[color]} ${disabled ? 'opacity-50 cursor-not-allowed hover:bg-slate-50 hover:text-slate-500' : ''}`}
+      className={`px-3 py-2 rounded-lg font-bold text-xs transition-all ${colors[color]} ${disabled ? 'opacity-50 cursor-not-allowed hover:bg-slate-50 hover:text-slate-600' : ''}`}
     >
       {label}
     </button>

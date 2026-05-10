@@ -42,7 +42,7 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
   };
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-auto sm:h-[calc(100vh-12rem)] sm:min-h-[600px]">
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header and Controls */}
       <div className="p-4 sm:p-6 border-b border-slate-200 bg-slate-50/50">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -71,7 +71,7 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
 
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} className="sm:w-[18px] sm:h-[18px]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
               placeholder="Search employees..." 
@@ -82,7 +82,7 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
           </div>
           <div className="flex gap-2 sm:gap-4">
             <div className="relative flex-1 min-w-0">
-              <Filter className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} className="sm:w-4 sm:h-4" />
+              <Filter className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <select 
                 value={clientFilter}
                 onChange={(e) => setClientFilter(e.target.value)}
@@ -91,7 +91,7 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
                 <option value="All">All Sites</option>
                 {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} className="sm:w-4 sm:h-4" />
+              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
             </div>
             <div className="relative flex-1 min-w-0">
               <select 
@@ -103,18 +103,18 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
                 <option value="Deployed">Deployed</option>
                 <option value="On Bench">On Bench</option>
               </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} className="sm:w-4 sm:h-4" />
+              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
             </div>
           </div>
         </div>
       </div>
 
       {/* Directory Grid/List */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-50/30">
+      <div className="p-3 sm:p-6 bg-slate-50/30 max-h-[calc(100vh-20rem)] overflow-y-auto">
         {filteredEmployees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8 sm:py-12">
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
-              <Search className="text-slate-400" size={20} className="sm:w-6 sm:h-6" />
+              <Search className="text-slate-400" size={20} />
             </div>
             <h3 className="text-base sm:text-lg font-bold text-slate-700 mb-1">No employees found</h3>
             <p className="text-slate-500 text-xs sm:text-sm">Try adjusting your search or filters.</p>
@@ -156,15 +156,15 @@ export default function WorkforceDirectory({ employees = [], clients = [], onAdd
                   <div className="pt-3 sm:pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div className="flex gap-1 sm:gap-2">
                       <button onClick={() => onEdit(emp, idx)} className="p-1.5 sm:p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="Edit Employee">
-                        <Edit2 size={14} className="sm:w-4 sm:h-4" />
+                        <Edit2 size={14} />
                       </button>
                       <button onClick={() => onDelete(emp, idx)} className="p-1.5 sm:p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="Delete Employee">
-                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                     <div className="relative group/menu">
                       <button className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 sm:px-3 py-1.5 rounded-lg transition-colors">
-                        <FileText size={12} className="sm:w-[14px] sm:h-[14px]" /> 
+                        <FileText size={12} /> 
                         <span className="hidden xs:inline">Docs</span>
                       </button>
                       <div className="absolute bottom-full right-0 mb-2 w-40 sm:w-48 bg-white border border-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-10 overflow-hidden transform translate-y-2 group-hover/menu:translate-y-0">
