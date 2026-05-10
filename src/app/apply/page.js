@@ -26,9 +26,11 @@ import {
   DollarSign,
   Clock,
   IndianRupee,
-  Layout
+  ChevronLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
 
 function ApplyForm() {
   const searchParams = useSearchParams();
@@ -59,7 +61,6 @@ function ApplyForm() {
     photoUrl: ''
   });
 
-  // Fetch available jobs on mount
   useEffect(() => {
     async function fetchJobs() {
       try {
@@ -71,7 +72,6 @@ function ApplyForm() {
           );
           setAvailableJobs(openJobs);
           
-          // Check for job ID in URL
           const urlJobId = searchParams.get('job');
           if (urlJobId) {
             const selectedJob = openJobs.find(j => j.id === urlJobId);
@@ -95,25 +95,15 @@ function ApplyForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     if (name === 'jobSelection') {
       const selectedJob = availableJobs.find(j => j.id === value);
       if (selectedJob) {
-        setFormData(prev => ({
-          ...prev,
-          jobTitle: selectedJob.title,
-          jobId: selectedJob.id
-        }));
+        setFormData(prev => ({ ...prev, jobTitle: selectedJob.title, jobId: selectedJob.id }));
       } else if (value === 'general') {
-        setFormData(prev => ({
-          ...prev,
-          jobTitle: 'General Application',
-          jobId: 'GEN-001'
-        }));
+        setFormData(prev => ({ ...prev, jobTitle: 'General Application', jobId: 'GEN-001' }));
       }
       return;
     }
-
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -123,7 +113,6 @@ function ApplyForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const response = await fetch('/api/database', {
         method: 'POST',
@@ -153,9 +142,7 @@ function ApplyForm() {
           }
         })
       });
-
       const result = await response.json();
-
       if (result.success) {
         setIsSubmitted(true);
         toast.success('Application submitted successfully!');
@@ -163,7 +150,6 @@ function ApplyForm() {
         throw new Error(result.message || 'Submission failed');
       }
     } catch (error) {
-      console.error('Submission error:', error);
       toast.error(error.message || 'An error occurred while submitting.');
     } finally {
       setLoading(false);
@@ -172,25 +158,17 @@ function ApplyForm() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/10 backdrop-blur-3xl p-12 rounded-[3.5rem] shadow-2xl max-w-xl w-full text-center border border-white/20 relative"
-        >
-          <div className="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-green-500/20">
-            <CheckCircle size={56} />
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-w-md">
+          <div className="w-20 h-20 bg-blue-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-blue-200">
+            <CheckCircle size={40} />
           </div>
-          <h1 className="text-4xl font-black text-white mb-4">You're All Set!</h1>
-          <p className="text-blue-100 mb-10 text-lg font-medium leading-relaxed">
-            Your application for <span className="text-white font-black underline decoration-blue-500">{formData.jobTitle}</span> has been received. Our team will review it and get back to you shortly.
+          <h1 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Application Received</h1>
+          <p className="text-slate-500 mb-10 font-medium">
+            Thank you for your interest in <span className="text-blue-600 font-bold">{formData.jobTitle}</span>. Our recruitment team will review your profile and contact you shortly.
           </p>
-          <button 
-            onClick={() => window.location.href = '/jobs'}
-            className="w-full bg-white text-slate-900 font-black py-5 rounded-2xl hover:bg-blue-50 transition-all shadow-xl text-lg"
-          >
-            Explore More Jobs
+          <button onClick={() => window.location.href = '/jobs'} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-blue-600 transition-all">
+            Back to Careers
           </button>
         </motion.div>
       </div>
@@ -198,57 +176,57 @@ function ApplyForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 py-12 px-4 relative overflow-hidden flex flex-col justify-center">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/30 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/30 rounded-full blur-[120px] animate-pulse delay-1000" />
-      </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Navbar />
+      
+      <main className="flex-grow pt-32 pb-24 px-4">
+        <div className="max-w-2xl mx-auto">
+          {/* Back Button */}
+          <button 
+            onClick={() => window.location.href = '/jobs'}
+            className="flex items-center gap-2 text-slate-400 hover:text-slate-900 transition-colors mb-8 text-xs font-black uppercase tracking-widest"
+          >
+            <ChevronLeft size={16} /> Back to Listings
+          </button>
 
-      <div className="max-w-3xl mx-auto w-full relative z-10">
-        <header className="text-center mb-10">
-          <motion.div initial={{ y: -20 }} animate={{ y: 0 }} className="flex justify-center mb-6">
-            <div className="bg-white p-4 rounded-2xl shadow-xl">
-              <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-12 w-auto" />
+          <header className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Application Form</h1>
+              <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Step {step} of 3
+              </div>
             </div>
-          </motion.div>
-          <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-black text-white tracking-tight uppercase">Apply for Excellence</motion.h1>
-          <p className="text-blue-200 mt-2 font-medium">Step {step} of 3: {step === 1 ? 'Personal Profile' : step === 2 ? 'Professional Journey' : 'Identity & Verification'}</p>
-          
-          {/* Progress Bar */}
-          <div className="mt-6 max-w-xs mx-auto h-2 bg-white/10 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: `${(step / 3) * 100}%` }} 
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-            />
-          </div>
-        </header>
-
-        <div className="bg-white/5 backdrop-blur-2xl p-8 md:p-12 rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            {step === 1 && (
+            
+            {/* Minimal Progress Bar */}
+            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <motion.div 
-                key="step1"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -50, opacity: 0 }}
-                className="space-y-8"
-              >
-                <div className="space-y-6">
-                  <div className="relative">
-                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" size={20} />
-                    <select 
-                      name="jobSelection" 
-                      value={formData.jobId} 
-                      onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-5 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all appearance-none"
-                    >
-                      <option className="bg-slate-900" value="general">General Application</option>
-                      {availableJobs.map(job => (
-                        <option className="bg-slate-900" key={job.id} value={job.id}>{job.title}</option>
-                      ))}
-                    </select>
+                initial={{ width: 0 }} 
+                animate={{ width: `${(step / 3) * 100}%` }} 
+                className="h-full bg-blue-600"
+              />
+            </div>
+          </header>
+
+          <div className="bg-white p-6 md:p-10 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div key="step1" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Applying For</label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <select 
+                        name="jobSelection" 
+                        value={formData.jobId} 
+                        onChange={handleChange}
+                        className="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="general">General Application</option>
+                        {availableJobs.map(job => (
+                          <option key={job.id} value={job.id}>{job.title}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -258,127 +236,127 @@ function ApplyForm() {
                     <Input icon={Calendar} name="dob" value={formData.dob} onChange={handleChange} placeholder="Date of Birth" type="date" />
                   </div>
                   
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-5 text-blue-400" size={20} />
-                    <textarea 
-                      name="address" 
-                      value={formData.address} 
-                      onChange={handleChange} 
-                      rows={3} 
-                      className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-500" 
-                      placeholder="Current Address" 
-                    />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Address</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <textarea 
+                        name="address" 
+                        value={formData.address} 
+                        onChange={handleChange} 
+                        rows={3} 
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300" 
+                        placeholder="House no, Street, City, State..." 
+                      />
+                    </div>
                   </div>
-                </div>
-                
-                <button type="button" onClick={nextStep} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3">
-                  Continue to Career Details <ArrowRight size={20} />
-                </button>
-              </motion.div>
-            )}
-
-            {step === 2 && (
-              <motion.div 
-                key="step2"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -50, opacity: 0 }}
-                className="space-y-8"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input icon={Building2} name="employer" value={formData.employer} onChange={handleChange} placeholder="Current Employer" />
-                  <Input icon={Award} name="experience" value={formData.experience} onChange={handleChange} placeholder="Years of Experience" type="number" />
-                  <Input icon={IndianRupee} name="currentSalary" value={formData.currentSalary} onChange={handleChange} placeholder="Current Salary (₹)" />
-                  <Input icon={Sparkles} name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} placeholder="Expected Salary (₹)" />
-                  <Input icon={Clock} name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} placeholder="Notice Period (Days)" type="number" />
-                </div>
-                <div className="relative">
-                  <BookOpen className="absolute left-4 top-5 text-blue-400" size={20} />
-                  <textarea 
-                    name="skills" 
-                    value={formData.skills} 
-                    onChange={handleChange} 
-                    rows={3} 
-                    className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 transition-all placeholder:text-slate-500" 
-                    placeholder="Key Skills (e.g. Management, Security, CCTV)" 
-                  />
-                </div>
-
-                <div className="flex gap-4">
-                  <button type="button" onClick={prevStep} className="flex-1 bg-white/10 hover:bg-white/20 text-white font-black py-5 rounded-2xl transition-all border border-white/10">
-                    Back
+                  
+                  <button type="button" onClick={nextStep} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+                    Next Step <ArrowRight size={18} />
                   </button>
-                  <button type="button" onClick={nextStep} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3">
-                    Next: Verification <ArrowRight size={20} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
-            {step === 3 && (
-              <motion.div 
-                key="step3"
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -50, opacity: 0 }}
-                className="space-y-8"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input icon={CreditCard} name="aadhar" value={formData.aadhar} onChange={handleChange} placeholder="Aadhar Number" />
-                  <Input icon={ShieldCheck} name="pan" value={formData.pan} onChange={handleChange} placeholder="PAN Number" />
-                  <Input icon={FileText} name="resumeUrl" value={formData.resumeUrl} onChange={handleChange} placeholder="Resume Drive Link" />
-                  <Input icon={Camera} name="photoUrl" value={formData.photoUrl} onChange={handleChange} placeholder="Photo Drive Link" />
-                </div>
+              {step === 2 && (
+                <motion.div key="step2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input icon={Building2} name="employer" value={formData.employer} onChange={handleChange} placeholder="Current Employer" />
+                    <Input icon={Award} name="experience" value={formData.experience} onChange={handleChange} placeholder="Years of Experience" type="number" />
+                    <Input icon={IndianRupee} name="currentSalary" value={formData.currentSalary} onChange={handleChange} placeholder="Current Salary" />
+                    <Input icon={Sparkles} name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} placeholder="Expected Salary" />
+                    <Input icon={Clock} name="noticePeriod" value={formData.noticePeriod} onChange={handleChange} placeholder="Notice Period (Days)" type="number" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Skills</label>
+                    <div className="relative">
+                      <BookOpen className="absolute left-4 top-4 text-slate-400" size={18} />
+                      <textarea 
+                        name="skills" 
+                        value={formData.skills} 
+                        onChange={handleChange} 
+                        rows={3} 
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300" 
+                        placeholder="List your key technical or soft skills..." 
+                      />
+                    </div>
+                  </div>
 
-                <div className="p-6 bg-blue-500/10 rounded-[2rem] border border-blue-500/20 flex gap-4 items-center">
-                  <div className="p-3 bg-blue-500 rounded-full text-white"><Sparkles size={24} /></div>
-                  <p className="text-sm text-blue-100 font-medium">Double-check your Drive links to ensure our team can view your documents!</p>
-                </div>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={prevStep} className="px-6 py-4 bg-slate-100 text-slate-600 font-black rounded-xl hover:bg-slate-200 transition-all active:scale-[0.98]">
+                      <ArrowLeft size={18} />
+                    </button>
+                    <button type="button" onClick={nextStep} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+                      Verification <ArrowRight size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
 
-                <div className="flex gap-4">
-                  <button type="button" onClick={prevStep} className="flex-1 bg-white/10 hover:bg-white/20 text-white font-black py-5 rounded-2xl transition-all border border-white/10">
-                    Back
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleSubmit} 
-                    disabled={loading}
-                    className="flex-[2] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-5 rounded-2xl shadow-2xl shadow-blue-500/20 transition-all flex items-center justify-center gap-3"
-                  >
-                    {loading ? (
-                      <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <>Finalize Application <CheckCircle size={20} /></>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {step === 3 && (
+                <motion.div key="step3" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input icon={CreditCard} name="aadhar" value={formData.aadhar} onChange={handleChange} placeholder="Aadhar Number" />
+                    <Input icon={ShieldCheck} name="pan" value={formData.pan} onChange={handleChange} placeholder="PAN Number" />
+                    <Input icon={FileText} name="resumeUrl" value={formData.resumeUrl} onChange={handleChange} placeholder="Resume Drive Link" />
+                    <Input icon={Camera} name="photoUrl" value={formData.photoUrl} onChange={handleChange} placeholder="Photo Drive Link" />
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3 items-start">
+                    <Sparkles className="text-blue-500 mt-0.5 shrink-0" size={16} />
+                    <p className="text-[11px] text-blue-600 font-bold leading-relaxed">
+                      Ensure your Drive links are accessible to "Anyone with the link" so our recruitment team can review your documents without delay.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button type="button" onClick={prevStep} className="px-6 py-4 bg-slate-100 text-slate-600 font-black rounded-xl hover:bg-slate-200 transition-all active:scale-[0.98]">
+                      <ArrowLeft size={18} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleSubmit} 
+                      disabled={loading}
+                      className="flex-1 bg-slate-900 hover:bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {loading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>Submit Application <CheckCircle size={18} /></>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
 
 function Input({ icon: Icon, placeholder, ...props }) {
   return (
-    <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 group-focus-within:text-white transition-colors">
-        <Icon size={20} />
+    <div className="space-y-2">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{placeholder}</label>
+      <div className="relative group">
+        <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+        <input 
+          {...props} 
+          placeholder={`Enter ${placeholder.toLowerCase()}`}
+          className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all placeholder:text-slate-300 text-sm" 
+        />
       </div>
-      <input 
-        {...props} 
-        placeholder={placeholder}
-        className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white font-bold outline-none focus:ring-4 focus:ring-blue-500/20 focus:bg-white/15 transition-all placeholder:text-slate-500" 
-      />
     </div>
   );
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading Immersive Experience...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center font-black text-slate-400 uppercase tracking-widest animate-pulse">Initializing Portal...</div>}>
       <ApplyForm />
     </Suspense>
   );

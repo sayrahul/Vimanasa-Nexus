@@ -57,98 +57,100 @@ export default function CareersPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col font-sans">
       <Navbar />
       
       <main className="flex-grow">
-        {/* Hero Section */}
-        <section className="relative pt-40 pb-20 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-indigo-600/5" />
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl" />
-          
-          <div className="max-w-7xl mx-auto relative text-center">
+        {/* Minimalist Professional Hero */}
+        <section className="relative pt-32 pb-16 md:pt-52 md:pb-32 px-4 overflow-hidden border-b border-slate-50">
+          <div className="max-w-5xl mx-auto relative">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-bold mb-6"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100/50 text-blue-600 text-[10px] font-black uppercase tracking-widest mb-8"
             >
-              <Sparkles size={16} />
-              <span>We're Hiring for 2026!</span>
+              <div className="w-1 h-1 bg-blue-600 rounded-full animate-pulse" />
+              <span>Careers at Vimanasa Nexus</span>
             </motion.div>
+            
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight mb-6"
+              className="text-4xl md:text-7xl font-black text-slate-900 tracking-tight mb-8 leading-[1.05]"
             >
-              Build your future at <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Vimanasa Nexus</span>
+              Your next chapter <br />
+              <span className="text-blue-600">begins here.</span>
             </motion.h1>
+            
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl text-slate-600 max-w-2xl mx-auto mb-10 font-medium"
+              className="text-base md:text-xl text-slate-500 max-w-2xl font-medium mb-12 leading-relaxed"
             >
-              Join a fast-growing ecosystem where talent meets opportunity. Browse our open positions and start your journey today.
+              We're building the future of workforce management. Discover roles that challenge your potential and impact global industries.
             </motion.p>
 
-            {/* Search & Filter Bar */}
+            {/* High-End Search Interface */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="max-w-3xl mx-auto bg-white p-2 rounded-3xl shadow-2xl shadow-blue-100 flex flex-col md:flex-row gap-2 border border-slate-100"
+              className="flex flex-col md:flex-row items-center gap-3 p-1.5 bg-slate-50 rounded-2xl md:rounded-full border border-slate-200 shadow-sm max-w-3xl"
             >
-              <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <div className="flex-1 relative w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Search by job title or department..." 
-                  className="w-full pl-12 pr-4 py-4 rounded-2xl outline-none font-bold text-slate-800"
+                  placeholder="Search roles or departments..." 
+                  className="w-full pl-11 pr-4 py-3.5 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-400 text-sm md:text-base"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="w-px h-8 bg-slate-200 hidden md:block" />
+              <div className="flex w-full md:w-auto gap-2">
                 <select 
-                  className="px-6 py-4 bg-slate-50 rounded-2xl font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="flex-1 md:flex-none pl-4 pr-10 py-3.5 bg-transparent font-bold text-slate-600 outline-none text-sm cursor-pointer appearance-none"
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  <option>All</option>
+                  <option>All Types</option>
                   <option>Full-time</option>
                   <option>Part-time</option>
                   <option>Contract</option>
                 </select>
+                <div className="hidden md:block pr-4 pointer-events-none">
+                  <Filter size={16} className="text-slate-400" />
+                </div>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* Jobs Listing */}
-        <section className="pb-24 px-4">
-          <div className="max-w-7xl mx-auto">
+        {/* Jobs Feed */}
+        <section className="py-16 md:py-24 px-4 bg-slate-50/30">
+          <div className="max-w-6xl mx-auto">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-80 bg-white rounded-[2.5rem] animate-pulse border border-slate-100" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-64 bg-white rounded-3xl animate-pulse border border-slate-100 shadow-sm" />
                 ))}
               </div>
             ) : filteredJobs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredJobs.map((job, index) => (
                   <JobCard key={job.id} job={job} index={index} />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Briefcase size={32} className="text-slate-300" />
+              <div className="text-center py-24 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Briefcase size={28} className="text-slate-300" />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2">No matching jobs found</h3>
-                <p className="text-slate-500">Try adjusting your search or filters to find more opportunities.</p>
+                <h3 className="text-xl font-black text-slate-900 mb-2">No matching opportunities</h3>
+                <p className="text-slate-500 text-sm">Try broadening your search or check back later.</p>
               </div>
             )}
           </div>
@@ -163,50 +165,51 @@ export default function CareersPage() {
 function JobCard({ job, index }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={{ y: -10 }}
-      className="group bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all cursor-pointer relative flex flex-col h-full"
+      transition={{ delay: index * 0.05 }}
+      className="group bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-200 transition-all cursor-pointer flex flex-col h-full relative"
       onClick={() => window.location.href = `/jobs/${job.id}`}
     >
-      <div className="mb-6 flex justify-between items-start">
-        <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-500">
-          <Building2 size={28} />
-        </div>
-        <div className="px-3 py-1 bg-slate-50 rounded-full text-[10px] font-black uppercase tracking-wider text-slate-500 border border-slate-100">
+      <div className="flex justify-between items-start mb-6">
+        <div className="px-2.5 py-1 bg-slate-50 rounded-md text-[10px] font-black uppercase tracking-wider text-slate-500 border border-slate-100">
           {job.type}
+        </div>
+        <div className="text-slate-300 group-hover:text-blue-500 transition-colors">
+          <ChevronRight size={20} />
         </div>
       </div>
 
-      <h3 className="text-2xl font-black text-slate-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors">
-        {job.title}
-      </h3>
-      <p className="text-sm font-bold text-slate-500 mb-6 flex items-center gap-2 uppercase tracking-wide">
-        {job.department}
-      </p>
+      <div className="flex-grow">
+        <h3 className="text-xl md:text-2xl font-black text-slate-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors">
+          {job.title}
+        </h3>
+        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-8">
+          {job.department}
+        </p>
 
-      <div className="space-y-3 mb-8">
-        <div className="flex items-center gap-2 text-slate-600 font-medium text-sm">
-          <MapPin size={16} className="text-blue-500" />
-          <span>{job.location}</span>
-        </div>
-        <div className="flex items-center gap-2 text-slate-600 font-medium text-sm">
-          <DollarSign size={16} className="text-green-500" />
-          <span>{job.salary_range || 'Competitive'}</span>
+        <div className="flex flex-wrap gap-x-6 gap-y-3 mb-8">
+          <div className="flex items-center gap-2 text-slate-600">
+            <MapPin size={14} className="text-blue-500/70" />
+            <span className="text-sm font-bold">{job.location}</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-600">
+            <DollarSign size={14} className="text-emerald-500/70" />
+            <span className="text-sm font-bold">{job.salary_range || 'Competitive'}</span>
+          </div>
         </div>
       </div>
 
       <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-        <span className="text-sm font-black text-blue-600 flex items-center gap-2">
-          View Details <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-        </span>
+        <div className="flex items-center gap-2 text-[11px] font-black text-blue-600 uppercase tracking-widest">
+          View Details <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+        </div>
         <button 
           onClick={(e) => {
             e.stopPropagation();
             window.location.href = `/apply?job=${job.id}`;
           }}
-          className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-colors"
+          className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-100"
         >
           Quick Apply
         </button>
