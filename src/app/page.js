@@ -520,6 +520,8 @@ export default function DashboardLayout() {
                 </div>
                 <SubNavigation 
                   mainTab="clients" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'clients', label: 'Client Management' },
                     { id: 'partners', label: 'Site Partners' }
@@ -581,6 +583,8 @@ export default function DashboardLayout() {
                 </div>
                 <SubNavigation 
                   mainTab="placements" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'workforce', label: 'Workforce Directory' },
                     { id: 'deployment', label: 'Deployment Manager' },
@@ -693,6 +697,8 @@ export default function DashboardLayout() {
                 </div>
                 <SubNavigation 
                   mainTab="finance" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'overview', label: 'Financial Ledger' },
                     { id: 'payroll', label: 'Payroll Processing' },
@@ -795,6 +801,8 @@ export default function DashboardLayout() {
                 </div>
                 <SubNavigation 
                   mainTab="compliance" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'calendar', label: 'Compliance Calendar' }
                   ]} 
@@ -826,6 +834,8 @@ export default function DashboardLayout() {
                 </div>
                 <SubNavigation 
                   mainTab="reports" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'compliance', label: 'Compliance Tracker' },
                     { id: 'exports', label: 'Data Exports' }
@@ -890,6 +900,8 @@ export default function DashboardLayout() {
                 
                 <SubNavigation 
                   mainTab="settings" 
+                  subTabs={subTabs}
+                  onChange={handleSubTabChange}
                   tabs={[
                     { id: 'company', label: 'Company Profile' },
                     { id: 'salary', label: 'Salary Components' },
