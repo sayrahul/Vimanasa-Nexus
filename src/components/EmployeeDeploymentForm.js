@@ -1,14 +1,15 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, User, Building2, DollarSign, MapPin, Clock, Shield, AlertTriangle, FileText, Image } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function EmployeeDeploymentForm({ employee, clients, onSave, onCancel, userRole }) {
   const isAdmin = userRole === 'admin';
+  const generatedEmployeeId = useMemo(() => `EMP${String(Date.now()).slice(-6)}`, []);
   
   const [formData, setFormData] = useState({
     // Basic Info
-    'ID': employee?.['ID'] || `EMP${String(Date.now()).slice(-6)}`,
+    'ID': employee?.['ID'] || generatedEmployeeId,
     'Employee': employee?.['Employee'] || '',
     'Role': employee?.['Role'] || 'Security Guard',
     'Status': employee?.['Status'] || 'Active',
@@ -339,7 +340,7 @@ export default function EmployeeDeploymentForm({ employee, clients, onSave, onCa
                     <label className="block text-sm font-bold text-slate-700 mb-2">Profile Photo (URL or Base64)</label>
                     <div className="flex gap-3">
                       {formData['Photo URL'] ? (
-                        <img src={formData['Photo URL']} alt="Profile" className="w-12 h-12 rounded-xl object-cover border border-slate-200" />
+                        <img src={formData['Photo URL']} alt="Employee profile" className="w-12 h-12 rounded-xl object-cover border border-slate-200" />
                       ) : (
                         <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
                           <Image size={20} />

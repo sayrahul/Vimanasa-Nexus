@@ -1,4 +1,4 @@
-import { verifyToken } from '@/lib/auth';
+import { verifyToken } from '@/lib/authSecure';
 
 export const runtime = 'edge';
 

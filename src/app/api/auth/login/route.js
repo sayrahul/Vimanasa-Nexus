@@ -1,9 +1,10 @@
 /**
  * Login API Route
  * Handles user authentication and token generation
+ * Uses secure database-backed authentication
  */
 
-import { authenticateUser, createToken } from '@/lib/auth';
+import { authenticateUser, createToken } from '@/lib/authSecure';
 
 export const runtime = 'edge';
 
@@ -49,8 +50,14 @@ export async function POST(request) {
       );
     }
 
+    // Collect metadata for audit logging
+    const metadata = {
+      ip: getClientKey(request),
+      userAgent: request.headers.get('user-agent'),
+    };
+
     // Authenticate user
-    const user = await authenticateUser(username, password);
+    const user = await authenticateUser(username, password, metadata);
 
     if (!user) {
       return Response.json(
@@ -67,10 +74,9 @@ export async function POST(request) {
       user: {
         id: user.id,
         username: user.username,
-        name: user.name,
+        name: user.full_name,
         email: user.email,
         role: user.role,
-        permissions: user.permissions,
       },
       token,
     }, {

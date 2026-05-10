@@ -20,6 +20,7 @@ import WorkforceDirectory from '@/components/WorkforceDirectory';
 import PartnerDirectory from '@/components/PartnerDirectory';
 import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
+import UserManagement from '@/components/UserManagement';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus } from 'lucide-react';
 import { apiClient, authAPI, setToken, setUser, removeToken } from '@/lib/apiClient';
@@ -27,6 +28,27 @@ import { toast } from 'react-toastify';
 import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+
+function SubNavigation({ tabs, mainTab, subTabs, onChange }) {
+  return (
+    <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-6 overflow-x-auto w-full max-w-fit border border-slate-200/60 shadow-sm">
+      {tabs.map(tab => (
+        <button
+          key={tab.id}
+          onClick={() => onChange(mainTab, tab.id)}
+          className={cn(
+            "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200",
+            subTabs[mainTab] === tab.id 
+              ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
+              : "text-slate-600 hover:bg-slate-200/50"
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -68,25 +90,6 @@ export default function DashboardLayout() {
   const handleSubTabChange = (mainTab, newSubTab) => {
     setSubTabs(prev => ({ ...prev, [mainTab]: newSubTab }));
   };
-
-  const SubNavigation = ({ tabs, mainTab }) => (
-    <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-xl mb-6 overflow-x-auto w-full max-w-fit border border-slate-200/60 shadow-sm">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => handleSubTabChange(mainTab, tab.id)}
-          className={cn(
-            "px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-200",
-            subTabs[mainTab] === tab.id 
-              ? "bg-white text-blue-600 shadow-sm border border-slate-200/50" 
-              : "text-slate-600 hover:bg-slate-200/50"
-          )}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
 
   // Check for auto-login on component mount
   useEffect(() => {
@@ -858,6 +861,21 @@ export default function DashboardLayout() {
                     </div>
                   </motion.div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'users' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">User Management</h1>
+                    <p className="text-slate-500 mt-1">Create and manage user accounts and permissions</p>
+                  </div>
+                </div>
+                
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <UserManagement />
+                </motion.div>
               </div>
             )}
 

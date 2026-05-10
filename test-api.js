@@ -76,7 +76,7 @@ async function testGoogleSheetsConnection() {
 
     console.log('\n✅ Google Sheets API test completed successfully!');
     console.log('\n💡 If you see errors above, make sure:');
-    console.log('   1. The spreadsheet is shared with:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+    console.log('   1. The spreadsheet is shared with the service account email');
     console.log('   2. The service account has "Editor" or "Viewer" access');
     console.log('   3. All required sheets exist with the correct names');
 

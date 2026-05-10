@@ -3,7 +3,7 @@
  * Verifies JWT token and returns user data
  */
 
-import { verifyToken, getUserById } from '@/lib/auth';
+import { verifyToken, getUserById } from '@/lib/authSecure';
 
 export const runtime = 'edge';
 
@@ -28,8 +28,8 @@ export async function GET(request) {
       );
     }
 
-    // Get fresh user data
-    const user = getUserById(payload.id);
+    // Get fresh user data from database
+    const user = await getUserById(payload.id);
 
     if (!user) {
       return Response.json(

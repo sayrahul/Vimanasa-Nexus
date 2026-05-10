@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { toDB, toFrontend } from '@/lib/dataMapper';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken } from '@/lib/authSecure';
+import { verifyCaptcha } from '@/lib/captcha';
+import { validateFile } from '@/lib/fileValidation';
+import { sanitizeCandidateData, containsXss } from '@/lib/inputSanitization';
 
 export const runtime = 'edge';
 
@@ -46,6 +49,10 @@ const tablePermissions = {
     read: ['dashboard', 'workforce', 'employees', 'compliance'],
     write: ['compliance'],
   },
+  employee: {
+    read: [],
+    write: [],
+  },
 };
 
 const publicRules = [
@@ -60,14 +67,15 @@ const requestSchema = z.object({
 });
 
 const candidateSchema = z.object({
-  'Full Name': z.string().trim().min(2).max(120),
-  Phone: z.string().trim().min(8).max(20),
-  Email: z.string().trim().email().optional().or(z.literal('')),
+  'Full Name': z.string().trim().min(2).max(120).regex(/^[a-zA-Z\s.'-]+$/, 'Name can only contain letters, spaces, dots, hyphens, and apostrophes'),
+  Phone: z.string().trim().regex(/^\+?[1-9]\d{7,14}$/, 'Invalid phone number format (use E.164 format)'),
+  Email: z.string().trim().email().toLowerCase().optional().or(z.literal('')),
   'Job Title': z.string().trim().min(2).max(160).optional(),
   'Job ID': z.string().trim().max(80).optional(),
-  PAN: z.string().trim().max(20).optional().or(z.literal('')),
-  Aadhar: z.string().trim().max(20).optional().or(z.literal('')),
+  PAN: z.string().trim().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, 'Invalid PAN format (e.g., ABCDE1234F)').optional().or(z.literal('')),
+  Aadhar: z.string().trim().regex(/^\d{12}$/, 'Invalid Aadhar format (12 digits)').optional().or(z.literal('')),
   Status: z.string().trim().max(40).optional(),
+  captchaToken: z.string().min(1, 'CAPTCHA verification required').optional(),
 }).passthrough();
 
 const jobSchema = z.object({
@@ -158,6 +166,24 @@ async function verifyRequest(request, table, method) {
   }
 
   if (!hasTableAccess(payload, table, method)) {
+    // Log unauthorized access attempt
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_id: payload.id,
+        username: payload.username,
+        action: 'unauthorized_access_attempt',
+        resource: table,
+        status: 'failure',
+        details: {
+          method,
+          role: payload.role,
+          reason: 'insufficient_permissions',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to log unauthorized access:', error);
+    }
+
     return { success: false, error: 'Forbidden', message: 'Insufficient permissions', status: 403 };
   }
 
@@ -266,10 +292,6 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    if (!checkRateLimit(request, 'api-database-post', 30)) {
-      return json(request, { error: 'Rate Limited', message: 'Too many requests' }, 429);
-    }
-
     const parsed = requestSchema.safeParse(await request.json());
     if (!parsed.success) {
       return json(request, { error: 'Validation Error', message: 'Invalid request body' }, 400);
@@ -285,6 +307,101 @@ export async function POST(request) {
     const auth = await verifyRequest(request, table, 'POST');
     if (!auth.success) {
       return json(request, { error: auth.error, message: auth.message }, auth.status);
+    }
+
+    // Enhanced security for public candidate submissions
+    if (table === 'candidates' && auth.public) {
+      // Stricter rate limiting for public submissions (5 per hour)
+      if (!checkRateLimit(request, 'candidate-submission', 5, 3600000)) {
+        return json(request, { 
+          error: 'Rate Limited', 
+          message: 'Too many applications submitted. Please try again later.' 
+        }, 429);
+      }
+
+      // CAPTCHA verification
+      const captchaToken = insertData?.captchaToken;
+      if (!captchaToken) {
+        return json(request, { 
+          error: 'Validation Error', 
+          message: 'CAPTCHA verification required' 
+        }, 400);
+      }
+
+      const clientIp = getClientKey(request);
+      const captchaResult = await verifyCaptcha(captchaToken, clientIp);
+      
+      if (!captchaResult.success) {
+        return json(request, { 
+          error: 'CAPTCHA Failed', 
+          message: 'CAPTCHA verification failed. Please try again.' 
+        }, 400);
+      }
+
+      // Remove captchaToken from data before validation
+      delete insertData.captchaToken;
+
+      // Check for XSS patterns
+      for (const [key, value] of Object.entries(insertData)) {
+        if (typeof value === 'string' && containsXss(value)) {
+          return json(request, { 
+            error: 'Validation Error', 
+            message: `Field "${key}" contains potentially malicious content` 
+          }, 400);
+        }
+      }
+
+      // Sanitize input
+      const sanitizedData = sanitizeCandidateData(insertData);
+
+      // Duplicate detection
+      const email = sanitizedData.Email;
+      const phone = sanitizedData.Phone;
+
+      if (email || phone) {
+        let duplicateQuery = supabaseAdmin.from('candidates').select('id');
+
+        if (email && phone) {
+          duplicateQuery = duplicateQuery.or(`email.eq.${email},phone.eq.${phone}`);
+        } else if (email) {
+          duplicateQuery = duplicateQuery.eq('email', email);
+        } else if (phone) {
+          duplicateQuery = duplicateQuery.eq('phone', phone);
+        }
+
+        const { data: existingCandidate } = await duplicateQuery.single();
+
+        if (existingCandidate) {
+          return json(request, {
+            error: 'Duplicate Submission',
+            message: 'An application with this email or phone already exists',
+          }, 400);
+        }
+      }
+
+      // Use sanitized data for validation
+      const validation = validatePayload(table, sanitizedData);
+      if (!validation.success) {
+        return json(request, { error: 'Validation Error', message: validation.message }, 400);
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from(dbTable)
+        .insert(toDB(table, validation.data))
+        .select();
+
+      if (error) throw error;
+
+      return json(request, {
+        success: true,
+        data: toFrontend(table, data?.[0]),
+        message: 'Application submitted successfully',
+      });
+    }
+
+    // Standard rate limiting for authenticated requests
+    if (!checkRateLimit(request, 'api-database-post', 30)) {
+      return json(request, { error: 'Rate Limited', message: 'Too many requests' }, 429);
     }
 
     if (!supabaseAdmin) {

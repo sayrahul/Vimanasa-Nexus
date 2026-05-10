@@ -11,6 +11,7 @@ import {
   X,
   UserPlus,
   Settings as SettingsIcon,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +23,7 @@ const menuItems = [
   { icon: Wallet, label: 'Finance', id: 'finance' },
   { icon: ShieldCheck, label: 'Compliance', id: 'compliance' },
   { icon: Receipt, label: 'Reports', id: 'reports' },
+  { icon: UserCog, label: 'Users', id: 'users' },
   { icon: SettingsIcon, label: 'Settings', id: 'settings' },
 ];
 
