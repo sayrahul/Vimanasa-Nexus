@@ -159,97 +159,111 @@ function EmployeeCard({ emp, idx, onEdit, onDelete, onGenerateDoc, getStatusBadg
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2, delay: Math.min(idx * 0.05, 0.5) }}
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all overflow-hidden group flex flex-col h-full"
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.2, delay: Math.min(idx * 0.03, 0.3) }}
+      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group"
     >
-      {/* Card Header with Status */}
-      <div className="p-4 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100">
-        <div className="flex justify-between items-start mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-100 shrink-0">
+      {/* Top Banner Accent */}
+      <div className={`h-1.5 w-full ${status === 'Deployed' ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+      
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex gap-4 mb-6">
+          <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-black text-base border border-slate-100 shrink-0 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 overflow-hidden">
             {emp['Photo URL'] ? (
-              <img src={emp['Photo URL']} alt="" className="w-full h-full object-cover rounded-2xl" />
+              <img src={emp['Photo URL']} alt="" className="w-full h-full object-cover" />
             ) : getInitials(emp.Employee)}
           </div>
-          {getStatusBadge(status)}
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate mb-1" title={emp.Employee}>
+              {emp.Employee}
+            </h3>
+            <div className="flex items-center flex-wrap gap-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {emp['ID'] || 'N/A'}</p>
+              <div className="pt-0.5">
+                {getStatusBadge(status)}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h3 className="font-black text-slate-900 text-base leading-tight truncate" title={emp.Employee}>
-            {emp.Employee}
-          </h3>
-          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">ID: {emp['ID']}</p>
+
+        <div className="mt-auto space-y-5">
+          {/* Work Info Grid */}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 py-4 border-y border-slate-50">
+            <div className="min-w-0">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Designation</p>
+              <div className="flex items-center gap-2 text-slate-700">
+                <Briefcase size={13} className="text-slate-300 shrink-0" />
+                <p className="text-xs font-bold truncate" title={emp['Role']}>{emp['Role'] || 'Staff'}</p>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Location</p>
+              <div className="flex items-center gap-2 text-slate-700">
+                <MapPin size={13} className="text-slate-300 shrink-0" />
+                <p className="text-xs font-bold truncate" title={emp['Assigned Client']}>{emp['Assigned Client'] || 'Bench'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Quick Info */}
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2.5 text-slate-500 group/item">
+              <Mail size={13} className="text-slate-300 shrink-0 group-hover/item:text-indigo-400 transition-colors" />
+              <p className="text-xs font-medium truncate" title={emp['Email']}>{emp['Email'] || 'no-email@vimanasa.com'}</p>
+            </div>
+            <div className="flex items-center gap-2.5 text-slate-500 group/item">
+              <Phone size={13} className="text-slate-300 shrink-0 group-hover/item:text-indigo-400 transition-colors" />
+              <p className="text-xs font-medium truncate">{emp['Phone'] || 'Not Provided'}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Details Section */}
-      <div className="p-4 space-y-3 flex-1">
-        <div className="flex items-start gap-3">
-          <Briefcase size={14} className="text-slate-400 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Designation</p>
-            <p className="text-sm font-bold text-slate-700 truncate">{emp['Role'] || 'Unassigned'}</p>
-          </div>
+      {/* Corporate Action Footer */}
+      <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => onEdit(emp, idx)}
+            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            title="Edit Details"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button 
+            onClick={() => onDelete(emp, idx)}
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Remove Employee"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
 
-        {status === 'Deployed' ? (
-          <div className="flex items-start gap-3 p-2.5 bg-blue-50/50 rounded-xl border border-blue-100">
-            <MapPin size={14} className="text-blue-500 mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Work Site</p>
-              <p className="text-sm font-black text-blue-700 truncate">{emp['Assigned Client']}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-start gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-            <Clock size={14} className="text-slate-400 mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bench Since</p>
-              <p className="text-sm font-bold text-slate-600 truncate">{emp['Created At'] ? new Date(emp['Created At']).toLocaleDateString() : 'N/A'}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Actions Footer */}
-      <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center gap-2">
-        <button 
-          onClick={() => onEdit(emp, idx)}
-          className="flex-1 bg-white border border-slate-200 p-2 rounded-xl text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-        >
-          <Edit2 size={14} /> <span>Edit</span>
-        </button>
-        <button 
-          onClick={() => onDelete(emp, idx)}
-          className="bg-white border border-slate-200 p-2 rounded-xl text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center shrink-0"
-          title="Delete"
-        >
-          <Trash2 size={14} />
-        </button>
-        
-        <div className="relative shrink-0">
+        <div className="relative">
           <button 
             onClick={() => setShowDocMenu(!showDocMenu)}
-            className={`p-2 rounded-xl transition-all flex items-center justify-center ${showDocMenu ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              showDocMenu 
+                ? 'bg-indigo-600 text-white shadow-sm' 
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-600 hover:text-indigo-600'
+            }`}
           >
             <FileText size={14} />
+            <span>Documents</span>
           </button>
           
           <AnimatePresence>
             {showDocMenu && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowDocMenu(false)} />
+                <div className="fixed inset-0 z-[60]" onClick={() => setShowDocMenu(false)} />
                 <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full right-0 mb-3 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl z-20 overflow-hidden"
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-[70] overflow-hidden"
                 >
-                  <div className="p-2 border-b border-slate-100 bg-slate-50">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Documents</p>
-                  </div>
-                  <div className="p-1">
+                  <div className="p-1.5">
                     <DocMenuItem icon={FileText} label="Offer Letter" onClick={() => { onGenerateDoc(emp, 'offer'); setShowDocMenu(false); }} />
                     <DocMenuItem icon={ExternalLink} label="Joining Letter" onClick={() => { onGenerateDoc(emp, 'joining'); setShowDocMenu(false); }} />
                     <DocMenuItem icon={Calendar} label="Experience" onClick={() => { onGenerateDoc(emp, 'experience'); setShowDocMenu(false); }} />
@@ -268,7 +282,7 @@ function DocMenuItem({ icon: Icon, label, onClick }) {
   return (
     <button 
       onClick={onClick}
-      className="w-full text-left px-3 py-2 text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors flex items-center gap-2"
+      className="w-full text-left px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition-colors flex items-center gap-2"
     >
       <Icon size={14} /> {label}
     </button>

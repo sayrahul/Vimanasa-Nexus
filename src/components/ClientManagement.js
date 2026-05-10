@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X, Search, Download } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Calendar, DollarSign, Users, Edit2, Trash2, Plus, X, Search, Download, AlertTriangle } from 'lucide-react';
 import { exportToExcel } from '@/lib/excelExport';
 import { motion } from 'framer-motion';
 
@@ -141,111 +141,100 @@ function ClientCard({ client, employees, onEdit, onDelete }) {
   return (
     <>
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      layout
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all overflow-hidden group"
+      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group"
     >
-      {/* Compact Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 border-b border-slate-100">
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white flex-shrink-0">
-            <Building2 size={22} />
+      {/* Top Banner Accent */}
+      <div className={`h-1.5 w-full ${status === 'Active' ? 'bg-blue-600' : 'bg-slate-300'}`} />
+      
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex gap-4 mb-6">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-slate-50 flex items-center justify-center text-blue-600 border border-slate-100 shrink-0 shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+            <Building2 size={24} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <h3 className="font-black text-base text-slate-900 truncate flex-1">{client['Client Name']}</h3>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold whitespace-nowrap ${
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate mb-1" title={client['Client Name']}>
+              {client['Client Name']}
+            </h3>
+            <div className="flex items-center flex-wrap gap-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{client['Client ID'] || 'CLI-NEW'}</p>
+              <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
                 status === 'Active' 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-slate-100 text-slate-600'
+                  ? 'bg-green-50 text-green-700 border-green-200 shadow-sm shadow-green-100' 
+                  : 'bg-slate-50 text-slate-500 border-slate-200'
               }`}>
                 {status}
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium mb-2">{client['Client ID']}</p>
-            
-            {isExpiringSoon && (
-              <p className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-md inline-block">
-                ⚠️ Expires in {daysUntilExpiry} days
-              </p>
-            )}
-            {isExpired && (
-              <p className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded-md inline-block">
-                ❌ Expired
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Compact Details Grid */}
-      <div className="p-4 space-y-3">
-        {/* Location & Contact in 2 columns */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-start gap-2">
-            <MapPin size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs text-slate-400 font-bold uppercase mb-0.5">Location</p>
-              <p className="text-sm text-slate-700 font-semibold truncate" title={client.Location}>
-                {client.Location || 'N/A'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2">
-            <Phone size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs text-slate-400 font-bold uppercase mb-0.5">Contact</p>
-              <p className="text-sm text-slate-700 font-semibold truncate" title={client['Contact Person']}>
-                {client['Contact Person'] || 'N/A'}
-              </p>
-            </div>
           </div>
         </div>
 
-        {/* Payment Terms & Deployed in 2 columns */}
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-          <div className="flex items-start gap-2">
-            <DollarSign size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
-              <p className="text-xs text-slate-400 font-bold uppercase mb-0.5">Payment</p>
-              <p className="text-sm text-slate-700 font-semibold truncate">
-                {client['Payment Terms'] || 'Net 30'}
-              </p>
-            </div>
+        {/* Expiry Alerts */}
+        {(isExpiringSoon || isExpired) && (
+          <div className={`mb-5 px-3 py-2 rounded-lg flex items-center gap-2 text-[9px] font-black uppercase tracking-wider border ${
+            isExpired ? 'bg-red-50 text-red-700 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+          }`}>
+            <AlertTriangle size={14} className="shrink-0" />
+            <span className="truncate">{isExpired ? 'Contract Expired' : `Expires in ${daysUntilExpiry} days`}</span>
           </div>
+        )}
 
-          <div className="flex items-start gap-2">
-            <Users size={14} className="text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="mt-auto space-y-5">
+          {/* Metadata Grid - Optimized for narrow desktop cards */}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 py-4 border-y border-slate-50">
             <div className="min-w-0">
-              <p className="text-xs text-slate-400 font-bold uppercase mb-0.5">Staff</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Location</p>
+              <div className="flex items-center gap-2 text-slate-700">
+                <MapPin size={13} className="text-slate-300 shrink-0" />
+                <p className="text-xs font-bold truncate" title={client.Location}>{client.Location || 'N/A'}</p>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Contact</p>
+              <div className="flex items-center gap-2 text-slate-700">
+                <Phone size={13} className="text-slate-300 shrink-0" />
+                <p className="text-xs font-bold truncate" title={client['Contact Person']}>{client['Contact Person'] || 'N/A'}</p>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Payment</p>
+              <div className="flex items-center gap-2 text-slate-700">
+                <DollarSign size={13} className="text-slate-300 shrink-0" />
+                <p className="text-xs font-bold truncate">{client['Payment Terms'] || 'Net 30'}</p>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Workforce</p>
               <button 
                 onClick={() => setShowEmployees(true)}
-                className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-black transition-colors"
               >
-                {deployedStaff.length} Deployed
+                <Users size={13} className="shrink-0" />
+                <p className="text-xs">{deployedStaff.length} Deployed</p>
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2 border-t border-slate-100">
-          <button
-            onClick={onEdit}
-            className="flex-1 px-3 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-bold"
-          >
-            <Edit2 size={14} />
-            <span>Edit</span>
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex-1 px-3 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-bold"
-          >
-            <Trash2 size={14} />
-            <span>Delete</span>
-          </button>
-        </div>
+      {/* Corporate Action Footer */}
+      <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center gap-2">
+        <button
+          onClick={onEdit}
+          className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:border-blue-600 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+        >
+          <Edit2 size={14} />
+          <span>Edit</span>
+        </button>
+        <button
+          onClick={onDelete}
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-lg font-bold text-xs transition-all flex items-center justify-center shrink-0"
+          title="Remove Client"
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
     </motion.div>
 

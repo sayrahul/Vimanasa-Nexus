@@ -22,7 +22,7 @@ import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import UserManagement from '@/components/UserManagement';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus } from 'lucide-react';
+import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus, Calendar, Building2, ShieldCheck, Receipt, UserCog } from 'lucide-react';
 import { apiClient, authAPI, setToken, setUser, removeToken } from '@/lib/apiClient';
 import { toast } from 'react-toastify';
 import { generateSalarySlip, generateOfferLetter, generateJoiningLetter, generateExperienceLetter } from '@/lib/pdfGenerator';
@@ -31,22 +31,26 @@ import { supabase } from '@/lib/supabase';
 
 function SubNavigation({ tabs, mainTab, subTabs, onChange }) {
   return (
-    <div className="w-full overflow-x-auto pb-4 custom-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
-      <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-2xl mb-2 w-fit min-w-min border border-slate-200/60 shadow-sm">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => onChange(mainTab, tab.id)}
-            className={cn(
-              "px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all duration-200 flex-shrink-0",
-              subTabs[mainTab] === tab.id 
-                ? "bg-white text-blue-600 shadow-md shadow-blue-100/50 border border-slate-200/50" 
-                : "text-slate-500 hover:bg-slate-200/50 hover:text-slate-800"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="w-full mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-nowrap gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200/60 shadow-sm">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onChange(mainTab, tab.id)}
+              className={cn(
+                "px-4 py-2.5 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center lg:justify-start gap-2.5 min-w-0 truncate",
+                subTabs[mainTab] === tab.id 
+                  ? "bg-white text-blue-600 shadow-md shadow-blue-100/50 border border-slate-200/50 scale-[1.02]" 
+                  : "text-slate-500 hover:bg-white/60 hover:text-slate-800"
+              )}
+            >
+              {Icon && <Icon size={14} className={cn("shrink-0", subTabs[mainTab] === tab.id ? "text-blue-500" : "text-slate-400")} />}
+              <span className="truncate">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -85,7 +89,7 @@ export default function DashboardLayout() {
     placements: 'workforce',
     finance: 'overview',
     compliance: 'calendar',
-    reports: 'hr',
+    reports: 'compliance',
     settings: 'company'
   });
 
@@ -584,15 +588,15 @@ export default function DashboardLayout() {
                   </div>
                 </div>
                 <SubNavigation 
-                  mainTab="placements" 
+                  tabs={[
+                    { id: 'workforce', label: 'Workforce Directory', icon: Users },
+                    { id: 'deployment', label: 'Deployment Manager', icon: Briefcase },
+                    { id: 'attendance', label: 'Attendance Tracking', icon: CheckSquare },
+                    { id: 'leave', label: 'Leave Requests', icon: FileText }
+                  ]}
+                  mainTab="placements"
                   subTabs={subTabs}
                   onChange={handleSubTabChange}
-                  tabs={[
-                    { id: 'workforce', label: 'Workforce Directory' },
-                    { id: 'deployment', label: 'Deployment Manager' },
-                    { id: 'attendance', label: 'Attendance Tracking' },
-                    { id: 'leave', label: 'Leave Requests' }
-                  ]} 
                 />
 
                 {subTabs.placements === 'workforce' && (
@@ -806,7 +810,7 @@ export default function DashboardLayout() {
                   subTabs={subTabs}
                   onChange={handleSubTabChange}
                   tabs={[
-                    { id: 'calendar', label: 'Compliance Calendar' }
+                    { id: 'calendar', label: 'Compliance Calendar', icon: Calendar }
                   ]} 
                 />
                 {subTabs.compliance === 'calendar' && (
@@ -839,8 +843,8 @@ export default function DashboardLayout() {
                   subTabs={subTabs}
                   onChange={handleSubTabChange}
                   tabs={[
-                    { id: 'compliance', label: 'Compliance Tracker' },
-                    { id: 'exports', label: 'Data Exports' }
+                    { id: 'compliance', label: 'Compliance Tracker', icon: CheckCircle },
+                    { id: 'exports', label: 'Data Exports', icon: Download }
                   ]} 
                 />
 
@@ -1088,487 +1092,184 @@ export default function DashboardLayout() {
 
 function DashboardView({ data, allData }) {
   const [activeTab, setActiveTab] = useState('workforce');
-  const [showQuickAction, setShowQuickAction] = useState(null);
   
   // Calculate real-time stats from actual data
   const stats = {
     staff: allData?.workforce?.length || 0,
     deployed: allData?.workforce?.filter(e => e['Deployment Status'] === 'Deployed' || (!e['Deployment Status'] && e['Assigned Client'])).length || 0,
-    bench: allData?.workforce?.filter(e => e['Deployment Status'] === 'On Bench' || (!e['Deployment Status'] && !e['Assigned Client'])).length || 0,
-    clients: allData?.partners?.length || 0,
-    payroll: allData?.payroll?.[0]?.['Total Payout'] || allData?.payroll?.[0]?.['Monthly Billing'] || '₹0',
-    onLeave: allData?.workforce?.filter(e => e.Status === 'On Leave').length || 0,
-    pendingLeave: allData?.leaveRequests?.filter(r => r.Status === 'Pending').length || 0,
-    pendingExpenses: allData?.expenses?.filter(e => e.Status === 'Pending').length || 0,
-    complianceDue: allData?.compliance?.filter(c => c.Status === 'Pending').length || 0,
-    overdueInvoices: allData?.invoices?.filter(i => i.Status === 'Overdue').length || 0,
-    newApplications: allData?.candidates?.filter(c => (c.Status || 'Pending').toLowerCase() === 'pending').length || 0,
+    onLeave: allData?.workforce?.filter(e => e['Deployment Status'] === 'On Leave').length || 0,
+    clients: allData?.clients?.length || 0,
+    payroll: allData?.payroll?.length > 0 ? `₹${(allData.payroll.reduce((acc, curr) => acc + (parseFloat(curr['Net Salary']) || 0), 0) / 100000).toFixed(2)}L` : '₹0.00L',
+    pendingLeave: allData?.leave?.filter(r => r.Status === 'Pending' || r.Status === 'Applied').length || 0,
+    complianceDue: allData?.compliance?.filter(c => c.Status === 'Pending' || c.Status === 'Upcoming').length || 0,
+    newApplications: allData?.candidates?.filter(c => c.Status === 'Pending' || !c.Status).length || 0,
   };
-  
-  const deploymentRate = stats.staff > 0 ? Math.round((stats.deployed / stats.staff) * 100) : 0;
 
-  // Calculate Days Since Last Payroll
-  const lastPayrollRecord = allData?.payroll?.length > 0 ? [...allData.payroll].sort((a, b) => new Date(b.Date || 0) - new Date(a.Date || 0))[0] : null;
-  const daysSincePayroll = lastPayrollRecord && lastPayrollRecord.Date ? Math.floor((Date.now() - new Date(lastPayrollRecord.Date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
-
-  // Calculate financial summary
+  // Financial summaries
   const financialSummary = {
-    totalIncome: allData?.finance?.filter(f => f.Type === 'Income').reduce((sum, f) => {
-      const amount = String(f.Amount || '0').replace(/[₹,]/g, '');
-      return sum + parseFloat(amount || 0);
-    }, 0) || 0,
-    totalExpense: allData?.finance?.filter(f => f.Type === 'Expense').reduce((sum, f) => {
-      const amount = String(f.Amount || '0').replace(/[₹,]/g, '');
-      return sum + parseFloat(amount || 0);
-    }, 0) || 0,
+    totalIncome: allData?.invoices?.reduce((acc, curr) => acc + (parseFloat(curr['Total Amount']) || 0), 0) || 0,
+    totalExpense: (allData?.payroll?.reduce((acc, curr) => acc + (parseFloat(curr['Total Bill Rate']) || 0), 0) || 0) + (allData?.expenses?.reduce((acc, curr) => acc + (parseFloat(curr.Amount) || 0), 0) || 0),
   };
-  
-  const profit = financialSummary.totalIncome - financialSummary.totalExpense;
-  const profitMargin = financialSummary.totalIncome > 0 
-    ? Math.round((profit / financialSummary.totalIncome) * 100) 
-    : 0;
-
-  // Calculate Birthdays this week
-  const today = new Date();
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
-  
-  const upcomingBirthdays = allData?.workforce?.filter(emp => {
-    if (!emp['DOB']) return false;
-    const dob = new Date(emp['DOB']);
-    const dobThisYear = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
-    return dobThisYear >= today && dobThisYear <= nextWeek;
-  }) || [];
+  const profitMargin = financialSummary.totalIncome > 0 ? Math.round(((financialSummary.totalIncome - financialSummary.totalExpense) / financialSummary.totalIncome) * 100) : 0;
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-8 pb-10">
+      {/* Premium Corporate Header */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
-          <p className="text-slate-500 mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg">Real-time operational overview for Vimanasa Nexus</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Operations Hub</h1>
+          <p className="text-slate-500 mt-1 text-sm font-medium">Core metrics and operational health overview</p>
         </div>
-        <div className="flex items-center gap-4 text-xs sm:text-sm">
-          <SharePlatform />
-          <button className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors" title="Notifications">
-            <Bell size={24} />
-            {(stats.pendingLeave > 0 || stats.overdueInvoices > 0) && (
-              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white flex items-center justify-center">
-                {stats.pendingLeave + stats.overdueInvoices}
-              </span>
-            )}
-          </button>
-          <div className="flex items-center gap-2 bg-green-50 text-green-600 px-3 py-2 rounded-xl font-bold">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            Live Data
-          </div>
-          <div className="text-slate-500 font-medium">
-            Last updated: {new Date().toLocaleTimeString()}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-slate-200">
+            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+            SYSTEM ACTIVE
           </div>
         </div>
       </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      {/* Corporate Grid: Primary Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard 
           label="Total Workforce" 
           value={stats.staff} 
-          trend="+5%" 
           icon={Users}
-          color="blue"
-          subtitle={`${stats.onLeave} on leave`}
+          color="indigo"
+          subtitle={`${stats.deployed} Deployed • ${stats.onLeave} Leave`}
         />
         <StatsCard 
-          label="Deployed Staff" 
-          value={stats.deployed} 
-          trend={`${deploymentRate}%`} 
-          icon={TrendingUp}
-          color="green"
-          subtitle={`${stats.bench} on bench`}
-        />
-        <StatsCard 
-          label="Active Partners" 
+          label="Client Sites" 
           value={stats.clients} 
-          icon={Shield}
-          color="purple"
-          subtitle="Client sites"
+          icon={Building2}
+          color="slate"
+          subtitle="Active operational partners"
         />
         <StatsCard 
           label="Monthly Payroll" 
           value={stats.payroll} 
           icon={DollarSign}
-          color="orange"
-          subtitle="Current month"
+          color="indigo"
+          subtitle="Total net distribution"
+        />
+        <StatsCard 
+          label="Operational Margin" 
+          value={`${profitMargin}%`} 
+          icon={TrendingUp}
+          color="indigo"
+          subtitle="Net financial efficiency"
         />
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-        <MiniStatCard 
-          label="Pending Leave" 
-          value={stats.pendingLeave}
-          color="amber"
-          clickable
-        />
-        <MiniStatCard 
-          label="Pending Expenses" 
-          value={stats.pendingExpenses}
-          color="orange"
-          clickable
-        />
-        <MiniStatCard 
-          label="Compliance Due" 
-          value={stats.complianceDue}
-          color="red"
-          clickable
-        />
-        <MiniStatCard 
-          label="Profit Margin" 
-          value={`${profitMargin}%`}
-          color="green"
-        />
-        {daysSincePayroll > 30 ? (
-          <div className="bg-red-50 border-2 border-red-500 p-4 rounded-xl shadow-sm relative overflow-hidden animate-pulse">
-            <div className="absolute top-0 right-0 p-1 bg-red-500 rounded-bl-lg">
-              <AlertTriangle size={14} className="text-white" />
-            </div>
-            <p className="text-xs font-bold uppercase tracking-wider text-red-700">Days Since Payroll</p>
-            <p className="text-2xl font-black mt-1 text-red-600">{daysSincePayroll}</p>
-          </div>
-        ) : (
-          <MiniStatCard 
-            label="Days Since Payroll" 
-            value={daysSincePayroll}
-            color="blue"
-          />
-        )}
-        <div className="bg-indigo-600 p-4 rounded-xl shadow-lg relative overflow-hidden group cursor-pointer" onClick={() => window.open('/apply', '_blank')}>
-          <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform text-white">
-            <Briefcase size={80} />
-          </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-indigo-100">Candidate Portal</p>
-          <div className="flex items-center justify-between mt-1">
-            <p className="text-xl font-black text-white">Open Form</p>
-            <ArrowRight size={20} className="text-white" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-        {/* Quick Actions */}
-        <div className="lg:col-span-2 bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h3 className="font-bold text-lg sm:text-xl text-slate-800">Quick Actions</h3>
-            <span className="text-xs text-slate-500 font-medium">Click to perform action</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
-            <QuickActionCard 
-              icon={UserPlus} 
-              label="Recruitment" 
-              color="indigo"
-              count={stats.newApplications}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'recruitment' }));
-              }}
-            />
-            <QuickActionCard 
-              icon={Users} 
-              label="Add Employee" 
-              color="blue"
-              count={stats.staff}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'workforce' }));
-                setTimeout(() => {
-                  document.querySelector('[data-action="add-workforce"]')?.click();
-                }, 100);
-              }}
-            />
-            <QuickActionCard 
-              icon={Shield} 
-              label="Add Partner" 
-              color="purple"
-              count={stats.clients}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'partners' }));
-                setTimeout(() => {
-                  document.querySelector('[data-action="add-partners"]')?.click();
-                }, 100);
-              }}
-            />
-            <QuickActionCard 
-              icon={FileText} 
-              label="Generate Payslip" 
-              color="green"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'payroll' }));
-              }}
-            />
-            <QuickActionCard 
-              icon={DollarSign} 
-              label="Record Expense" 
-              color="orange"
-              count={stats.pendingExpenses}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'expenses' }));
-              }}
-            />
-            <QuickActionCard 
-              icon={AlertTriangle} 
-              label="Compliance" 
-              color="red"
-              count={stats.complianceDue}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'compliance' }));
-              }}
-            />
-            <QuickActionCard 
-              icon={CheckSquare} 
-              label="Pending Approvals" 
-              color="slate"
-              count={stats.pendingLeave + stats.pendingExpenses}
-              onClick={() => {
-                toast.info('Viewing pending approvals');
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Recent Activity */}
-        <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
-          <div className="flex justify-between items-center mb-4 sm:mb-6">
-            <h3 className="font-bold text-lg sm:text-xl text-slate-800">Recent Activity</h3>
-            <button className="text-xs text-blue-600 font-bold hover:text-blue-700">View All</button>
-          </div>
-          <div className="space-y-3 sm:space-y-4 max-h-[280px] sm:max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-            {allData?.workforce?.slice(0, 6).map((emp, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-pointer group"
-              >
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  {(emp.Employee || emp['First Name'] || 'U').charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">{emp.Employee || emp['First Name']}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{emp.Role || emp.Designation}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      (emp.Status || emp['Employee Status']) === 'Active' 
-                        ? 'bg-green-50 text-green-600' 
-                        : 'bg-amber-50 text-amber-600'
-                    }`}>
-                      {emp.Status || emp['Employee Status']}
-                    </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Essential Operations Hub */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Center</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { icon: UserPlus, label: "Recruit", count: stats.newApplications, tab: 'recruitment' },
+                { icon: ShieldCheck, label: "Compliance", count: stats.complianceDue, tab: 'compliance' },
+                { icon: Receipt, label: "Payroll", tab: 'payroll' },
+                { icon: CheckSquare, label: "Approvals", count: stats.pendingLeave, tab: 'placements' },
+                { icon: Users, label: "Staff", tab: 'placements' },
+                { icon: UserCog, label: "System", tab: 'settings' }
+              ].map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: action.tab }))}
+                  className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-indigo-600 hover:shadow-md transition-all group relative text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors mb-3">
+                    <action.icon size={18} />
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  <span className="text-xs font-black text-slate-600 group-hover:text-indigo-600 uppercase tracking-wider">{action.label}</span>
+                  {action.count > 0 && (
+                    <span className="absolute top-4 right-4 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                      {action.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-        </div>
-      </div>
-      
-      {/* Hiring & Recruitment Overview */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="font-bold text-xl text-slate-800">Hiring Command Center</h3>
-            <p className="text-sm text-slate-500">Manage all incoming candidate applications</p>
+
+          {/* Minimalist P&L Snapshot */}
+          <div className="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-12 opacity-5">
+               <DollarSign size={150} />
+             </div>
+             <div className="relative z-10">
+               <h3 className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-8">P&L Snapshot</h3>
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
+                 <div>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Revenue</p>
+                   <p className="text-3xl font-black tracking-tighter">₹{(financialSummary.totalIncome / 100000).toFixed(2)}L</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Expenses</p>
+                   <p className="text-3xl font-black tracking-tighter">₹{(financialSummary.totalExpense / 100000).toFixed(2)}L</p>
+                 </div>
+                 <div>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Operational Net</p>
+                   <p className="text-3xl font-black tracking-tighter text-indigo-400">₹{((financialSummary.totalIncome - financialSummary.totalExpense) / 100000).toFixed(2)}L</p>
+                 </div>
+               </div>
+             </div>
           </div>
-          <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'recruitment' }))}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-200"
-          >
-            Manage Pipeline →
-          </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-indigo-50 p-6 rounded-2xl border border-indigo-100 relative overflow-hidden">
-            <UserPlus className="absolute -right-4 -bottom-4 text-indigo-100" size={120} />
-            <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Pending Review</p>
-            <p className="text-4xl font-black text-indigo-900">{stats.newApplications}</p>
-            <p className="text-sm text-indigo-600 mt-2">New applications this week</p>
-          </div>
-          
-          <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
-            <CheckCircle className="absolute -right-4 -bottom-4 text-emerald-100" size={120} />
-            <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Public Portal</p>
-            <p className="text-xl font-bold text-emerald-900 mt-1 flex items-center gap-2">
-              Status: <span className="bg-emerald-500 text-white px-2 py-0.5 rounded text-xs font-black animate-pulse">LIVE</span>
-            </p>
-            <a 
-              href="/apply" 
-              target="_blank" 
-              className="mt-4 bg-white text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 shadow-sm"
-            >
-              Visit Portal <ArrowUpRight size={16} />
-            </a>
-          </div>
-
-          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col justify-center">
-            <h4 className="text-sm font-bold text-slate-800 mb-2">Hiring Tip</h4>
-            <p className="text-sm text-slate-500 leading-relaxed italic">
-              "You can automatically convert a hired candidate into a workforce member from the recruitment profile."
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Financial Overview & Mini Chart */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mt-8">
-        <h3 className="font-bold text-xl text-slate-800 mb-6">Monthly P&L Snapshot</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-bold text-green-900">Total Income</h4>
-              <ArrowUpRight className="text-green-600" size={20} />
-            </div>
-            <p className="text-3xl font-black text-green-900">
-              ₹{(financialSummary.totalIncome / 100000).toFixed(2)}L
-            </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-2xl border border-red-100 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-bold text-red-900">Total Expenses</h4>
-              <ArrowDownRight className="text-red-600" size={20} />
-            </div>
-            <p className="text-3xl font-black text-red-900">
-              ₹{(financialSummary.totalExpense / 100000).toFixed(2)}L
-            </p>
-          </div>
-          
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border border-blue-100 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-bold text-blue-900">Net Profit</h4>
-              <TrendingUp className="text-blue-600" size={20} />
-            </div>
-            <p className="text-3xl font-black text-blue-900">
-              ₹{(profit / 100000).toFixed(2)}L
-            </p>
-            <p className="text-xs text-blue-600 mt-1 font-medium">{profitMargin}% margin</p>
-          </div>
-
-          <div className="p-4 rounded-2xl flex flex-col justify-center items-center">
-            <div className="w-full flex h-8 bg-slate-100 rounded-full overflow-hidden">
-               <div className="bg-green-500 h-full transition-all" style={{width: `${financialSummary.totalIncome > 0 ? (financialSummary.totalIncome / (financialSummary.totalIncome + financialSummary.totalExpense)) * 100 : 50}%`}}></div>
-               <div className="bg-red-500 h-full transition-all" style={{width: `${financialSummary.totalExpense > 0 ? (financialSummary.totalExpense / (financialSummary.totalIncome + financialSummary.totalExpense)) * 100 : 50}%`}}></div>
-            </div>
-            <div className="flex justify-between w-full mt-2 text-xs font-bold px-2">
-              <span className="text-green-600">Revenue</span>
-              <span className="text-red-600">Expense</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Birthdays Card */}
-      {upcomingBirthdays.length > 0 && (
-        <div className="bg-gradient-to-r from-pink-500 to-purple-500 p-6 rounded-3xl text-white shadow-lg mt-6">
-          <h3 className="font-black text-xl mb-4">🎉 Upcoming Birthdays This Week</h3>
-          <div className="flex flex-wrap gap-4">
-            {upcomingBirthdays.map((emp, i) => (
-              <div key={i} className="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-2xl flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-pink-600">
-                  {emp.Employee.charAt(0)}
+        {/* Recent Operational Log */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-full">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">System Log</h3>
+          <div className="space-y-4 flex-1">
+            {allData?.workforce?.slice(0, 6).map((emp, i) => (
+              <div key={i} className="flex gap-4 items-center group cursor-pointer border-b border-slate-50 pb-4 last:border-0">
+                <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 font-black text-sm group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  {(emp.Employee || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="font-bold">{emp.Employee}</p>
-                  <p className="text-xs text-pink-100">{new Date(emp['DOB']).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'})}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-800 truncate leading-tight group-hover:text-indigo-600 transition-colors">{emp.Employee}</p>
+                  <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">{emp.Role || 'OPERATIONAL STAFF'}</p>
                 </div>
+                <span className="text-[8px] font-black text-slate-300 uppercase shrink-0">LOGGED</span>
               </div>
             ))}
           </div>
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'placements' }))}
+            className="mt-8 w-full py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-100 rounded-xl hover:bg-slate-50 hover:text-slate-600 transition-all"
+          >
+            Directory Archive
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-function QuickActionCard({ icon: Icon, label, color, onClick, count }) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-blue-200',
-    purple: 'bg-purple-50 text-purple-600 hover:bg-purple-100 hover:shadow-purple-200',
-    green: 'bg-green-50 text-green-600 hover:bg-green-100 hover:shadow-green-200',
-    orange: 'bg-orange-50 text-orange-600 hover:bg-orange-100 hover:shadow-orange-200',
-    red: 'bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-red-200',
-    slate: 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:shadow-slate-200',
-  };
-  
+function StatsCard({ label, value, icon: Icon, color, subtitle }) {
   return (
-    <button
-      onClick={onClick}
-      className={`relative p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl ${colorClasses[color]} transition-all hover:scale-105 hover:shadow-lg active:scale-95 flex flex-col items-center gap-2 sm:gap-3 group`}
-    >
-      {count !== undefined && count > 0 && (
-        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse">
-          {count}
-        </span>
-      )}
-      <Icon size={24} className="sm:w-7 sm:h-7 lg:w-8 lg:h-8 group-hover:scale-110 transition-transform" />
-      <span className="text-xs sm:text-sm font-bold text-center leading-tight">{label}</span>
-    </button>
-  );
-}
-
-function MiniStatCard({ label, value, color, clickable }) {
-  const colorClasses = {
-    amber: 'bg-amber-50 border-amber-200 text-amber-900',
-    orange: 'bg-orange-50 border-orange-200 text-orange-900',
-    red: 'bg-red-50 border-red-200 text-red-900',
-    green: 'bg-green-50 border-green-200 text-green-900',
-  };
-  
-  return (
-    <div className={`${colorClasses[color]} p-4 rounded-xl border-2 ${clickable ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}>
-      <p className="text-xs font-bold uppercase tracking-wider opacity-70">{label}</p>
-      <p className="text-2xl font-black mt-1">{value}</p>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col group">
+      <div className={cn("h-1 w-full transition-all duration-500", color === 'indigo' ? 'bg-indigo-600' : 'bg-slate-200 group-hover:bg-indigo-400')} />
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+            <Icon size={20} />
+          </div>
+          <div className="text-[9px] font-black text-slate-300 group-hover:text-indigo-400 transition-colors">LIVE SYNC</div>
+        </div>
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</h4>
+        <div className="text-3xl font-black text-slate-900 tracking-tight">{value}</div>
+        <p className="text-[10px] font-bold text-slate-500 mt-2 flex items-center gap-1.5">
+          {subtitle}
+        </p>
+      </div>
     </div>
   );
 }
 
-function StatsCard({ label, value, trend, icon: Icon, color, subtitle }) {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600',
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.02 }}
-      className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
-    >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider sm:tracking-widest">{label}</p>
-          {subtitle && (
-            <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">{subtitle}</p>
-          )}
-        </div>
-        <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-400'}`}>
-          <Icon size={16} className="sm:w-5 sm:h-5" />
-        </div>
-      </div>
-      <div className="mt-3 sm:mt-4 flex items-baseline justify-between">
-        <h4 className="text-2xl sm:text-3xl font-black text-slate-900">{value}</h4>
-        {trend && (
-          <span className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 sm:py-1.5 bg-emerald-50 text-emerald-600 rounded-lg sm:rounded-xl">
-            <ArrowUpRight size={10} className="sm:w-3 sm:h-3" />
-            {trend}
-          </span>
-        )}
-      </div>
-    </motion.div>
-  );
-}
+
+
 
 function TableView({ title, subtitle, data, columns, onAdd, onEdit, onDelete, tab, onGenerateDoc }) {
   const [searchTerm, setSearchTerm] = useState('');
