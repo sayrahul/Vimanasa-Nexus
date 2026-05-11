@@ -737,15 +737,22 @@ export default function DashboardLayout() {
                       onSaveRoll={async (records, month) => {
                         try {
                           for (const record of records) {
-                            // Map the record to the attendance table schema
-                            // We use a special Date (last day of month) and Status (monthly_roll)
+                            // Find the employee DB ID (UUID) to satisfy FK constraints
+                            const emp = data.workforce.find(e => 
+                              (e['ID'] === record.employee_id || e.employee_id === record.employee_id || e['Employee ID'] === record.employee_id)
+                            );
+                            
+                            if (!emp?.id) {
+                              console.error('Employee not found for ID:', record.employee_id);
+                              continue; 
+                            }
+
                             const [year, monthNum] = month.split('-');
                             const lastDay = new Date(year, monthNum, 0).getDate();
                             const attendanceRecord = {
-                              employee_id: record.employee_id,
+                              employee_id: emp.id, // Use the UUID
                               Date: `${month}-${lastDay}`,
                               Status: 'monthly_roll',
-                              // Custom fields go into metadata
                               payable_days: record.payable_days,
                               overtime_hours: record.overtime_hours,
                               remarks: record.remarks
