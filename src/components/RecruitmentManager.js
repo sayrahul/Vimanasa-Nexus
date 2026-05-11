@@ -96,15 +96,15 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-amber-50 text-amber-600 border-amber-100',
-      shortlisted: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-      rejected: 'bg-red-50 text-red-600 border-red-100',
-      hold: 'bg-slate-100 text-slate-600 border-slate-200',
-      hired: 'bg-green-50 text-green-600 border-green-100',
+      pending: 'bg-slate-50 text-slate-500 border-slate-200/60',
+      shortlisted: 'bg-indigo-50/50 text-indigo-600 border-indigo-100/80',
+      rejected: 'bg-rose-50/50 text-rose-600 border-rose-100/80',
+      hold: 'bg-zinc-100 text-zinc-500 border-zinc-200',
+      hired: 'bg-emerald-50/50 text-emerald-600 border-emerald-100/80',
     };
     const s = status?.toLowerCase() || 'pending';
     return (
-      <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border", styles[s] || styles.pending)}>
+      <span className={cn("px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border", styles[s] || styles.pending)}>
         {status || 'Pending'}
       </span>
     );
@@ -112,11 +112,11 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const getAccentColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'shortlisted': return 'bg-indigo-600';
-      case 'hired': return 'bg-green-600';
-      case 'rejected': return 'bg-red-600';
-      case 'hold': return 'bg-slate-400';
-      default: return 'bg-amber-500';
+      case 'shortlisted': return 'bg-indigo-500';
+      case 'hired': return 'bg-emerald-500';
+      case 'rejected': return 'bg-rose-500';
+      case 'hold': return 'bg-zinc-400';
+      default: return 'bg-slate-400';
     }
   };
 
@@ -125,21 +125,21 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       {/* Premium Corporate Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Recruitment HQ</h2>
-          <p className="text-slate-500 font-medium mt-1 flex items-center gap-2">
-            <Users size={16} className="text-indigo-600" />
-            Managing {candidates.length} candidate applications
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Recruitment HQ</h2>
+          <p className="text-slate-500 font-medium mt-1 flex items-center gap-2 text-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Managing {candidates.length} active applications
           </p>
         </div>
 
         {/* Tab Switcher - Now integrated into header for mobile */}
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full lg:w-auto">
+        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/60 w-full lg:w-auto">
           {['applications', 'pipeline', 'openings'].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveSubTab(tab)}
               className={cn(
-                "flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all capitalize whitespace-nowrap uppercase tracking-wider",
+                "flex-1 px-5 py-2 rounded-lg text-[11px] font-bold transition-all capitalize whitespace-nowrap uppercase tracking-wider",
                 activeSubTab === tab 
                   ? "bg-white text-indigo-600 shadow-sm border border-slate-200/50" 
                   : "text-slate-500 hover:text-slate-800"
@@ -155,27 +155,27 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
         {activeSubTab === 'applications' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
             {/* Corporate Filter Bar */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-5 items-center">
+            <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col xl:flex-row gap-4 items-center">
               <div className="relative flex-1 w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="text" 
-                  placeholder="Search by name, role or phone..." 
+                  placeholder="Search candidates..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-100 outline-none transition-all font-bold text-slate-700 text-sm"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200/60 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all font-semibold text-slate-700 text-sm placeholder:text-slate-400"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+              <div className="flex flex-wrap gap-1.5 w-full xl:w-auto">
                 {['all', 'pending', 'shortlisted', 'hold', 'rejected', 'hired'].map(status => (
                   <button
                     key={status}
                     onClick={() => setStatusFilter(status)}
                     className={cn(
-                      "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all",
+                      "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all",
                       statusFilter === status 
-                        ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
-                        : "bg-white text-slate-500 border-slate-200 hover:border-indigo-600 hover:text-indigo-600"
+                        ? "bg-slate-900 text-white border-slate-900 shadow-md" 
+                        : "bg-white text-slate-500 border-slate-200/60 hover:border-indigo-400 hover:text-indigo-600"
                     )}
                   >
                     {status}
@@ -206,22 +206,31 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
         )}
 
         {activeSubTab === 'pipeline' && (
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }} 
+            animate={{ opacity: 1, x: 0 }} 
+            exit={{ opacity: 0, x: -20 }} 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+          >
             {['Pending', 'Shortlisted', 'Rejected'].map((status) => (
-              <div key={status} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col min-h-[500px]">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-2">
-                    <span className={cn("w-2 h-2 rounded-full", 
-                      status === 'Pending' ? "bg-amber-400" : status === 'Shortlisted' ? "bg-indigo-500" : "bg-red-500"
+              <div key={status} className="bg-slate-50/40 rounded-3xl border border-slate-200/60 flex flex-col min-h-[600px] overflow-hidden">
+                <div className="p-6 border-b border-slate-200/40 bg-white/40 backdrop-blur-sm flex items-center justify-between sticky top-0 z-10">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2 h-2 rounded-full ring-4", 
+                      status === 'Pending' ? "bg-slate-400 ring-slate-400/10" : 
+                      status === 'Shortlisted' ? "bg-indigo-500 ring-indigo-500/10" : 
+                      "bg-rose-500 ring-rose-500/10"
                     )} />
-                    {status}
-                  </h3>
-                  <span className="bg-white px-2.5 py-1 rounded-lg text-[10px] font-black text-slate-400 border border-slate-200">
+                    <h3 className="font-bold text-slate-900 uppercase tracking-loose text-xs">
+                      {status}
+                    </h3>
+                  </div>
+                  <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 border border-slate-200 shadow-sm">
                     {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length}
                   </span>
                 </div>
                 
-                <div className="space-y-4 flex-1 overflow-y-auto scrollbar-hide">
+                <div className="p-4 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
                   {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).map((candidate, idx) => (
                     <CandidateCard 
                       key={candidate.id} 
@@ -233,6 +242,11 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
                       onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
                     />
                   ))}
+                  {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length === 0 && (
+                    <div className="h-32 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 rounded-2xl">
+                      <p className="text-[10px] font-bold uppercase tracking-widest">No candidates</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -339,63 +353,84 @@ function CandidateCard({ candidate, idx, onClick, getStatusBadge, getAccentColor
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: Math.min(idx * 0.03, 0.3) }}
+      transition={{ duration: 0.3, delay: Math.min(idx * 0.05, 0.4) }}
       onClick={onClick}
-      className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full group cursor-pointer overflow-hidden"
+      className={cn(
+        "bg-white rounded-2xl border border-slate-200/70 transition-all duration-300 flex flex-col group cursor-pointer overflow-hidden",
+        "hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-200/50 hover:-translate-y-0.5",
+        isCompact ? "p-4" : "h-full"
+      )}
     >
-      <div className={cn("h-1.5 w-full", getAccentColor(status))} />
+      {!isCompact && (
+        <div className={cn("h-1 w-full", getAccentColor(status))} />
+      )}
       
-      <div className="p-5 flex-1">
+      <div className={cn(isCompact ? "" : "p-6 flex-1")}>
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-indigo-600 font-black text-lg shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 font-bold text-base shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
               {candidate['Full Name']?.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-slate-900 text-sm leading-tight truncate">{candidate['Full Name']}</h3>
-              <p className="text-[10px] font-medium text-slate-500 mt-0.5 truncate">{candidate['Phone']}</p>
+              <h3 className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{candidate['Full Name']}</h3>
+              <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate flex items-center gap-1">
+                <Phone size={10} className="text-slate-300" />
+                {candidate['Phone']}
+              </p>
             </div>
           </div>
           {!isCompact && getStatusBadge(status)}
         </div>
 
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 py-2.5 border-y border-slate-50">
+        <div className="space-y-4">
+          <div className={cn(
+            "grid grid-cols-2 gap-4 py-3 border-y border-slate-50",
+            isCompact && "py-2 border-none bg-slate-50/50 rounded-xl px-3"
+          )}>
             <div className="space-y-1">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Role</p>
               <div className="flex items-center gap-1.5 text-slate-700">
-                <Briefcase size={10} className="text-slate-400" />
-                <p className="text-[11px] font-semibold truncate">{candidate['Job Title']}</p>
+                <p className="text-[11px] font-semibold truncate leading-none">{candidate['Job Title']}</p>
               </div>
             </div>
             <div className="space-y-1">
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Experience</p>
               <div className="flex items-center gap-1.5 text-slate-700">
-                <Calendar size={10} className="text-slate-400" />
-                <p className="text-[11px] font-semibold truncate">{candidate['Experience'] || 'Fresher'}</p>
+                <p className="text-[11px] font-semibold truncate leading-none">{candidate['Experience'] || 'Fresher'}</p>
               </div>
             </div>
           </div>
           
           {!isCompact && (
-            <div className="flex items-center justify-between text-slate-500">
-               <div className="flex items-center gap-1.5">
-                 <DollarSign size={10} />
-                 <span className="text-[10px] font-bold">{candidate['Expected Salary'] || 'N/A'}</span>
+            <div className="flex items-center justify-between">
+               <div className="flex items-center gap-1.5 text-slate-500">
+                 <DollarSign size={12} className="text-slate-300" />
+                 <span className="text-[11px] font-semibold">{candidate['Expected Salary'] || 'N/A'}</span>
                </div>
-               <div className="flex items-center gap-1.5">
-                 <MapPin size={10} />
-                 <span className="text-[10px] font-bold truncate max-w-[80px]">{candidate['Address'] || 'Mumbai'}</span>
+               <div className="flex items-center gap-1.5 text-slate-500">
+                 <MapPin size={12} className="text-slate-300" />
+                 <span className="text-[11px] font-semibold truncate max-w-[100px]">{candidate['Address'] || 'Mumbai'}</span>
                </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between group-hover:bg-indigo-50 transition-colors">
-        <span className="text-[9px] font-black text-slate-400 group-hover:text-indigo-600 transition-colors">REVIEW PROFILE</span>
-        <ChevronRight size={14} className="text-slate-400 group-hover:text-indigo-600 transition-all group-hover:translate-x-0.5" />
-      </div>
+      {!isCompact && (
+        <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between group-hover:bg-indigo-50/30 transition-colors mt-auto">
+          <span className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">View Profile</span>
+          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </div>
+      )}
+      
+      {isCompact && (
+         <div className="mt-3 flex items-center justify-between">
+            {getStatusBadge(status)}
+            <div className="p-1 rounded-md bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+              <ChevronRight size={14} />
+            </div>
+         </div>
+      )}
     </motion.div>
   );
 }
@@ -447,66 +482,70 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-slate-200/60 shadow-sm">
         <div>
-          <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">Talent Pipeline</h3>
-          <p className="text-slate-400 text-[11px] font-bold mt-1">Actively managing {jobs.length} open positions</p>
+          <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Job Board</h3>
+          <p className="text-slate-400 text-[11px] font-medium mt-1 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            {jobs.length} Active job openings
+          </p>
         </div>
         <button 
           onClick={() => handleOpenForm()}
-          className="w-full sm:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-black text-xs shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+          className="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
         >
-          <Plus size={16} /> NEW OPENING
+          <Plus size={16} /> PUBLISH NEW ROLE
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {jobs.length > 0 ? jobs.map((job, idx) => (
-          <div key={job.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all group overflow-hidden flex flex-col">
-            <div className={`h-1.5 w-full ${job.status === 'open' ? 'bg-green-500' : 'bg-slate-300'}`} />
-            <div className="p-6 flex-1">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-indigo-600 shrink-0">
+          <div 
+            key={job.id} 
+            className="bg-white rounded-2xl border border-slate-200/70 transition-all duration-300 flex flex-col group overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-200/50"
+            onClick={() => handleOpenForm(job)}
+          >
+            <div className={cn("h-1 w-full", job.status === 'open' ? 'bg-emerald-500' : 'bg-slate-300')} />
+            <div className="p-6 flex-1 cursor-pointer">
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
                   <Building size={20} />
                 </div>
                 <span className={cn(
-                  "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                  job.status === 'open' ? "bg-green-50 text-green-700 border-green-100" : "bg-slate-100 text-slate-600 border-slate-200"
+                  "px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border",
+                  job.status === 'open' ? "bg-emerald-50 text-emerald-600 border-emerald-100/80" : "bg-slate-50 text-slate-400 border-slate-200"
                 )}>
                   {job.status}
                 </span>
               </div>
               
-              <h4 className="font-bold text-slate-900 text-lg leading-tight mb-2 truncate">{job.title}</h4>
-              <div className="flex gap-3 text-[11px] font-bold text-slate-400 mb-4">
-                <span className="flex items-center gap-1"><MapPin size={10} /> {job.location}</span>
-                <span className="flex items-center gap-1"><Briefcase size={10} /> {job.department}</span>
+              <h4 className="font-bold text-slate-900 text-[15px] leading-tight mb-2 group-hover:text-indigo-600 transition-colors">{job.title}</h4>
+              <div className="flex flex-wrap gap-4 text-[11px] font-medium text-slate-400 mb-6">
+                <span className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-300" /> {job.location}</span>
+                <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-slate-300" /> {job.department}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+              <div className="grid grid-cols-2 gap-6 py-4 border-t border-slate-50">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Type</p>
-                  <p className="text-xs font-black text-slate-700">{job.type}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Position Type</p>
+                  <p className="text-[11px] font-bold text-slate-700">{job.type}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Budget</p>
-                  <p className="text-xs font-black text-indigo-600">{job.salary_range}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Annual Budget</p>
+                  <p className="text-[11px] font-bold text-indigo-600">{job.salary_range}</p>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100">
-               <button 
-                onClick={() => handleOpenForm(job)}
-                className="w-full flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:border-indigo-600 hover:text-indigo-600 transition-all"
-              >
-                <Edit2 size={14} /> Edit Position
-              </button>
+            <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between group-hover:bg-indigo-50/30 transition-colors mt-auto cursor-pointer">
+              <span className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Manage Opening</span>
+              <ArrowUpRight size={14} className="text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
           </div>
         )) : (
-          <div className="col-span-full py-20 text-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs italic">No active job openings found</p>
+          <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 shadow-sm"><Briefcase size={32} /></div>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active job openings found</p>
           </div>
         )}
       </div>
@@ -517,28 +556,31 @@ function JobOpeningsList({ jobs, onUpdate }) {
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200/60"
             >
               <form onSubmit={handleSaveJob} className="p-8 space-y-6">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">{editingJob ? 'Edit Position' : 'New Position'}</h3>
-                  <button type="button" onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><X size={20} /></button>
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{editingJob ? 'Manage Position' : 'Publish Position'}</h3>
+                    <p className="text-slate-400 text-xs font-medium mt-1">Fill in the details for the job opening</p>
+                  </div>
+                  <button type="button" onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><X size={20} /></button>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormInput label="Job Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} required />
                   <FormInput label="Department" value={formData.department} onChange={v => setFormData({...formData, department: v})} />
                   <FormInput label="Location" value={formData.location} onChange={v => setFormData({...formData, location: v})} />
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Type</label>
-                    <select className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-100 font-bold text-sm" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                    <select className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
                       <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
                     </select>
                   </div>
                   <FormInput label="Salary Range" value={formData.salary_range} onChange={v => setFormData({...formData, salary_range: v})} placeholder="e.g. ₹10L - ₹15L" />
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
-                    <select className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-100 font-bold text-sm" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
+                    <select className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
                       <option value="open">Open</option>
                       <option value="closed">Closed</option>
                     </select>
@@ -546,14 +588,15 @@ function JobOpeningsList({ jobs, onUpdate }) {
                 </div>
 
                 <div className="space-y-4">
-                   <div className="space-y-1">
+                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Requirements</label>
-                    <textarea rows={3} className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-100 font-bold text-sm" value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} />
+                    <textarea rows={3} className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm placeholder:text-slate-400" placeholder="List key requirements..." value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} />
                   </div>
                 </div>
 
-                <button type="submit" disabled={isSaving} className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all disabled:opacity-50">
-                  {isSaving ? 'Saving...' : editingJob ? 'Update Position' : 'Publish Position'}
+                <button type="submit" disabled={isSaving} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isSaving ? 'Processing...' : editingJob ? 'Update Position' : 'Publish Position'}
+                  {!isSaving && <ArrowRight size={18} />}
                 </button>
               </form>
             </motion.div>
@@ -566,9 +609,15 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
 function FormInput({ label, value, onChange, required = false, placeholder = '' }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      <input required={required} placeholder={placeholder} className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-100 font-bold text-sm" value={value} onChange={e => onChange(e.target.value)} />
+      <input 
+        required={required} 
+        placeholder={placeholder} 
+        className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm placeholder:text-slate-400" 
+        value={value} 
+        onChange={e => onChange(e.target.value)} 
+      />
     </div>
   );
 }
