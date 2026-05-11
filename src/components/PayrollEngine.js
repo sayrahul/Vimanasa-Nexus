@@ -21,6 +21,7 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateSalarySlip } from '@/lib/pdfGenerator';
 import ExportMenu from '@/components/ExportMenu';
+import ManualPayslipForm from '@/components/ManualPayslipForm';
 import { cn } from '@/lib/utils';
 
 export default function PayrollEngine({ employees = [], attendanceData = [], monthlyAttendanceData = [], onSavePayroll }) {
@@ -28,6 +29,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [clientFilter, setClientFilter] = useState('All');
+  const [showManualForm, setShowManualForm] = useState(false);
 
   // Filter deployed employees
   const activeEmployees = employees.filter(e => e.Status !== 'Inactive');
@@ -257,16 +259,41 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
               </button>
             }
           />
-          <button
-            onClick={handleRunPayroll}
-            disabled={isProcessing || payrollData.length === 0}
-            className="flex-1 lg:flex-none px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
+          <button 
+            onClick={() => setShowManualForm(true)}
+            className="flex-1 lg:flex-none px-6 py-3 bg-white text-indigo-600 border border-indigo-200 rounded-2xl font-black text-[10px] hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-sm uppercase tracking-widest"
           >
-            {isProcessing ? 'Processing...' : 'Run Master Payroll'}
+            <DollarSign size={16} /> Manual Issue
+          </button>
+          <button 
+            onClick={handleBulkProcess}
+            disabled={isProcessing || filteredPayroll.every(p => !p.isReady)}
+            className="flex-1 lg:flex-none px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
+          >
+            {isProcessing ? 'Processing...' : 'Bulk Finalize'}
             <ArrowUpRight size={16} />
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showManualForm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 lg:p-12">
+             <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               onClick={() => setShowManualForm(false)}
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+             />
+             <div className="relative z-[210] w-full max-w-2xl">
+                <ManualPayslipForm 
+                  employees={employees} 
+                  onSave={onSavePayroll} 
+                  onClose={() => setShowManualForm(false)} 
+                />
+             </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Main Control Card */}
       <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border border-slate-200/60 p-6 sm:p-8 shadow-sm">
