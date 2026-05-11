@@ -170,10 +170,12 @@ export default function EmployeePortal({ user, onLogout }) {
     }
   };
 
+  // Tabs for bottom navigation and desktop sidebar
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'attendance', label: 'Attendance', icon: Calendar },
     { id: 'leave', label: 'Leave', icon: Clock },
+    { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
@@ -181,45 +183,118 @@ export default function EmployeePortal({ user, onLogout }) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-slate-500 font-bold animate-pulse">Syncing your workspace...</p>
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto shadow-xl shadow-indigo-100"></div>
+          <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] animate-pulse">Initializing Secure Portal</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24">
-      {/* Top Header */}
-      <header className="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
-             <img src="/vimanasa-logo.png" alt="Nexus" className="h-6 w-auto" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black tracking-tight text-slate-900">Nexus ESS</h1>
-            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Self-Service Portal</p>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 lg:pb-0 lg:flex">
+      {/* Desktop Sidebar (Only visible on LG+) */}
+      <aside className="hidden lg:flex w-72 bg-white border-r border-slate-100 flex-col sticky top-0 h-screen z-40">
+        <div className="p-8 border-b border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
+              <img src="/vimanasa-logo.png" alt="Nexus" className="h-6 w-auto" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-slate-900 uppercase tracking-tighter">Nexus</h1>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Employee Portal</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <button className="p-2.5 bg-slate-50 text-slate-400 rounded-full hover:bg-slate-100 transition-all relative">
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-           </button>
-           <button onClick={onLogout} className="p-2.5 bg-slate-50 text-slate-400 rounded-full hover:bg-rose-50 hover:text-rose-600 transition-all">
-              <LogOut size={20} />
-           </button>
-        </div>
-      </header>
 
-      {/* Dynamic Content */}
-      <main className="max-w-md mx-auto">
+        <nav className="flex-1 p-6 space-y-2">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all font-bold text-sm",
+                  isActive 
+                    ? "bg-slate-900 text-white shadow-xl shadow-slate-200" 
+                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                )}
+              >
+                <Icon size={20} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-6 border-t border-slate-50">
+           <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center font-black text-slate-900">
+                 {user.full_name?.charAt(0)}
+              </div>
+              <div className="min-w-0">
+                 <p className="font-bold text-slate-900 text-xs truncate">{user.full_name}</p>
+                 <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-widest">{user.role?.replace('_', ' ')}</p>
+              </div>
+           </div>
+           <button onClick={onLogout} className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 transition-all font-bold text-sm">
+              <LogOut size={20} />
+              Sign Out
+           </button>
+        </div>
+      </aside>
+
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        {/* Mobile Header (Hidden on LG+) */}
+        <header className="bg-white/80 backdrop-blur-xl px-6 py-4 border-b border-slate-100 flex justify-between items-center sticky top-0 z-30 lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
+               <img src="/vimanasa-logo.png" alt="Nexus" className="h-6 w-auto" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-slate-900">Nexus</h1>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Self-Service</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+             <button className="p-2.5 bg-slate-50 text-slate-400 rounded-full hover:bg-slate-100 transition-all relative">
+                <Bell size={20} />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+             </button>
+          </div>
+        </header>
+
+        {/* Desktop Header Title (Visible only on LG+) */}
+        <header className="hidden lg:flex items-center justify-between px-12 py-8 bg-slate-50/50 backdrop-blur-sm sticky top-0 z-30">
+           <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
+                {tabs.find(t => t.id === activeTab)?.label}
+              </h2>
+              <p className="text-slate-400 font-medium text-sm">Employee Self-Service Portal / {activeTab}</p>
+           </div>
+           <div className="flex items-center gap-4">
+              <div className="flex flex-col text-right">
+                 <p className="text-xs font-black text-slate-900 tabular-nums">
+                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                 </p>
+                 <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Network Secure</p>
+              </div>
+              <button className="p-3 bg-white text-slate-400 rounded-xl border border-slate-100 shadow-sm hover:bg-slate-50 transition-all relative">
+                 <Bell size={20} />
+                 <span className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              </button>
+           </div>
+        </header>
+
+        {/* Dynamic Content Container */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-6 lg:px-12 lg:py-4">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
             <motion.div 
               key="home"
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="p-6 space-y-8"
+              className="max-w-4xl mx-auto space-y-8"
             >
               {/* Welcome Card */}
               <div className="space-y-1">
@@ -326,7 +401,7 @@ export default function EmployeePortal({ user, onLogout }) {
             <motion.div 
               key="leave"
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-              className="p-6 space-y-6"
+              className="max-w-4xl mx-auto space-y-6"
             >
               <div className="flex justify-between items-center">
                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Leave Manager</h2>
@@ -435,7 +510,7 @@ export default function EmployeePortal({ user, onLogout }) {
             <motion.div 
               key="profile"
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="p-6 space-y-8"
+              className="max-w-4xl mx-auto space-y-8"
             >
               <div className="flex flex-col items-center text-center space-y-4">
                  <div className="w-24 h-24 bg-white rounded-[40px] shadow-2xl shadow-slate-200 border border-slate-100 flex items-center justify-center font-black text-4xl text-slate-900">
@@ -473,11 +548,84 @@ export default function EmployeePortal({ user, onLogout }) {
             </motion.div>
           )}
 
+          {activeTab === 'documents' && (
+             <motion.div 
+               key="documents"
+               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+               className="max-w-4xl mx-auto space-y-8"
+             >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {[
+                     { id: 'offer', label: 'Offer Letter', date: employeeRecord?.['Joined Date'] || 'Joined', status: 'Ready', icon: ShieldCheck, color: 'indigo' },
+                     { id: 'joining', label: 'Joining Letter', date: employeeRecord?.['Joined Date'] || 'Joined', status: 'Ready', icon: Briefcase, color: 'emerald' },
+                     { id: 'experience', label: 'Experience Letter', date: 'N/A', status: employeeRecord?.Status === 'Inactive' ? 'Ready' : 'Locked', icon: FileText, color: 'amber' },
+                     { id: 'relieving', label: 'Relieving Letter', date: 'N/A', status: employeeRecord?.Status === 'Inactive' ? 'Ready' : 'Locked', icon: LogOut, color: 'rose' },
+                   ].map((doc) => (
+                     <div 
+                       key={doc.id}
+                       className={cn(
+                         "bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm transition-all group hover:shadow-xl hover:shadow-slate-200/50",
+                         doc.status === 'Locked' ? "opacity-60 grayscale" : "cursor-pointer"
+                       )}
+                       onClick={() => doc.status === 'Ready' && toast.info(`Generating ${doc.label}...`)}
+                     >
+                        <div className="flex justify-between items-start mb-6">
+                           <div className={cn(
+                             "w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
+                             doc.color === 'indigo' ? "bg-indigo-50 text-indigo-600" :
+                             doc.color === 'emerald' ? "bg-emerald-50 text-emerald-600" :
+                             doc.color === 'amber' ? "bg-amber-50 text-amber-600" :
+                             "bg-rose-50 text-rose-600"
+                           )}>
+                              <doc.icon size={28} />
+                           </div>
+                           <div className={cn(
+                             "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                             doc.status === 'Ready' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-slate-100 text-slate-400 border border-slate-200"
+                           )}>
+                              {doc.status}
+                           </div>
+                        </div>
+                        <h4 className="text-xl font-black text-slate-900 tracking-tight mb-1">{doc.label}</h4>
+                        <p className="text-slate-400 text-xs font-medium mb-6">
+                           {doc.status === 'Locked' ? 'Available upon resignation' : `Verified Document`}
+                        </p>
+                        <button 
+                          disabled={doc.status === 'Locked'}
+                          className={cn(
+                            "w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2",
+                            doc.status === 'Ready' ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          )}
+                        >
+                           <Download size={14} /> Download PDF
+                        </button>
+                     </div>
+                   ))}
+                </div>
+
+                {/* Important Notice */}
+                <div className="bg-indigo-600 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-200">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                   <div className="relative flex flex-col md:flex-row items-center gap-6">
+                      <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shrink-0">
+                         <AlertCircle size={32} />
+                      </div>
+                      <div className="text-center md:text-left">
+                         <h5 className="text-lg font-black tracking-tight mb-1">Need a specialized document?</h5>
+                         <p className="text-indigo-100 text-sm font-medium opacity-90">If you require customized certifications or physical copies, please submit a request through the Help Desk.</p>
+                      </div>
+                      <button className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 transition-all md:ml-auto shadow-xl">
+                         Contact Support
+                      </button>
+                   </div>
+                </div>
+             </motion.div>
+          )}
           {activeTab === 'attendance' && (
              <motion.div 
                key="attendance"
                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-               className="p-6 space-y-6"
+               className="max-w-4xl mx-auto space-y-6"
              >
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Attendance Logs</h2>
                 
