@@ -27,6 +27,10 @@ import { cn } from '@/lib/utils';
 
 export default function EmployeePortal({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [employeeRecord, setEmployeeRecord] = useState(null);
+  const [attendanceLogs, setAttendanceLogs] = useState([]);
+  const [leaveHistory, setLeaveHistory] = useState([]);
+  const [payrollData, setPayrollData] = useState([]);
   const [stats, setStats] = useState({
     presentDays: 0,
     leaveBalance: 12,
@@ -34,8 +38,138 @@ export default function EmployeePortal({ user, onLogout }) {
   });
   const [isClocking, setIsClocking] = useState(false);
   const [clockStatus, setClockStatus] = useState('Out'); // In | Out
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Tabs for bottom navigation
+  // Leave Form State
+  const [leaveForm, setLeaveForm] = useState({
+    type: 'Casual Leave',
+    fromDate: '',
+    toDate: '',
+    reason: ''
+  });
+
+  // Fetch all relevant data for the employee
+  const fetchEmployeeData = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Find employee in workforce directory by email
+      const workforceRes = await apiClient.get(`/api/database?table=workforce`);
+      const allEmployees = workforceRes.data || [];
+      const myRecord = allEmployees.find(emp => emp.Email?.toLowerCase() === user.email?.toLowerCase());
+      
+      if (myRecord) {
+        setEmployeeRecord(myRecord);
+        
+        // 2. Fetch attendance logs for this employee
+        const attendanceRes = await apiClient.get(`/api/database?table=attendance`);
+        const myAttendance = (attendanceRes.data || []).filter(log => log.employee_id === myRecord.id || log['Employee ID'] === myRecord['ID']);
+        setAttendanceLogs(myAttendance);
+        
+        // Calculate present days this month
+        const thisMonth = new Date().getMonth();
+        const presentThisMonth = myAttendance.filter(log => {
+          const logDate = new Date(log.Date || log.date);
+          return logDate.getMonth() === thisMonth && (log.Status === 'Present' || log.status === 'Present');
+        }).length;
+        
+        setStats(prev => ({ ...prev, presentDays: presentThisMonth }));
+        
+        // Determine current clock status from today's log
+        const today = new Date().toISOString().split('T')[0];
+        const todayLog = myAttendance.find(log => (log.Date || log.date) === today);
+        if (todayLog) {
+          setClockStatus(todayLog.Status === 'Present' || todayLog.status === 'Present' ? 'In' : 'Out');
+        }
+
+        // 3. Fetch leave history
+        const leaveRes = await apiClient.get(`/api/database?table=leave`);
+        const myLeave = (leaveRes.data || []).filter(req => req.employee_id === myRecord.id || req['Employee ID'] === myRecord['ID']);
+        setLeaveHistory(myLeave);
+
+        // 4. Fetch payroll
+        const payrollRes = await apiClient.get(`/api/database?table=payroll`);
+        const myPayroll = (payrollRes.data || []).filter(p => p.employee_id === myRecord.id || p['Employee ID'] === myRecord['ID']);
+        setPayrollData(myPayroll);
+      }
+    } catch (error) {
+      console.error('Error fetching employee data:', error);
+      toast.error('Failed to load your records');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployeeData();
+  }, [user.email]);
+
+  const handleClockAction = async () => {
+    if (!employeeRecord) {
+      toast.error('Employee record not found. Contact HR.');
+      return;
+    }
+
+    setIsClocking(true);
+    try {
+      const newStatus = clockStatus === 'In' ? 'Out' : 'In';
+      const today = new Date().toISOString().split('T')[0];
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Save to database
+      await apiClient.post('/api/database', {
+        table: 'attendance',
+        data: {
+          'Employee ID': employeeRecord['ID'],
+          'Employee': employeeRecord['Employee'],
+          Date: today,
+          Status: newStatus === 'In' ? 'Present' : 'Out',
+          'Check In': newStatus === 'In' ? nowTime : undefined,
+          'Check Out': newStatus === 'Out' ? nowTime : undefined,
+        }
+      });
+
+      setClockStatus(newStatus);
+      fetchEmployeeData(); // Refresh logs
+      toast.success(newStatus === 'In' ? 'Shift Started! Have a great day.' : 'Shift Ended! Rest well.');
+    } catch (error) {
+      console.error('Clock error:', error);
+      toast.error('Failed to sync attendance. Try again.');
+    } finally {
+      setIsClocking(false);
+    }
+  };
+
+  const handleLeaveSubmit = async (e) => {
+    e.preventDefault();
+    if (!employeeRecord) return;
+    if (!leaveForm.fromDate || !leaveForm.toDate) {
+      toast.warn('Please select both dates');
+      return;
+    }
+
+    try {
+      await apiClient.post('/api/database', {
+        table: 'leave',
+        data: {
+          'Employee ID': employeeRecord['ID'],
+          'Employee': employeeRecord['Employee'],
+          'Leave Type': leaveForm.type,
+          'Start Date': leaveForm.fromDate,
+          'End Date': leaveForm.toDate,
+          Reason: leaveForm.reason,
+          Status: 'Pending',
+          'Applied On': new Date().toISOString().split('T')[0]
+        }
+      });
+      
+      toast.success('Leave request submitted for approval');
+      setLeaveForm({ type: 'Casual Leave', fromDate: '', toDate: '', reason: '' });
+      fetchEmployeeData(); // Refresh history
+    } catch (error) {
+      toast.error('Failed to submit leave request');
+    }
+  };
+
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'attendance', label: 'Attendance', icon: Calendar },
@@ -43,16 +177,16 @@ export default function EmployeePortal({ user, onLogout }) {
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
-  const handleClockAction = async () => {
-    setIsClocking(true);
-    // Simulate geo-fencing and clocking
-    setTimeout(() => {
-      const newStatus = clockStatus === 'In' ? 'Out' : 'In';
-      setClockStatus(newStatus);
-      setIsClocking(false);
-      toast.success(newStatus === 'In' ? 'Clocked In Successfully!' : 'Clocked Out Successfully!');
-    }, 1500);
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-500 font-bold animate-pulse">Syncing your workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24">
@@ -98,7 +232,9 @@ export default function EmployeePortal({ user, onLogout }) {
                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-[100px] -z-10 opacity-50"></div>
                  
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Current Status: {clockStatus === 'In' ? 'Active Work' : 'Break / Out'}</p>
-                 <div className="text-4xl font-black text-slate-900 mb-8 tracking-tighter tabular-nums">09:42 <span className="text-slate-300">AM</span></div>
+                 <div className="text-4xl font-black text-slate-900 mb-8 tracking-tighter tabular-nums">
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                 </div>
                  
                  <button 
                    onClick={handleClockAction}
@@ -147,14 +283,23 @@ export default function EmployeePortal({ user, onLogout }) {
               <div className="space-y-4">
                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Essentials</h3>
                  <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-                    <button className="w-full p-5 flex items-center justify-between hover:bg-slate-50 transition-all text-left group">
+                     <button 
+                       onClick={() => {
+                         const latest = payrollData[0];
+                         if (latest) toast.info(`Downloading ${latest.Month} payslip...`);
+                         else toast.warn('No payslips available yet.');
+                       }}
+                       className="w-full p-5 flex items-center justify-between hover:bg-slate-50 transition-all text-left group"
+                     >
                        <div className="flex items-center gap-4">
                           <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                              <FileText size={22} />
                           </div>
                           <div>
                              <h4 className="font-bold text-slate-900 text-sm">Latest Payslip</h4>
-                             <p className="text-[10px] font-medium text-slate-400">Available: April 2026</p>
+                             <p className="text-[10px] font-medium text-slate-400">
+                               Available: {payrollData[0]?.Month || 'N/A'}
+                             </p>
                           </div>
                        </div>
                        <Download size={18} className="text-slate-300 group-hover:text-amber-600" />
@@ -191,11 +336,15 @@ export default function EmployeePortal({ user, onLogout }) {
               </div>
 
               {/* Leave Application Form Preview */}
-              <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
+               <form onSubmit={handleLeaveSubmit} className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
                  <div className="space-y-4">
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type of Absence</label>
-                       <select className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none">
+                       <select 
+                         value={leaveForm.type}
+                         onChange={(e) => setLeaveForm(prev => ({ ...prev, type: e.target.value }))}
+                         className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all appearance-none"
+                       >
                           <option>Casual Leave</option>
                           <option>Sick Leave</option>
                           <option>Earned Leave</option>
@@ -205,47 +354,78 @@ export default function EmployeePortal({ user, onLogout }) {
                     <div className="grid grid-cols-2 gap-4">
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">From Date</label>
-                          <input type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
+                          <input 
+                            type="date" 
+                            required
+                            value={leaveForm.fromDate}
+                            onChange={(e) => setLeaveForm(prev => ({ ...prev, fromDate: e.target.value }))}
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all" 
+                          />
                        </div>
                        <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">To Date</label>
-                          <input type="date" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all" />
+                          <input 
+                            type="date" 
+                            required
+                            value={leaveForm.toDate}
+                            onChange={(e) => setLeaveForm(prev => ({ ...prev, toDate: e.target.value }))}
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all" 
+                          />
                        </div>
                     </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reason (Optional)</label>
+                       <textarea 
+                         value={leaveForm.reason}
+                         onChange={(e) => setLeaveForm(prev => ({ ...prev, reason: e.target.value }))}
+                         placeholder="Why are you requesting leave?"
+                         className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all resize-none h-24"
+                       />
+                    </div>
                  </div>
-                 <button className="w-full py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
+                 <button type="submit" className="w-full py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
                     Submit Request
                  </button>
-              </div>
+              </form>
 
               {/* Status List */}
               <div className="space-y-4 pt-4">
                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Recent Requests</h3>
                  <div className="space-y-3">
-                    <div className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
-                             <Clock size={20} />
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-slate-900 text-sm">May 14 - May 16</h4>
-                             <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Pending Review</p>
-                          </div>
-                       </div>
-                       <ChevronRight size={16} className="text-slate-300" />
-                    </div>
-                    <div className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
-                             <CheckCircle2 size={20} />
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-slate-900 text-sm">April 10 - April 11</h4>
-                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Approved</p>
-                          </div>
-                       </div>
-                       <ChevronRight size={16} className="text-slate-300" />
-                    </div>
+                    {leaveHistory.length > 0 ? leaveHistory.slice(0, 5).map((leave, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "w-12 h-12 rounded-2xl flex items-center justify-center",
+                              leave.Status === 'Approved' ? "bg-emerald-50 text-emerald-600" :
+                              leave.Status === 'Rejected' ? "bg-rose-50 text-rose-600" :
+                              "bg-amber-50 text-amber-600"
+                            )}>
+                               {leave.Status === 'Approved' ? <CheckCircle2 size={20} /> : 
+                                leave.Status === 'Rejected' ? <XCircle size={20} /> : 
+                                <Clock size={20} />}
+                            </div>
+                            <div>
+                               <h4 className="font-bold text-slate-900 text-sm">
+                                 {new Date(leave['Start Date']).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - {new Date(leave['End Date']).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                               </h4>
+                               <p className={cn(
+                                 "text-[10px] font-black uppercase tracking-widest",
+                                 leave.Status === 'Approved' ? "text-emerald-600" :
+                                 leave.Status === 'Rejected' ? "text-rose-600" :
+                                 "text-amber-600"
+                               )}>
+                                 {leave.Status || 'Pending'}
+                               </p>
+                            </div>
+                         </div>
+                         <ChevronRight size={16} className="text-slate-300" />
+                      </div>
+                    )) : (
+                      <div className="bg-white p-8 rounded-[28px] border border-slate-100 text-center">
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No leave history found</p>
+                      </div>
+                    )}
                  </div>
               </div>
             </motion.div>
@@ -331,30 +511,35 @@ export default function EmployeePortal({ user, onLogout }) {
                       ))}
                    </div>
                 </div>
-
                 <div className="space-y-4">
                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Today's Timeline</h3>
                    <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
-                      <div className="absolute left-10 top-12 bottom-12 w-0.5 bg-slate-100"></div>
-                      
-                      <div className="space-y-8 relative">
-                         <div className="flex items-start gap-6">
-                            <div className="w-8 h-8 rounded-full bg-emerald-500 border-4 border-white shadow-lg z-10 flex items-center justify-center">
-                               <CheckCircle2 size={12} className="text-white" />
-                            </div>
-                            <div>
-                               <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">Shift Started</h4>
-                               <p className="text-[11px] font-bold text-slate-400">09:12 AM • Nexus HQ Site</p>
-                            </div>
-                         </div>
-                         <div className="flex items-start gap-6 opacity-40">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 border-4 border-white z-10"></div>
-                            <div>
-                               <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">Break Begun</h4>
-                               <p className="text-[11px] font-bold text-slate-400">Scheduled: 01:00 PM</p>
-                            </div>
-                         </div>
-                      </div>
+                      {attendanceLogs.filter(log => (log.Date || log.date) === new Date().toISOString().split('T')[0]).length > 0 ? (
+                        <>
+                          <div className="absolute left-10 top-12 bottom-12 w-0.5 bg-slate-100"></div>
+                          <div className="space-y-8 relative">
+                             {attendanceLogs.filter(log => (log.Date || log.date) === new Date().toISOString().split('T')[0]).map((log, i) => (
+                               <div key={i} className="flex items-start gap-6">
+                                  <div className="w-8 h-8 rounded-full bg-emerald-500 border-4 border-white shadow-lg z-10 flex items-center justify-center">
+                                     <CheckCircle2 size={12} className="text-white" />
+                                  </div>
+                                  <div>
+                                     <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">
+                                        {log['Check In'] ? 'Shift Started' : 'Shift Recorded'}
+                                     </h4>
+                                     <p className="text-[11px] font-bold text-slate-400">
+                                        {log['Check In'] || 'Recorded'} • {log.Site || 'Nexus HQ'}
+                                     </p>
+                                  </div>
+                               </div>
+                             ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">No activity recorded today</p>
+                        </div>
+                      )}
                    </div>
                 </div>
              </motion.div>
