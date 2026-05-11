@@ -127,7 +127,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Recruitment HQ</h2>
           <p className="text-slate-500 font-medium mt-1 flex items-center gap-2 text-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
             Managing {candidates.length} active applications
           </p>
         </div>
@@ -486,7 +486,7 @@ function JobOpeningsList({ jobs, onUpdate }) {
         <div>
           <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Job Board</h3>
           <p className="text-slate-400 text-[11px] font-medium mt-1 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             {jobs.length} Active job openings
           </p>
         </div>
