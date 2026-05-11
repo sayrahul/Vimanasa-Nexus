@@ -22,6 +22,7 @@ import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import UserManagement from '@/components/UserManagement';
 import AttendanceRoll from '@/components/AttendanceRoll';
+import EmployeePortal from '@/components/EmployeePortal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus, Calendar, Building2, ShieldCheck, Receipt, UserCog } from 'lucide-react';
 import { apiClient, authAPI, setToken, setUser, removeToken } from '@/lib/apiClient';
@@ -63,7 +64,7 @@ function SubNavigation({ tabs, mainTab, subTabs, onChange }) {
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState('admin'); // admin, sub-admin, employee
+  const [user, setUserState] = useState(null);
   const [data, setData] = useState({
     dashboard: null,
     workforce: [],
@@ -123,6 +124,7 @@ export default function DashboardLayout() {
           .then(res => {
             if (res.success) {
               setIsAuthenticated(true);
+              setUserState(res.user);
               toast.success(`Welcome back, ${savedUsername}! 👋`, {
                 position: "top-right",
                 autoClose: 3000,
@@ -469,7 +471,27 @@ export default function DashboardLayout() {
     return fieldConfigs[tab] || [];
   };
 
-  if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
+  if (!isAuthenticated) return (
+    <Login onLogin={() => {
+      setIsAuthenticated(true);
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) setUserState(JSON.parse(savedUser));
+    }} />
+  );
+
+  // Redirect to Employee Portal if role is employee
+  if (user?.role === 'employee') {
+    return (
+      <EmployeePortal 
+        user={user} 
+        onLogout={() => {
+          authAPI.logout();
+          setIsAuthenticated(false);
+          setUserState(null);
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
