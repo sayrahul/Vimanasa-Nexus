@@ -32,6 +32,7 @@ const tableMapping = {
   client_invoices: 'client_invoices',
   candidates: 'candidates',
   job_openings: 'job_openings',
+  monthly_attendance: 'monthly_attendance',
 };
 
 const tablePermissions = {
@@ -42,8 +43,8 @@ const tablePermissions = {
     write: ['workforce', 'employees', 'attendance', 'leave', 'leave_requests', 'candidates', 'job_openings'],
   },
   finance_manager: {
-    read: ['dashboard', 'workforce', 'employees', 'clients', 'payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices'],
-    write: ['payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices'],
+    read: ['dashboard', 'workforce', 'employees', 'clients', 'payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices', 'monthly_attendance'],
+    write: ['payroll', 'finance', 'expenses', 'expense_claims', 'invoices', 'client_invoices', 'monthly_attendance'],
   },
   compliance_officer: {
     read: ['dashboard', 'workforce', 'employees', 'compliance'],

@@ -21,6 +21,7 @@ import PartnerDirectory from '@/components/PartnerDirectory';
 import RecruitmentManager from '@/components/RecruitmentManager';
 import SharePlatform from '@/components/SharePlatform';
 import UserManagement from '@/components/UserManagement';
+import AttendanceRoll from '@/components/AttendanceRoll';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Search, Plus, Filter, Download, ArrowUpRight, ArrowDownRight, Send, Edit2, Trash2, FileText, TrendingUp, Users, DollarSign, AlertTriangle, Bell, CheckSquare, CheckCircle, XCircle, Briefcase, ArrowRight, UserPlus, Calendar, Building2, ShieldCheck, Receipt, UserCog } from 'lucide-react';
 import { apiClient, authAPI, setToken, setUser, removeToken } from '@/lib/apiClient';
@@ -75,6 +76,7 @@ export default function DashboardLayout() {
     leaveRequests: [],
     expenses: [],
     invoices: [],
+    monthly_attendance: [],
     candidates: [],
     job_openings: [],
   });
@@ -303,8 +305,12 @@ export default function DashboardLayout() {
     syncCurrentGroup(false);
     
     // Also sync all other tables in background
-    const allTabs = ['workforce', 'clients', 'partners', 'attendance', 'leave', 'expenses', 'payroll', 'finance', 'compliance', 'invoices'];
-    allTabs.forEach(tab => {
+    const tabs = [
+      'workforce', 'clients', 'partners', 'attendance', 'leave', 
+      'expenses', 'finance', 'payroll', 'compliance', 'invoices', 
+      'candidates', 'job_openings', 'monthly_attendance'
+    ];
+    tabs.forEach(tab => {
       fetchData(tab, true);
     });
   };
@@ -706,6 +712,7 @@ export default function DashboardLayout() {
                   onChange={handleSubTabChange}
                   tabs={[
                     { id: 'overview', label: 'Financial Ledger' },
+                    { id: 'attendance_roll', label: 'Attendance Roll' },
                     { id: 'payroll', label: 'Payroll Processing' },
                     { id: 'invoices', label: 'Client Invoices' },
                     { id: 'expenses', label: 'Expense Claims' }
@@ -723,11 +730,30 @@ export default function DashboardLayout() {
                   </motion.div>
                 )}
 
+                {subTabs.finance === 'attendance_roll' && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <AttendanceRoll 
+                      employees={data.workforce}
+                      attendanceData={data.attendance}
+                      onSaveRoll={async (records, month) => {
+                        try {
+                          for (const record of records) {
+                            await apiClient.post('/api/database', { table: 'monthly_attendance', data: record });
+                          }
+                          toast.success('✅ Attendance roll finalized!');
+                          fetchData('monthly_attendance');
+                        } catch (error) { toast.error('❌ Failed to save roll.'); }
+                      }}
+                    />
+                  </motion.div>
+                )}
+
                 {subTabs.finance === 'payroll' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <PayrollEngine 
                       employees={data.workforce}
                       attendanceData={data.attendance}
+                      monthlyAttendanceData={data.monthly_attendance}
                       onSavePayroll={async (record) => {
                         try {
                           await apiClient.post('/api/database', { table: 'payroll', data: record });

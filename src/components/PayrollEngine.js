@@ -23,7 +23,7 @@ import { generateSalarySlip } from '@/lib/pdfGenerator';
 import ExportMenu from '@/components/ExportMenu';
 import { cn } from '@/lib/utils';
 
-export default function PayrollEngine({ employees = [], attendanceData = [], onSavePayroll }) {
+export default function PayrollEngine({ employees = [], attendanceData = [], monthlyAttendanceData = [], onSavePayroll }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,7 +57,15 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
       const leaveDays = monthRecords.filter(r => r.Status === 'On Leave').length;
       const absentDays = monthRecords.filter(r => r.Status === 'Absent').length;
       
-      const payableDays = presentDays + (halfDays * 0.5) + leaveDays;
+      const payableDaysCalculated = presentDays + (halfDays * 0.5) + leaveDays;
+
+      // Check for Manual Override from Attendance Roll
+      const manualRecord = monthlyAttendanceData.find(r => 
+        (r.employee_id === empId) && r.month === selectedMonth
+      );
+      
+      const isOverridden = manualRecord !== undefined;
+      const payableDays = isOverridden ? parseFloat(manualRecord.payable_days) : payableDaysCalculated;
 
       // Base Salary Details
       const basicSalaryRaw = parseFloat(emp['Basic Salary']) || 0;
@@ -116,6 +124,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
         totalDeductions,
         netSalary,
         errors,
+        isOverridden,
         isReady: errors.length === 0 && payableDays > 0
       };
     });
@@ -386,6 +395,11 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
                           </span>
                           <span className="text-[10px] font-bold text-slate-400">/{totalDaysInMonth}</span>
                         </div>
+                        {data.isOverridden && (
+                          <div className="mt-1 text-[8px] font-black text-blue-600 uppercase tracking-tighter bg-blue-50 px-1 rounded border border-blue-100">
+                            Manual Override
+                          </div>
+                        )}
                       </div>
 
                       <div className="lg:col-span-2 text-right">
