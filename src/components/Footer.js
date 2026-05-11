@@ -25,71 +25,78 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-card/40 mt-auto">
-      <div className="container mx-auto max-w-7xl px-6 py-16">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-4">
-          <div className="lg:col-span-2">
-            <Link href="/" className="inline-flex items-center gap-3 rounded-2xl border border-border bg-background/80 px-4 py-3 shadow-sm">
-              <Image 
-                src="/vimanasa-logo.png" 
-                alt="Vimanasa Services" 
-                width={150} 
-                height={48} 
-                className="h-10 w-auto object-contain" 
-              />
-            </Link>
-            <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground font-medium">
-              Vimanasa Services helps organizations scale with reliable manpower outsourcing, telecom execution, and digital technology services.
+    <footer className="bg-white border-t border-slate-100 antialiased">
+      <div className="container mx-auto max-w-7xl px-12 py-24">
+        <div className="grid grid-cols-1 gap-16 lg:grid-cols-4">
+          <div className="lg:col-span-2 space-y-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg">
+                <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-6 w-auto invert" />
+              </div>
+              <h2 className="text-xl font-black tracking-[-0.05em] text-black uppercase">Vimanasa.</h2>
+            </div>
+            
+            <p className="max-w-md text-slate-400 font-medium text-sm leading-relaxed tracking-tight">
+              A global enterprise infrastructure partner specializing in manpower outsourcing, telecom execution, and high-performance digital technology services.
             </p>
-            <div className="mt-6 space-y-3 text-sm text-muted-foreground font-medium">
-              <p className="flex items-start gap-2">
-                <MapPin size={16} className="mt-0.5 shrink-0 text-primary" /> 
-                Corporate: Chhatrapati Sambhajinagar, MH
-              </p>
-              <p className="flex items-center gap-2">
-                <Phone size={16} className="shrink-0 text-primary" /> 
-                +91 9921713207
-              </p>
-              <p className="flex items-center gap-2">
-                <Mail size={16} className="shrink-0 text-primary" /> 
-                vimanasaservices@gmail.com
-              </p>
+
+            <div className="space-y-4 pt-4">
+              {[
+                { icon: MapPin, text: 'Chhatrapati Sambhajinagar, MH' },
+                { icon: Phone, text: '+91 9921713207' },
+                { icon: Mail, text: 'systems@vimanasa.com' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-4 text-slate-400 group cursor-pointer hover:text-black transition-colors">
+                  <item.icon size={16} strokeWidth={2.5} />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">{item.text}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">Company</h3>
-            <ul className="mt-4 space-y-3">
-              {FOOTER_LINKS.company.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <div className="grid grid-cols-2 lg:col-span-2 gap-12">
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-black mb-8">Corporate</h3>
+              <ul className="space-y-4">
+                {FOOTER_LINKS.company.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-[11px] font-bold text-slate-400 hover:text-black transition-colors uppercase tracking-widest">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">Resources</h3>
-            <ul className="mt-4 space-y-3">
-              {FOOTER_LINKS.resources.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-black mb-8">Resources</h3>
+              <ul className="space-y-4">
+                {FOOTER_LINKS.resources.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-[11px] font-bold text-slate-400 hover:text-black transition-colors uppercase tracking-widest">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
         
-        <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <p>© {currentYear} Vimanasa Services LLP. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="/privacy" className="hover:text-primary">Privacy</Link>
-            <Link href="/terms" className="hover:text-primary">Terms</Link>
-          </div>
+        <div className="mt-24 pt-12 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-8">
+           <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
+                © {currentYear} Vimanasa Global Nexus Registry
+              </p>
+           </div>
+           <div className="flex gap-10">
+             {['Privacy', 'Terms', 'Security'].map(label => (
+               <Link key={label} href={`/${label.toLowerCase()}`} className="text-[9px] font-black text-slate-300 hover:text-black uppercase tracking-[0.5em] transition-colors">
+                 {label}
+               </Link>
+             ))}
+           </div>
         </div>
       </div>
     </footer>

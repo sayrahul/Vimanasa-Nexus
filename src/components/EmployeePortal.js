@@ -18,7 +18,8 @@ import {
   Briefcase,
   Smartphone,
   LogOut,
-  Fingerprint
+  Fingerprint,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -39,6 +40,12 @@ export default function EmployeePortal({ user, onLogout }) {
   const [isClocking, setIsClocking] = useState(false);
   const [clockStatus, setClockStatus] = useState('Out'); // In | Out
   const [isLoading, setIsLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Leave Form State
   const [leaveForm, setLeaveForm] = useState({
@@ -55,14 +62,25 @@ export default function EmployeePortal({ user, onLogout }) {
       // 1. Find employee in workforce directory by email
       const workforceRes = await apiClient.get(`/api/database?table=workforce`);
       const allEmployees = workforceRes.data || [];
-      const myRecord = allEmployees.find(emp => emp.Email?.toLowerCase() === user.email?.toLowerCase());
+      console.log('Workforce fetched:', allEmployees.length, 'records');
+      
+      const userEmail = user.email?.toLowerCase();
+      const myRecord = allEmployees.find(emp => {
+        const empEmail = (emp.Email || emp.email || emp['Contact Email'] || '').toLowerCase();
+        return empEmail === userEmail || (emp.Employee?.toLowerCase() === user.full_name?.toLowerCase());
+      });
       
       if (myRecord) {
+        console.log('Employee record matched:', myRecord.Employee);
         setEmployeeRecord(myRecord);
         
         // 2. Fetch attendance logs for this employee
         const attendanceRes = await apiClient.get(`/api/database?table=attendance`);
-        const myAttendance = (attendanceRes.data || []).filter(log => log.employee_id === myRecord.id || log['Employee ID'] === myRecord['ID']);
+        const myAttendance = (attendanceRes.data || []).filter(log => 
+          log.employee_id === myRecord.id || 
+          log['Employee ID'] === myRecord['ID'] ||
+          log['Employee ID'] === myRecord['Employee ID']
+        );
         setAttendanceLogs(myAttendance);
         
         // Calculate present days this month
@@ -296,43 +314,74 @@ export default function EmployeePortal({ user, onLogout }) {
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
               className="max-w-4xl mx-auto space-y-8"
             >
-              {/* Welcome Card */}
-              <div className="space-y-1">
-                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Hi, {user.full_name?.split(' ')[0]}! 👋</h2>
-                 <p className="text-slate-500 font-medium text-sm">Welcome to your workspace for today.</p>
+              {/* Reference-Style Header */}
+              <div className="flex justify-between items-center px-2">
+                 <div className="space-y-1">
+                    <h2 className="text-2xl font-medium text-slate-400">Good morning, <span className="font-bold text-slate-900">{user.full_name?.split(' ')[0]} !</span></h2>
+                    <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs uppercase tracking-wider">
+                       <ShieldCheck size={16} />
+                       OFFICE
+                    </div>
+                 </div>
+                 <div className="w-14 h-14 rounded-full border-4 border-white shadow-xl overflow-hidden">
+                    <img src={user.avatar || `https://i.pravatar.cc/150?u=${user.id}`} alt="User" className="w-full h-full object-cover" />
+                 </div>
               </div>
 
-              {/* Attendance Clock Card */}
-              <div className="bg-white rounded-[32px] p-8 shadow-2xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden text-center">
-                 <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-[100px] -z-10 opacity-50"></div>
-                 
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Current Status: {clockStatus === 'In' ? 'Active Work' : 'Break / Out'}</p>
-                 <div className="text-4xl font-black text-slate-900 mb-8 tracking-tighter tabular-nums">
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {/* Reference-Style Clock Card */}
+              <div className="bg-white rounded-[40px] p-10 shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-white/50 text-center relative overflow-hidden">
+                 <div className="space-y-1 mb-10">
+                    <div className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums flex items-center justify-center gap-3">
+                       {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                       <span className="text-xl font-medium text-slate-400">hrs</span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-400">
+                       {currentTime.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - {currentTime.toLocaleDateString('en-US', { weekday: 'long' })}
+                    </p>
                  </div>
                  
-                 <button 
-                   onClick={handleClockAction}
-                   disabled={isClocking}
-                   className={cn(
-                     "w-full py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95",
-                     clockStatus === 'In' 
-                      ? "bg-rose-50 text-rose-600 border border-rose-100 shadow-rose-100 hover:bg-rose-100" 
-                      : "bg-slate-900 text-white shadow-slate-200 hover:bg-slate-800"
-                   )}
-                 >
-                   {isClocking ? (
-                     <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                   ) : (
-                     <>
-                        <Fingerprint size={20} />
-                        {clockStatus === 'In' ? 'End Shift' : 'Begin Shift'}
-                     </>
-                   )}
-                 </button>
+                 <div className="relative flex justify-center mb-12">
+                    <motion.button 
+                      whileTap={{ scale: 0.92 }}
+                      onClick={handleClockAction}
+                      disabled={isClocking}
+                      className={cn(
+                        "w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 transition-all duration-500 relative z-10",
+                        clockStatus === 'In'
+                          ? "bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-[0_20px_40px_rgba(244,63,94,0.3)]"
+                          : "bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-[0_20px_40px_rgba(16,185,129,0.3)]"
+                      )}
+                    >
+                       <div className="w-12 h-12 flex items-center justify-center mb-1">
+                          <Fingerprint size={48} strokeWidth={1.5} />
+                       </div>
+                       <span className="font-bold text-lg tracking-tight">
+                          {isClocking ? "..." : clockStatus === 'In' ? 'Check-out' : 'Check-in'}
+                       </span>
+                    </motion.button>
+                    {/* Ripple effects */}
+                    <div className={cn("absolute inset-0 m-auto w-48 h-48 rounded-full animate-ping opacity-20", clockStatus === 'In' ? 'bg-rose-400' : 'bg-emerald-400')} />
+                 </div>
                  
-                 <div className="mt-6 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-400 bg-slate-50 py-2 rounded-xl">
-                    <MapPin size={14} className="text-indigo-500" /> Site: Nexus HQ, Bangalore
+                 <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-8 mt-2">
+                    <div className="flex flex-col items-center gap-2 border-r border-slate-50">
+                       <div className="w-10 h-10 rounded-full border border-emerald-100 flex items-center justify-center text-emerald-600">
+                          <Clock size={20} />
+                       </div>
+                       <div>
+                          <p className="text-sm font-bold text-slate-900">00:00 AM</p>
+                          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Check-in time</p>
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                       <div className="w-10 h-10 rounded-full border border-rose-100 flex items-center justify-center text-rose-600">
+                          <Clock size={20} />
+                       </div>
+                       <div>
+                          <p className="text-sm font-bold text-slate-900">00:00 PM</p>
+                          <p className="text-[10px] font-bold text-rose-600 uppercase tracking-tight">Check-out time</p>
+                       </div>
+                    </div>
                  </div>
               </div>
 

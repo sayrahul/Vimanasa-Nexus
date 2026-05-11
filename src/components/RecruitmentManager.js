@@ -5,7 +5,8 @@ import {
   Users, Search, Plus, Filter, Eye, CheckCircle, XCircle, Clock, 
   MoreVertical, Mail, Phone, Calendar, Briefcase, FileText, 
   UserPlus, ArrowRight, ChevronRight, Download, AlertCircle, 
-  DollarSign, Edit2, X, ArrowUpRight, Trash2, MapPin, Building, AlertTriangle
+  DollarSign, Edit2, X, ArrowUpRight, Trash2, MapPin, Building, 
+  AlertTriangle, Menu, LayoutGrid, Kanban, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/apiClient';
@@ -36,6 +37,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const handleUpdateStatus = async (candidate, newStatus) => {
     setIsUpdating(true);
+    const toastId = toast.loading(`Updating ${candidate['Full Name']} to ${newStatus}...`);
     try {
       const response = await apiClient.put('/api/database', {
         table: 'candidates',
@@ -48,14 +50,14 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
       });
 
       if (response.success) {
-        toast.success(`Status updated to ${newStatus}`);
+        toast.update(toastId, { render: "Status synchronization complete", type: "success", isLoading: false, autoClose: 2000 });
         onUpdate('candidates');
         if (selectedCandidate?.id === candidate.id) {
           setSelectedCandidate({ ...selectedCandidate, Status: newStatus });
         }
       }
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.update(toastId, { render: "Update failed. Database error.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsUpdating(false);
     }
@@ -63,6 +65,7 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const handleConvertToEmployee = async (candidate) => {
     setIsUpdating(true);
+    const toastId = toast.loading(`Onboarding ${candidate['Full Name']}...`);
     try {
       const employeeData = {
         'Employee ID': `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -81,14 +84,14 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
       if (empResponse.success) {
         await handleUpdateStatus(candidate, 'Hired');
-        toast.success(`Hired ${candidate['Full Name']}!`);
+        toast.update(toastId, { render: "Onboarding successful! Welcome aboard.", type: "success", isLoading: false, autoClose: 3000 });
         onUpdate('workforce');
         onUpdate('candidates');
         onNavigate('placements');
         setShowDrawer(false);
       }
     } catch (error) {
-      toast.error('Conversion failed');
+      toast.update(toastId, { render: "Onboarding failed.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsUpdating(false);
     }
@@ -96,246 +99,266 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: 'bg-slate-50 text-slate-500 border-slate-200/60',
-      shortlisted: 'bg-indigo-50/50 text-indigo-600 border-indigo-100/80',
-      rejected: 'bg-rose-50/50 text-rose-600 border-rose-100/80',
-      hold: 'bg-zinc-100 text-zinc-500 border-zinc-200',
-      hired: 'bg-emerald-50/50 text-emerald-600 border-emerald-100/80',
+      pending: 'bg-slate-100 text-slate-500 border-slate-200',
+      shortlisted: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      rejected: 'bg-rose-100 text-rose-700 border-rose-200',
+      hold: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+      hired: 'bg-emerald-100 text-emerald-700 border-emerald-200',
     };
     const s = status?.toLowerCase() || 'pending';
     return (
-      <span className={cn("px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border", styles[s] || styles.pending)}>
+      <span className={cn("px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border", styles[s] || styles.pending)}>
         {status || 'Pending'}
       </span>
     );
   };
 
-  const getAccentColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'shortlisted': return 'bg-indigo-500';
-      case 'hired': return 'bg-emerald-500';
-      case 'rejected': return 'bg-rose-500';
-      case 'hold': return 'bg-zinc-400';
-      default: return 'bg-slate-400';
-    }
-  };
-
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20">
-      {/* Premium Corporate Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Recruitment HQ</h2>
-          <p className="text-slate-500 font-medium mt-1 flex items-center gap-2 text-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-            Managing {candidates.length} active applications
-          </p>
+    <div className="min-h-screen bg-[#F8FAFB] pb-24">
+      {/* Premium Mesh Header */}
+      <header className="relative px-8 pt-12 pb-20 rounded-b-[60px] shadow-2xl overflow-hidden mb-[-40px] z-10">
+        <div className="absolute inset-0 bg-[#0F172A]">
+           <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#1E293B] rounded-full blur-[100px] animate-pulse"></div>
+           <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#334155] rounded-full blur-[100px]"></div>
+           <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-indigo-500/10 rounded-full blur-[80px]"></div>
         </div>
-
-        {/* Tab Switcher - Now integrated into header for mobile */}
-        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-200/60 w-full lg:w-auto">
-          {['applications', 'pipeline', 'openings'].map(tab => (
-            <button 
-              key={tab}
-              onClick={() => setActiveSubTab(tab)}
-              className={cn(
-                "flex-1 px-5 py-2 rounded-lg text-[11px] font-bold transition-all capitalize whitespace-nowrap uppercase tracking-wider",
-                activeSubTab === tab 
-                  ? "bg-white text-indigo-600 shadow-sm border border-slate-200/50" 
-                  : "text-slate-500 hover:text-slate-800"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        {activeSubTab === 'applications' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-            {/* Corporate Filter Bar */}
-            <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col xl:flex-row gap-4 items-center">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Search candidates..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200/60 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all font-semibold text-slate-700 text-sm placeholder:text-slate-400"
-                />
+        
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+                <Users size={24} strokeWidth={2.5} />
               </div>
-              <div className="flex flex-wrap gap-1.5 w-full xl:w-auto">
-                {['all', 'pending', 'shortlisted', 'hold', 'rejected', 'hired'].map(status => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all",
-                      statusFilter === status 
-                        ? "bg-slate-900 text-white border-slate-900 shadow-md" 
-                        : "bg-white text-slate-500 border-slate-200/60 hover:border-indigo-400 hover:text-indigo-600"
-                    )}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
+              <h1 className="text-white font-black text-xs uppercase tracking-[0.3em] opacity-60">Talent Acquisition</h1>
             </div>
-
-            {/* Corporate Candidate Grid - Fully Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filteredCandidates.length > 0 ? filteredCandidates.map((candidate, idx) => (
-                <CandidateCard 
-                  key={candidate.id} 
-                  candidate={candidate} 
-                  idx={idx}
-                  getStatusBadge={getStatusBadge}
-                  getAccentColor={getAccentColor}
-                  onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
-                />
-              )) : (
-                <div className="col-span-full py-20 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-4"><Search size={32} /></div>
-                   <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No matching applications found</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {activeSubTab === 'pipeline' && (
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }} 
-            animate={{ opacity: 1, x: 0 }} 
-            exit={{ opacity: 0, x: -20 }} 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-          >
-            {['Pending', 'Shortlisted', 'Rejected'].map((status) => (
-              <div key={status} className="bg-slate-50/40 rounded-3xl border border-slate-200/60 flex flex-col min-h-[600px] overflow-hidden">
-                <div className="p-6 border-b border-slate-200/40 bg-white/40 backdrop-blur-sm flex items-center justify-between sticky top-0 z-10">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("w-2 h-2 rounded-full ring-4", 
-                      status === 'Pending' ? "bg-slate-400 ring-slate-400/10" : 
-                      status === 'Shortlisted' ? "bg-indigo-500 ring-indigo-500/10" : 
-                      "bg-rose-500 ring-rose-500/10"
-                    )} />
-                    <h3 className="font-bold text-slate-900 uppercase tracking-loose text-xs">
-                      {status}
-                    </h3>
-                  </div>
-                  <span className="bg-white px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 border border-slate-200 shadow-sm">
-                    {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length}
-                  </span>
-                </div>
-                
-                <div className="p-4 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
-                  {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).map((candidate, idx) => (
-                    <CandidateCard 
-                      key={candidate.id} 
-                      candidate={candidate} 
-                      idx={idx}
-                      isCompact
-                      getStatusBadge={getStatusBadge}
-                      getAccentColor={getAccentColor}
-                      onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
-                    />
-                  ))}
-                  {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length === 0 && (
-                    <div className="h-32 flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 rounded-2xl">
-                      <p className="text-[10px] font-bold uppercase tracking-widest">No candidates</p>
-                    </div>
-                  )}
-                </div>
+            <h2 className="text-white text-5xl font-black tracking-tighter leading-tight">Recruitment HQ</h2>
+            <div className="flex items-center gap-4 mt-6">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
+                <Sparkles size={14} className="text-indigo-400" />
+                <span className="text-white/80 text-xs font-black uppercase tracking-widest">{candidates.length} Applications</span>
               </div>
+              <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+              <p className="text-white/40 text-xs font-bold">{jobs.length} Active Openings</p>
+            </div>
+          </div>
+
+          <div className="flex bg-white/5 backdrop-blur-xl p-1.5 rounded-[24px] border border-white/10 shadow-2xl">
+            {[
+              { id: 'applications', label: 'Feed', icon: LayoutGrid },
+              { id: 'pipeline', label: 'Pipeline', icon: Kanban },
+              { id: 'openings', label: 'Board', icon: Briefcase },
+            ].map(tab => (
+              <button 
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-3 px-8 py-4 rounded-[18px] text-[11px] font-black transition-all uppercase tracking-widest",
+                  activeSubTab === tab.id 
+                    ? "bg-white text-slate-900 shadow-xl" 
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <tab.icon size={16} strokeWidth={2.5} />
+                {tab.label}
+              </button>
             ))}
-          </motion.div>
-        )}
+          </div>
+        </div>
+      </header>
 
-        {activeSubTab === 'openings' && (
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
-            <JobOpeningsList jobs={jobs} onUpdate={onUpdate} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Main Content */}
+      <main className="px-8 relative z-20">
+        <AnimatePresence mode="wait">
+          {activeSubTab === 'applications' && (
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
+              {/* Glassmorphism Filter Bar */}
+              <div className="bg-white/80 backdrop-blur-2xl p-6 rounded-[40px] border border-white shadow-[0_30px_60px_rgba(0,0,0,0.03)] flex flex-col xl:flex-row gap-6 items-center">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Search candidate identity..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-16 pr-6 py-4 rounded-[22px] border border-slate-100 bg-slate-50/50 focus:bg-white focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all font-bold text-slate-700 text-sm"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+                  {['all', 'pending', 'shortlisted', 'hold', 'rejected', 'hired'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setStatusFilter(status)}
+                      className={cn(
+                        "px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all",
+                        statusFilter === status 
+                          ? "bg-slate-900 text-white border-slate-900 shadow-xl" 
+                          : "bg-white text-slate-400 border-slate-100 hover:border-indigo-200 hover:text-indigo-600 shadow-sm"
+                      )}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      {/* Modern Candidate Profile Drawer */}
+              {/* Candidate Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCandidates.length > 0 ? filteredCandidates.map((candidate, idx) => (
+                  <CandidateCard 
+                    key={candidate.id} 
+                    candidate={candidate} 
+                    idx={idx}
+                    getStatusBadge={getStatusBadge}
+                    onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
+                  />
+                )) : (
+                  <div className="col-span-full py-32 text-center bg-white rounded-[60px] border border-white shadow-sm">
+                     <div className="w-20 h-20 bg-slate-50 rounded-[28px] flex items-center justify-center text-slate-200 mx-auto mb-6"><Search size={40} /></div>
+                     <p className="text-slate-400 font-black uppercase tracking-[0.5em] text-[10px]">Registry Empty</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {activeSubTab === 'pipeline' && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} 
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            >
+              {['Pending', 'Shortlisted', 'Rejected'].map((status) => (
+                <div key={status} className="bg-white/40 rounded-[48px] border border-white flex flex-col min-h-[700px] overflow-hidden shadow-sm">
+                  <div className="p-8 flex items-center justify-between border-b border-white/50 bg-white/30 backdrop-blur-md">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("w-3 h-3 rounded-full shadow-[0_0_15px_currentColor]", 
+                        status === 'Pending' ? "text-slate-400" : 
+                        status === 'Shortlisted' ? "text-indigo-500" : 
+                        "text-rose-500"
+                      )} />
+                      <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">
+                        {status}
+                      </h3>
+                    </div>
+                    <span className="bg-white px-4 py-1.5 rounded-full text-[10px] font-black text-slate-500 shadow-sm border border-slate-50">
+                      {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).length}
+                    </span>
+                  </div>
+                  
+                  <div className="p-6 space-y-6 flex-1 overflow-y-auto scrollbar-hide">
+                    {candidates.filter(c => (c['Status'] || 'Pending').toLowerCase() === status.toLowerCase()).map((candidate, idx) => (
+                      <CandidateCard 
+                        key={candidate.id} 
+                        candidate={candidate} 
+                        idx={idx}
+                        isCompact
+                        getStatusBadge={getStatusBadge}
+                        onClick={() => { setSelectedCandidate(candidate); setShowDrawer(true); }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {activeSubTab === 'openings' && (
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+              <JobOpeningsList jobs={jobs} onUpdate={onUpdate} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* Profile Drawer */}
       <AnimatePresence>
         {showDrawer && selectedCandidate && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]" onClick={() => setShowDrawer(false)} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[100]" onClick={() => setShowDrawer(false)} />
             <motion.div 
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-white shadow-2xl z-[101] overflow-y-auto"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 35, stiffness: 300 }}
+              className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-[#F8FAFB] shadow-2xl z-[101] flex flex-col"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-3xl shadow-xl shadow-indigo-100">
-                      {selectedCandidate['Full Name']?.charAt(0).toUpperCase()}
+              <div className="bg-white p-12 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                <div className="flex justify-between items-start relative z-10">
+                  <div className="flex items-center gap-8">
+                    <div className="w-24 h-24 rounded-[32px] bg-slate-900 text-white flex items-center justify-center font-black text-4xl shadow-2xl shadow-slate-900/20 overflow-hidden">
+                       <img src={`https://i.pravatar.cc/150?u=${selectedCandidate.id}`} alt="Candidate" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-slate-900 leading-tight">{selectedCandidate['Full Name']}</h2>
-                      <div className="mt-2">{getStatusBadge(selectedCandidate['Status'])}</div>
+                      <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-4">{selectedCandidate['Full Name']}</h2>
+                      <div className="flex items-center gap-3">{getStatusBadge(selectedCandidate['Status'])}</div>
                     </div>
                   </div>
-                  <button onClick={() => setShowDrawer(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><X size={24} /></button>
+                  <button onClick={() => setShowDrawer(false)} className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 transition-colors"><X size={24} /></button>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Contact</p>
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm"><Phone size={14} className="text-indigo-500" /> {selectedCandidate['Phone']}</div>
-                      <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm truncate"><Mail size={14} className="text-indigo-500" /> {selectedCandidate['Email'] || 'N/A'}</div>
+              <div className="flex-1 overflow-y-auto p-12 space-y-12">
+                 <div className="grid grid-cols-2 gap-12">
+                    <div className="space-y-6">
+                       <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] border-b border-slate-100 pb-3">Identification</h4>
+                       <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm border border-slate-50"><Mail size={16} /></div>
+                             <p className="text-sm font-bold text-slate-700">{selectedCandidate['Email'] || 'N/A'}</p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm border border-slate-50"><Phone size={16} /></div>
+                             <p className="text-sm font-bold text-slate-700">{selectedCandidate['Phone']}</p>
+                          </div>
+                       </div>
                     </div>
-                  </div>
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Application</p>
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm"><Briefcase size={14} className="text-indigo-500" /> {selectedCandidate['Job Title']}</div>
-                      <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm"><Calendar size={14} className="text-indigo-500" /> {selectedCandidate['Experience'] || 'Fresher'}</div>
+                    <div className="space-y-6">
+                       <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] border-b border-slate-100 pb-3">Expertise</h4>
+                       <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm border border-slate-50"><Briefcase size={16} /></div>
+                             <p className="text-sm font-bold text-slate-700">{selectedCandidate['Job Title']}</p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm border border-slate-50"><Calendar size={16} /></div>
+                             <p className="text-sm font-bold text-slate-700">{selectedCandidate['Experience'] || 'Fresher'}</p>
+                          </div>
+                       </div>
                     </div>
-                  </div>
-                </div>
+                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-8">
-                   <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-4">Workflow Actions</h4>
-                   <div className="flex flex-wrap gap-2">
-                     <button 
-                       onClick={() => handleUpdateStatus(selectedCandidate, 'Shortlisted')}
-                       disabled={isUpdating || selectedCandidate['Status'] === 'Shortlisted'}
-                       className="flex-1 bg-white border border-slate-200 text-indigo-600 font-bold py-2.5 rounded-lg text-xs hover:bg-indigo-50 hover:border-indigo-200 transition-all disabled:opacity-50"
-                     >
-                       Shortlist
-                     </button>
-                     <button 
-                       onClick={() => handleUpdateStatus(selectedCandidate, 'Hold')}
-                       disabled={isUpdating}
-                       className="flex-1 bg-white border border-slate-200 text-slate-600 font-bold py-2.5 rounded-lg text-xs hover:bg-slate-50 transition-all disabled:opacity-50"
-                     >
-                       On Hold
-                     </button>
-                     <button 
-                       onClick={() => handleUpdateStatus(selectedCandidate, 'Rejected')}
-                       disabled={isUpdating}
-                       className="flex-1 bg-white border border-slate-200 text-red-600 font-bold py-2.5 rounded-lg text-xs hover:bg-red-50 hover:border-red-200 transition-all disabled:opacity-50"
-                     >
-                       Reject
-                     </button>
-                   </div>
-                   
-                   {selectedCandidate['Status']?.toLowerCase() === 'shortlisted' && (
-                     <button 
-                       onClick={() => handleConvertToEmployee(selectedCandidate)}
-                       disabled={isUpdating}
-                       className="w-full mt-4 bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 text-sm"
-                     >
-                       <UserPlus size={18} /> Convert to Employee
-                     </button>
-                   )}
-                </div>
+                 <div className="bg-white p-10 rounded-[48px] border border-white shadow-xl shadow-slate-200/20">
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-8">Decision Console</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                       {[
+                         { label: 'Shortlist', status: 'Shortlisted', color: 'bg-indigo-600 text-white shadow-indigo-100', icon: CheckCircle },
+                         { label: 'Hold', status: 'Hold', color: 'bg-slate-100 text-slate-900 border-slate-200', icon: Clock },
+                         { label: 'Reject', status: 'Rejected', color: 'bg-rose-50 text-rose-600 border-rose-100', icon: XCircle },
+                       ].map((btn) => (
+                         <button 
+                           key={btn.label}
+                           onClick={() => handleUpdateStatus(selectedCandidate, btn.status)}
+                           disabled={isUpdating || selectedCandidate['Status'] === btn.status}
+                           className={cn(
+                             "py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center gap-3 transition-all active:scale-95 disabled:opacity-30 border shadow-lg",
+                             btn.color
+                           )}
+                         >
+                            <btn.icon size={20} strokeWidth={2.5} />
+                            {btn.label}
+                         </button>
+                       ))}
+                    </div>
+
+                    {selectedCandidate['Status']?.toLowerCase() === 'shortlisted' && (
+                       <motion.button 
+                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                         onClick={() => handleConvertToEmployee(selectedCandidate)}
+                         disabled={isUpdating}
+                         className="w-full mt-8 bg-slate-900 text-white font-black py-6 rounded-[32px] shadow-2xl shadow-slate-900/30 flex items-center justify-center gap-4 text-sm group"
+                       >
+                          <UserPlus size={20} /> ONBOARD AS EMPLOYEE
+                          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                       </motion.button>
+                    )}
+                 </div>
               </div>
             </motion.div>
           </>
@@ -345,92 +368,56 @@ export default function RecruitmentManager({ data, onUpdate, onNavigate }) {
   );
 }
 
-function CandidateCard({ candidate, idx, onClick, getStatusBadge, getAccentColor, isCompact = false }) {
+function CandidateCard({ candidate, idx, onClick, getStatusBadge, isCompact = false }) {
   const status = candidate['Status'] || 'Pending';
   
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(idx * 0.05, 0.4) }}
+      initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.4) }}
       onClick={onClick}
       className={cn(
-        "bg-white rounded-2xl border border-slate-200/70 transition-all duration-300 flex flex-col group cursor-pointer overflow-hidden",
-        "hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-200/50 hover:-translate-y-0.5",
-        isCompact ? "p-4" : "h-full"
+        "bg-white rounded-[40px] border border-white transition-all duration-500 flex flex-col group cursor-pointer relative overflow-hidden",
+        "hover:shadow-[0_40px_80px_rgba(0,0,0,0.06)] hover:-translate-y-2",
+        isCompact ? "p-6" : "p-8 shadow-sm"
       )}
     >
-      {!isCompact && (
-        <div className={cn("h-1 w-full", getAccentColor(status))} />
-      )}
-      
-      <div className={cn(isCompact ? "" : "p-6 flex-1")}>
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 font-bold text-base shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-              {candidate['Full Name']?.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <h3 className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{candidate['Full Name']}</h3>
-              <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate flex items-center gap-1">
-                <Phone size={10} className="text-slate-300" />
-                {candidate['Phone']}
-              </p>
-            </div>
+      <div className="flex justify-between items-start mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#F8FAFB] border border-slate-50 flex items-center justify-center text-slate-900 font-black text-xl shrink-0 group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 overflow-hidden shadow-inner">
+             <img src={`https://i.pravatar.cc/150?u=${candidate.id}`} alt="C" className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
           </div>
-          {!isCompact && getStatusBadge(status)}
-        </div>
-
-        <div className="space-y-4">
-          <div className={cn(
-            "grid grid-cols-2 gap-4 py-3 border-y border-slate-50",
-            isCompact && "py-2 border-none bg-slate-50/50 rounded-xl px-3"
-          )}>
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Role</p>
-              <div className="flex items-center gap-1.5 text-slate-700">
-                <p className="text-[11px] font-semibold truncate leading-none">{candidate['Job Title']}</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Experience</p>
-              <div className="flex items-center gap-1.5 text-slate-700">
-                <p className="text-[11px] font-semibold truncate leading-none">{candidate['Experience'] || 'Fresher'}</p>
-              </div>
-            </div>
+          <div className="min-w-0">
+            <h3 className="font-black text-slate-900 text-base leading-tight truncate tracking-tight">{candidate['Full Name']}</h3>
+            <p className="text-[10px] font-black text-slate-300 mt-1 uppercase tracking-widest">{candidate['Job Title']}</p>
           </div>
-          
-          {!isCompact && (
-            <div className="flex items-center justify-between">
-               <div className="flex items-center gap-1.5 text-slate-500">
-                 <DollarSign size={12} className="text-slate-300" />
-                 <span className="text-[11px] font-semibold">{candidate['Expected Salary'] || 'N/A'}</span>
-               </div>
-               <div className="flex items-center gap-1.5 text-slate-500">
-                 <MapPin size={12} className="text-slate-300" />
-                 <span className="text-[11px] font-semibold truncate max-w-[100px]">{candidate['Address'] || 'Mumbai'}</span>
-               </div>
-            </div>
-          )}
         </div>
+        {!isCompact && getStatusBadge(status)}
       </div>
 
-      {!isCompact && (
-        <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between group-hover:bg-indigo-50/30 transition-colors mt-auto">
-          <span className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">View Profile</span>
-          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between py-5 border-y border-slate-50/50">
+           <div>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Experience</p>
+              <p className="text-sm font-bold text-slate-700">{candidate['Experience'] || 'Fresher'}</p>
+           </div>
+           <div className="text-right">
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Expected</p>
+              <p className="text-sm font-bold text-indigo-600">{candidate['Expected Salary'] || 'N/A'}</p>
+           </div>
         </div>
-      )}
-      
-      {isCompact && (
-         <div className="mt-3 flex items-center justify-between">
-            {getStatusBadge(status)}
-            <div className="p-1 rounded-md bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
-              <ChevronRight size={14} />
-            </div>
-         </div>
-      )}
+        
+        <div className="flex items-center justify-between">
+           <div className="flex items-center gap-2 text-slate-400">
+              <MapPin size={12} strokeWidth={2.5} />
+              <span className="text-[10px] font-bold uppercase tracking-wider truncate max-w-[120px]">{candidate['Address'] || 'Mumbai'}</span>
+           </div>
+           <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <ChevronRight size={16} strokeWidth={3} />
+           </div>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -444,159 +431,115 @@ function JobOpeningsList({ jobs, onUpdate }) {
     salary_range: '', description: '', requirements: '', status: 'open'
   });
 
-  const handleOpenForm = (job = null) => {
-    if (job) {
-      setEditingJob(job);
-      setFormData({ ...job });
-    } else {
-      setEditingJob(null);
-      setFormData({ title: '', department: '', location: 'Remote', type: 'Full-time', salary_range: '', description: '', requirements: '', status: 'open' });
-    }
-    setShowForm(true);
-  };
-
   const handleSaveJob = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const endpoint = '/api/database';
-      const method = editingJob ? apiClient.put : apiClient.post;
-      const payload = {
+      const response = await apiClient[editingJob ? 'put' : 'post']('/api/database', {
         table: 'job_openings',
         id: editingJob?.id,
         data: formData
-      };
-
-      const response = await method(endpoint, payload);
+      });
       if (response.success) {
-        toast.success(editingJob ? 'Job updated!' : 'Job published!');
+        toast.success(editingJob ? 'Position Registry Updated' : 'Role Published Successfully');
         setShowForm(false);
         onUpdate('job_openings');
       }
     } catch (error) {
-      toast.error('Operation failed');
+      toast.error('Registry operation failed');
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-slate-200/60 shadow-sm">
-        <div>
-          <h3 className="font-bold text-slate-900 uppercase tracking-wider text-xs">Job Board</h3>
-          <p className="text-slate-400 text-[11px] font-medium mt-1 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            {jobs.length} Active job openings
-          </p>
+    <div className="space-y-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-[#0F172A] p-10 rounded-[60px] shadow-2xl shadow-slate-900/10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <div className="relative z-10">
+          <h3 className="font-black text-white uppercase tracking-[0.4em] text-xs opacity-50 mb-2">Job Board</h3>
+          <h2 className="text-3xl font-black text-white tracking-tighter">{jobs.length} Active Openings</h2>
         </div>
         <button 
-          onClick={() => handleOpenForm()}
-          className="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+          onClick={() => { setEditingJob(null); setFormData({title:'', department:'', location:'Remote', type:'Full-time', salary_range:'', description:'', requirements:'', status:'open'}); setShowForm(true); }}
+          className="w-full sm:w-auto bg-white text-slate-900 px-10 py-5 rounded-[28px] font-black text-xs shadow-2xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 relative z-10"
         >
-          <Plus size={16} /> PUBLISH NEW ROLE
+          <Plus size={20} strokeWidth={3} /> PUBLISH NEW ROLE
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {jobs.length > 0 ? jobs.map((job, idx) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {jobs.map((job, idx) => (
           <div 
             key={job.id} 
-            className="bg-white rounded-2xl border border-slate-200/70 transition-all duration-300 flex flex-col group overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-200/50"
-            onClick={() => handleOpenForm(job)}
+            className="bg-white rounded-[48px] p-10 border border-white shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group cursor-pointer"
+            onClick={() => { setEditingJob(job); setFormData({...job}); setShowForm(true); }}
           >
-            <div className={cn("h-1 w-full", job.status === 'open' ? 'bg-emerald-500' : 'bg-slate-300')} />
-            <div className="p-6 flex-1 cursor-pointer">
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 shrink-0 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                  <Building size={20} />
-                </div>
-                <span className={cn(
-                  "px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border",
-                  job.status === 'open' ? "bg-emerald-50 text-emerald-600 border-emerald-100/80" : "bg-slate-50 text-slate-400 border-slate-200"
-                )}>
-                  {job.status}
-                </span>
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 rounded-[24px] bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 shadow-inner">
+                <Building size={28} strokeWidth={1.5} />
               </div>
-              
-              <h4 className="font-bold text-slate-900 text-[15px] leading-tight mb-2 group-hover:text-indigo-600 transition-colors">{job.title}</h4>
-              <div className="flex flex-wrap gap-4 text-[11px] font-medium text-slate-400 mb-6">
-                <span className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-300" /> {job.location}</span>
-                <span className="flex items-center gap-1.5"><Briefcase size={12} className="text-slate-300" /> {job.department}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 py-4 border-t border-slate-50">
-                <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Position Type</p>
-                  <p className="text-[11px] font-bold text-slate-700">{job.type}</p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Annual Budget</p>
-                  <p className="text-[11px] font-bold text-indigo-600">{job.salary_range}</p>
-                </div>
-              </div>
+              <span className={cn(
+                "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-sm",
+                job.status === 'open' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
+              )}>
+                {job.status}
+              </span>
+            </div>
+            
+            <h4 className="font-black text-slate-900 text-2xl tracking-tighter mb-4 leading-tight">{job.title}</h4>
+            <div className="flex flex-wrap gap-4 text-[10px] font-black text-slate-300 mb-8 uppercase tracking-widest">
+              <span className="flex items-center gap-2"><MapPin size={14} /> {job.location}</span>
+              <span className="flex items-center gap-2"><Briefcase size={14} /> {job.department}</span>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100/60 flex items-center justify-between group-hover:bg-indigo-50/30 transition-colors mt-auto cursor-pointer">
-              <span className="text-[10px] font-bold text-slate-400 group-hover:text-indigo-600 transition-colors uppercase tracking-wider">Manage Opening</span>
-              <ArrowUpRight size={14} className="text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <div className="grid grid-cols-2 gap-8 py-8 border-t border-slate-50">
+              <div>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-2">Category</p>
+                <p className="text-xs font-bold text-slate-700">{job.type}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-2">Budget</p>
+                <p className="text-xs font-bold text-indigo-600">{job.salary_range}</p>
+              </div>
             </div>
           </div>
-        )) : (
-          <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 shadow-sm"><Briefcase size={32} /></div>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active job openings found</p>
-          </div>
-        )}
+        ))}
       </div>
 
-      {/* Modern Job Editor Modal */}
       <AnimatePresence>
         {showForm && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-6">
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200/60"
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#F8FAFB] rounded-[60px] shadow-2xl w-full max-w-2xl overflow-hidden"
             >
-              <form onSubmit={handleSaveJob} className="p-8 space-y-6">
-                <div className="flex justify-between items-center mb-2">
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{editingJob ? 'Manage Position' : 'Publish Position'}</h3>
-                    <p className="text-slate-400 text-xs font-medium mt-1">Fill in the details for the job opening</p>
-                  </div>
-                  <button type="button" onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"><X size={20} /></button>
+              <form onSubmit={handleSaveJob} className="p-12 space-y-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-3xl font-black text-slate-900 tracking-tighter">{editingJob ? 'Update Position' : 'New Position Registry'}</h3>
+                  <button type="button" onClick={() => setShowForm(false)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-300 hover:text-rose-500 transition-colors shadow-sm border border-slate-100"><X size={24} /></button>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                   <FormInput label="Job Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} required />
                   <FormInput label="Department" value={formData.department} onChange={v => setFormData({...formData, department: v})} />
                   <FormInput label="Location" value={formData.location} onChange={v => setFormData({...formData, location: v})} />
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Type</label>
-                    <select className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Type</label>
+                    <select className="w-full px-6 py-4 bg-white rounded-2xl border border-white outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-sm shadow-sm" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
                       <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option>
                     </select>
                   </div>
-                  <FormInput label="Salary Range" value={formData.salary_range} onChange={v => setFormData({...formData, salary_range: v})} placeholder="e.g. ₹10L - ₹15L" />
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Status</label>
-                    <select className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
-                      <option value="open">Open</option>
-                      <option value="closed">Closed</option>
-                    </select>
-                  </div>
                 </div>
 
-                <div className="space-y-4">
-                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Requirements</label>
-                    <textarea rows={3} className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm placeholder:text-slate-400" placeholder="List key requirements..." value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} />
-                  </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">Requirements Profile</label>
+                   <textarea rows={4} className="w-full px-6 py-5 bg-white rounded-[32px] border border-white outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-sm shadow-sm" placeholder="Define the ideal candidate..." value={formData.requirements} onChange={e => setFormData({...formData, requirements: e.target.value})} />
                 </div>
 
-                <button type="submit" disabled={isSaving} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-                  {isSaving ? 'Processing...' : editingJob ? 'Update Position' : 'Publish Position'}
-                  {!isSaving && <ArrowRight size={18} />}
+                <button type="submit" disabled={isSaving} className="w-full bg-slate-900 text-white font-black py-6 rounded-[32px] shadow-2xl shadow-slate-900/20 flex items-center justify-center gap-4 text-sm active:scale-95 transition-all">
+                  {isSaving ? 'Processing Registry...' : editingJob ? 'COMMIT CHANGES' : 'PUBLISH POSITION'}
+                  <ArrowRight size={20} />
                 </button>
               </form>
             </motion.div>
@@ -609,12 +552,12 @@ function JobOpeningsList({ jobs, onUpdate }) {
 
 function FormInput({ label, value, onChange, required = false, placeholder = '' }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+    <div className="space-y-2">
+      <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest ml-1">{label}</label>
       <input 
         required={required} 
         placeholder={placeholder} 
-        className="w-full px-4 py-2.5 bg-slate-50/50 rounded-xl border border-slate-200/60 outline-none focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all font-semibold text-sm placeholder:text-slate-400" 
+        className="w-full px-6 py-4 bg-white rounded-2xl border border-white outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-sm shadow-sm" 
         value={value} 
         onChange={e => onChange(e.target.value)} 
       />
