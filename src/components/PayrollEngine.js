@@ -1,9 +1,27 @@
 "use client";
 import React, { useState, useMemo } from 'react';
-import { Calendar, DollarSign, Calculator, FileText, AlertTriangle, CheckCircle, ShieldAlert, Download } from 'lucide-react';
+import { 
+  Calendar, 
+  DollarSign, 
+  Calculator, 
+  FileText, 
+  AlertTriangle, 
+  CheckCircle, 
+  ShieldAlert, 
+  Download, 
+  Search, 
+  Filter, 
+  ArrowUpRight, 
+  TrendingUp, 
+  Users,
+  ChevronRight,
+  Printer
+} from 'lucide-react';
 import { toast } from 'react-toastify';
+import { motion, AnimatePresence } from 'framer-motion';
 import { generateSalarySlip } from '@/lib/pdfGenerator';
 import ExportMenu from '@/components/ExportMenu';
+import { cn } from '@/lib/utils';
 
 export default function PayrollEngine({ employees = [], attendanceData = [], onSavePayroll }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -82,9 +100,6 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
       if (!hasPF && basicSalaryRaw > 0) {
         errors.push("Missing PF Number");
       }
-      if (grossSalary > 21000 && hasESIC) {
-        // Not an error, just logic rule executed, maybe info
-      }
 
       return {
         ...emp,
@@ -131,7 +146,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
         // Calculated Earnings
         basicSalary: data.earnedBasic,
         hra: data.earnedHra,
-        conveyanceAllowance: data.earnedAllowances * 0.4, // Split generic allowance for payslip format
+        conveyanceAllowance: data.earnedAllowances * 0.4,
         medicalAllowance: data.earnedAllowances * 0.3,
         specialAllowance: data.earnedAllowances * 0.3,
         
@@ -144,14 +159,13 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
       toast.success(`Payslip generated for ${data.Employee}`);
     } catch (error) {
       toast.error('Failed to generate payslip');
-      console.error(error);
     }
   };
 
   const handleRunPayroll = async () => {
     const readyEmployees = payrollData.filter(p => p.isReady);
     if (readyEmployees.length === 0) {
-      toast.error('No employees ready for payroll generation. Check attendance and missing PF numbers.');
+      toast.error('No employees ready for payroll generation.');
       return;
     }
 
@@ -171,7 +185,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
       if (onSavePayroll) {
         await onSavePayroll(payrollRecord);
       }
-      toast.success(`Payroll processed successfully for ${readyEmployees.length} employees.`);
+      toast.success(`Payroll processed for ${readyEmployees.length} employees.`);
     } catch (error) {
       toast.error('Failed to run payroll');
     } finally {
@@ -179,7 +193,6 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
     }
   };
 
-  // Prepare CSV Export Data
   const exportData = payrollData.map(p => ({
     'Employee ID': p.empId,
     'Employee Name': p.Employee,
@@ -193,176 +206,281 @@ export default function PayrollEngine({ employees = [], attendanceData = [], onS
     'IFSC Code': p['IFSC Code'] || 'N/A'
   }));
 
+  const filteredData = payrollData.filter(data => {
+    const matchesSearch = (data.Employee || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (data.empId || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesClient = clientFilter === 'All' || data['Assigned Client'] === clientFilter;
+    return matchesSearch && matchesClient;
+  });
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 sm:space-y-8 pb-20">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 flex items-center gap-2">
-            <Calculator className="text-purple-600" /> Automated Payroll Engine
-          </h2>
-          <p className="text-slate-500 mt-1">Calculate PF, ESIC, and Net Pay automatically from attendance data</p>
-        </div>
-      </div>
-
-      {/* Controls & Summary */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-8 justify-between">
-        <div className="flex-1 space-y-4">
-          <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">Payroll Month</label>
-          <div className="flex items-center gap-4">
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-6 py-4 rounded-2xl border-2 border-purple-100 focus:ring-4 focus:ring-purple-50 focus:border-purple-500 outline-none font-black text-slate-700 bg-purple-50 text-xl"
-            />
-            <div className="text-sm font-bold text-slate-500">
-              Total Days: <span className="text-purple-600">{totalDaysInMonth}</span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-xl">
+              <Calculator size={24} className="text-indigo-600" />
             </div>
-          </div>
+            Payroll Engine
+          </h2>
+          <p className="text-slate-500 font-medium mt-1 flex items-center gap-2 text-sm sm:text-base">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Automated compliance & payout management
+          </p>
         </div>
 
-        <div className="hidden lg:block w-px bg-slate-100"></div>
-
-        <div className="flex-1 grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-sm font-bold text-slate-500 mb-1">Total Gross Salary</p>
-            <p className="text-3xl font-black text-slate-800">₹{totalPayrollCost.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-slate-500 mb-1">Net Payout</p>
-            <p className="text-3xl font-black text-green-600">₹{totalNetPayout.toLocaleString('en-IN', {maximumFractionDigits: 0})}</p>
-          </div>
-        </div>
-
-        <div className="hidden lg:block w-px bg-slate-100"></div>
-
-        <div className="flex flex-col justify-center gap-3">
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <ExportMenu 
+            data={exportData} 
+            filename={`Payroll_${selectedMonth}.csv`}
+            customTrigger={
+              <button className="flex-1 lg:flex-none px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+                <Download size={16} /> EXPORT SHEET
+              </button>
+            }
+          />
           <button
             onClick={handleRunPayroll}
             disabled={isProcessing || payrollData.length === 0}
-            className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-black hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+            className="flex-1 lg:flex-none px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
           >
             {isProcessing ? 'Processing...' : 'Run Master Payroll'}
+            <ArrowUpRight size={16} />
           </button>
-          <ExportMenu data={exportData} filename={`Payroll_Bank_Sheet_${selectedMonth}.csv`} />
         </div>
       </div>
 
-      {/* Payroll Processing Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-slate-50">
-          <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-            <DollarSign className="text-green-500" /> Employee Salary Breakdown
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <input 
-              type="text" 
-              placeholder="Search employee..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm"
-            />
+      {/* Main Control Card */}
+      <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border border-slate-200/60 p-6 sm:p-8 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Month Selector */}
+          <div className="lg:col-span-4 space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reporting Period</label>
+            <div className="relative group">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 transition-transform group-hover:scale-110" size={20} />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full pl-12 pr-6 py-4 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-50/50 focus:border-indigo-500 outline-none font-black text-slate-800 bg-white text-lg transition-all"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-slate-100 px-2 py-1 rounded-lg text-[10px] font-black text-slate-500">
+                {totalDaysInMonth} DAYS
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden lg:block lg:col-span-1 h-16 w-px bg-slate-200 mx-auto" />
+
+          {/* Key Metrics */}
+          <div className="lg:col-span-7 grid grid-cols-2 gap-6 sm:gap-12">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-slate-400">
+                <TrendingUp size={14} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Total Gross</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-black text-slate-400">₹</span>
+                <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter">
+                  {totalPayrollCost.toLocaleString('en-IN', {maximumFractionDigits: 0})}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-emerald-500">
+                <CheckCircle size={14} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Net Payout</span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm font-black text-emerald-400">₹</span>
+                <span className="text-2xl sm:text-4xl font-black text-emerald-600 tracking-tighter">
+                  {totalNetPayout.toLocaleString('en-IN', {maximumFractionDigits: 0})}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter & Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text" 
+            placeholder="Search by name or ID..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-50 transition-all font-semibold text-sm"
+          />
+        </div>
+        <div className="flex gap-3">
+          <div className="relative">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <select
               value={clientFilter}
               onChange={(e) => setClientFilter(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm font-semibold text-slate-700 bg-white"
+              className="pl-10 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-50 transition-all font-bold text-xs appearance-none text-slate-700 min-w-[160px]"
             >
               <option value="All">All Clients</option>
               {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="flex gap-4">
-             <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-               <span className="w-3 h-3 rounded-full bg-green-500"></span> Ready ({payrollData.filter(p => p.isReady).length})
-             </div>
-             <div className="flex items-center gap-2 text-sm font-bold text-slate-600">
-               <span className="w-3 h-3 rounded-full bg-red-500"></span> Blocked ({payrollData.filter(p => !p.isReady).length})
-             </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
+        {/* Table Header - Desktop Only */}
+        <div className="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="col-span-3">Employee</div>
+          <div className="col-span-1 text-center">Days</div>
+          <div className="col-span-2 text-right">Gross (₹)</div>
+          <div className="col-span-2 text-right text-rose-400">Deductions</div>
+          <div className="col-span-2 text-right">Net Pay (₹)</div>
+          <div className="col-span-1 text-center">Status</div>
+          <div className="col-span-1 text-right">Action</div>
+        </div>
+
+        {/* Content Body */}
+        <div className="divide-y divide-slate-100">
+          <AnimatePresence mode="popLayout">
+            {filteredData.length > 0 ? (
+              filteredData.map((data, idx) => (
+                <motion.div 
+                  layout
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={data.empId || idx}
+                  className={cn(
+                    "group p-6 lg:px-8 lg:py-5 hover:bg-slate-50/80 transition-colors",
+                    !data.isReady && "bg-rose-50/30"
+                  )}
+                >
+                  <div className="flex flex-col lg:grid lg:grid-cols-12 lg:items-center gap-4 lg:gap-4">
+                    {/* Employee Info */}
+                    <div className="col-span-3 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200 group-hover:bg-white group-hover:border-indigo-200 transition-all">
+                        {data.Employee?.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-900 text-sm truncate">{data.Employee}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{data.empId}</span>
+                          {data.grossSalary > 21000 && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 text-[8px] font-black uppercase">ESIC Exempt</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats Group - Mobile Card Layout Style */}
+                    <div className="flex lg:grid lg:col-span-7 grid-cols-2 lg:grid-cols-7 gap-4 items-center">
+                      <div className="lg:col-span-1 flex flex-col items-center lg:items-center">
+                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Worked</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className={cn("text-base font-black", data.payableDays > 0 ? "text-slate-800" : "text-rose-500")}>
+                            {data.payableDays}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-400">/{totalDaysInMonth}</span>
+                        </div>
+                      </div>
+
+                      <div className="lg:col-span-2 text-right">
+                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Gross</span>
+                        <span className="font-bold text-slate-700 text-sm">₹{data.grossSalary.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                      </div>
+
+                      <div className="lg:col-span-2 text-right">
+                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Total Ded.</span>
+                        <span className="font-bold text-rose-500 text-sm">-₹{data.totalDeductions.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                      </div>
+
+                      <div className="lg:col-span-2 text-right lg:bg-emerald-50/30 lg:py-2 lg:px-4 lg:rounded-xl">
+                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Net Pay</span>
+                        <span className="font-black text-emerald-600 text-base">₹{data.netSalary.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                      </div>
+                    </div>
+
+                    {/* Status & Action */}
+                    <div className="col-span-2 flex items-center justify-between lg:justify-center gap-4">
+                      <div className="flex-1 lg:flex-none">
+                        {data.isReady ? (
+                          <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                            <CheckCircle size={12} /> Ready
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                            <ShieldAlert size={12} /> Blocked
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => handleGeneratePayslip(data)}
+                        disabled={!data.isReady}
+                        className="p-3 bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed group-hover:border-indigo-200 group-hover:shadow-sm"
+                        title="Generate Payslip"
+                      >
+                        <Printer size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Errors / Notes */}
+                  {!data.isReady && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }} 
+                      animate={{ height: 'auto', opacity: 1 }}
+                      className="mt-4 p-3 bg-rose-50/50 rounded-2xl border border-rose-100 flex items-center gap-3"
+                    >
+                      <AlertTriangle size={14} className="text-rose-500 shrink-0" />
+                      <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest">
+                        {data.payableDays === 0 ? 'Zero attendance recorded for this month' : data.errors.join(' • ')}
+                      </p>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              <div className="p-20 text-center flex flex-col items-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-300 mb-6 border border-slate-100">
+                  <Users size={32} />
+                </div>
+                <h4 className="text-xl font-black text-slate-900">No employees found</h4>
+                <p className="text-slate-500 font-medium max-w-xs mt-2">Try adjusting your filters or search term to find what you're looking for.</p>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Summary Footer Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-6 bg-slate-900 rounded-[32px] text-white flex items-center justify-between overflow-hidden relative">
+          <div className="relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Processing</p>
+            <p className="text-3xl font-black">{filteredData.length}</p>
           </div>
+          <Users size={48} className="absolute -right-2 -bottom-2 text-white/5" />
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-white text-slate-500 font-bold border-b-2 border-slate-100 uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4 text-center border-l border-slate-100">Payable<br/>Days</th>
-                <th className="px-6 py-4 text-right border-l border-slate-100">Gross<br/>Salary (₹)</th>
-                <th className="px-6 py-4 text-right text-red-500 border-l border-slate-100">PF Ded.<br/>(12%)</th>
-                <th className="px-6 py-4 text-right text-red-500">ESIC Ded.<br/>(0.75%)</th>
-                <th className="px-6 py-4 text-right text-green-600 border-l border-slate-100 font-black text-xs">Net Payout</th>
-                <th className="px-6 py-4 text-center border-l border-slate-100">Status</th>
-                <th className="px-6 py-4 text-right border-l border-slate-100">Payslip</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {payrollData
-                .filter(data => {
-                  const matchesSearch = (data.Employee || '').toLowerCase().includes(searchTerm.toLowerCase()) || (data.empId || '').toLowerCase().includes(searchTerm.toLowerCase());
-                  const matchesClient = clientFilter === 'All' || data['Assigned Client'] === clientFilter;
-                  return matchesSearch && matchesClient;
-                })
-                .map((data, idx) => (
-                <tr key={idx} className={`hover:bg-slate-50 transition-colors ${!data.isReady ? 'bg-red-50/30' : ''}`}>
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-slate-800">{data.Employee}</div>
-                    <div className="text-xs text-slate-500 flex gap-2 mt-1">
-                      <span>{data.empId}</span>
-                      {data.grossSalary > 21000 && <span className="text-purple-600 bg-purple-50 px-1.5 rounded font-bold border border-purple-100">ESIC Exempt</span>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center border-l border-slate-100">
-                    <div className={`font-black text-lg ${data.payableDays > 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                      {data.payableDays}
-                    </div>
-                    <div className="text-[10px] text-slate-400">out of {totalDaysInMonth}</div>
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-slate-700 border-l border-slate-100">
-                    {data.grossSalary.toLocaleString('en-IN', {maximumFractionDigits: 2})}
-                  </td>
-                  <td className="px-6 py-4 text-right text-red-600 border-l border-slate-100">
-                    {data.pfDeduction > 0 ? data.pfDeduction.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right text-red-600">
-                    {data.esicDeduction > 0 ? data.esicDeduction.toLocaleString('en-IN', {maximumFractionDigits: 2}) : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right font-black text-green-600 border-l border-slate-100 text-base bg-green-50/30">
-                    {data.netSalary.toLocaleString('en-IN', {maximumFractionDigits: 2})}
-                  </td>
-                  <td className="px-6 py-4 border-l border-slate-100">
-                    {data.isReady ? (
-                      <div className="flex items-center justify-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-md text-xs font-bold border border-green-200">
-                        <CheckCircle size={14} /> Ready
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded-md text-[10px] font-bold border border-red-200 text-center">
-                        <ShieldAlert size={14} /> 
-                        {data.payableDays === 0 ? '0 Days Worked' : data.errors.join(', ')}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right border-l border-slate-100">
-                    <button
-                      onClick={() => handleGeneratePayslip(data)}
-                      disabled={!data.isReady}
-                      className="p-2 bg-purple-50 text-purple-600 hover:bg-purple-100 hover:text-purple-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-purple-200 shadow-sm"
-                      title="Generate Payslip PDF"
-                    >
-                      <FileText size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {payrollData.length === 0 && (
-                <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center text-slate-500 font-medium">
-                    No active employees to process payroll.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="p-6 bg-indigo-600 rounded-[32px] text-white flex items-center justify-between overflow-hidden relative">
+          <div className="relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-2">Compliance Ready</p>
+            <p className="text-3xl font-black">{filteredData.filter(p => p.isReady).length}</p>
+          </div>
+          <CheckCircle size={48} className="absolute -right-2 -bottom-2 text-white/5" />
+        </div>
+
+        <div className="p-6 bg-rose-500 rounded-[32px] text-white flex items-center justify-between overflow-hidden relative">
+          <div className="relative z-10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-rose-200 mb-2">Action Required</p>
+            <p className="text-3xl font-black">{filteredData.filter(p => !p.isReady).length}</p>
+          </div>
+          <AlertTriangle size={48} className="absolute -right-2 -bottom-2 text-white/5" />
         </div>
       </div>
     </div>
