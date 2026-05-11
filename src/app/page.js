@@ -231,6 +231,15 @@ export default function DashboardLayout() {
   }, [isAuthenticated]);
 
   const syncCurrentGroup = useCallback((silent = false) => {
+    // If employee, only sync personal relevant data
+    if (user?.role === 'employee') {
+      fetchData('workforce', silent);
+      fetchData('attendance', silent);
+      fetchData('leave', silent);
+      fetchData('payroll', silent);
+      return;
+    }
+
     if (activeTab === 'dashboard') {
       fetchData('workforce', silent);
       fetchData('clients', silent);
@@ -261,7 +270,7 @@ export default function DashboardLayout() {
       fetchData('compliance', silent);
       fetchData('attendance', silent);
     }
-  }, [activeTab, fetchData]);
+  }, [activeTab, user, fetchData]);
 
   useEffect(() => {
     // When active tab changes, fetch the necessary data for that group

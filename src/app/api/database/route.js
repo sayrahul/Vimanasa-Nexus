@@ -50,8 +50,8 @@ const tablePermissions = {
     write: ['compliance'],
   },
   employee: {
-    read: [],
-    write: [],
+    read: ['dashboard', 'workforce', 'employees', 'attendance', 'leave', 'leave_requests', 'payroll', 'job_openings'],
+    write: ['attendance', 'leave', 'leave_requests'],
   },
 };
 
