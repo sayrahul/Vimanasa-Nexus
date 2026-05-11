@@ -748,10 +748,16 @@ export default function DashboardLayout() {
                       attendance={data.attendance}
                       onGenerateInvoice={async (invoiceData) => {
                         try {
+                          // Optimistic update
+                          setData(prev => ({ ...prev, invoices: [invoiceData, ...(prev.invoices || [])] }));
+                          
                           await apiClient.post('/api/database', { table: 'invoices', data: invoiceData });
                           toast.success('✅ Invoice generated successfully!');
                           fetchData('invoices');
-                        } catch (error) { toast.error('❌ Failed to generate invoice.'); }
+                        } catch (error) { 
+                          toast.error('❌ Failed to generate invoice.'); 
+                          fetchData('invoices'); // Revert by fetching
+                        }
                       }}
                       onUpdateStatus={async (invoice, idx, newStatus) => {
                         try {

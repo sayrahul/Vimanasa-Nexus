@@ -361,7 +361,7 @@ function InvoiceGenerator({ clients, employees, attendance, onGenerate, onClose 
       'Client Name': calculatedData.client['Client Name'],
       'Client ID': calculatedData.client['Client ID'],
       'Month': formData.month,
-      'Invoice Date': new Date().toLocaleDateString(),
+      'Invoice Date': new Date().toISOString().split('T')[0],
       'Due Date': formData.dueDate,
       'Total Employees': calculatedData.totalEmployees,
       'Bill Rate Subtotal': calculatedData.totalBillRate,
