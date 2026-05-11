@@ -723,6 +723,7 @@ export default function EmployeePortal({ user, onLogout }) {
           })}
         </div>
       </nav>
+      </div>
     </div>
   );
 }
