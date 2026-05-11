@@ -41,6 +41,7 @@ export default function EmployeePortal({ user, onLogout }) {
   const [clockStatus, setClockStatus] = useState('Out'); // In | Out
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -320,7 +321,7 @@ export default function EmployeePortal({ user, onLogout }) {
                     <h2 className="text-2xl font-medium text-slate-400">Good morning, <span className="font-bold text-slate-900">{user.full_name?.split(' ')[0]} !</span></h2>
                     <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs uppercase tracking-wider">
                        <ShieldCheck size={16} />
-                       OFFICE
+                       {employeeRecord?.['Assigned Client'] || 'OFFICE'}
                     </div>
                  </div>
                  <div className="w-14 h-14 rounded-full border-4 border-white shadow-xl overflow-hidden">
@@ -670,77 +671,124 @@ export default function EmployeePortal({ user, onLogout }) {
                 </div>
              </motion.div>
           )}
-          {activeTab === 'attendance' && (
-             <motion.div 
-               key="attendance"
-               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-               className="max-w-4xl mx-auto space-y-6"
-             >
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Attendance Logs</h2>
-                
-                <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm">
-                   <div className="flex items-center justify-between mb-8">
-                      <div>
-                         <h3 className="font-black text-slate-900 text-lg tracking-tight">May 2026</h3>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Summary</p>
-                      </div>
-                      <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
-                         <Calendar size={24} />
-                      </div>
-                   </div>
-
-                   <div className="grid grid-cols-7 gap-2 mb-4">
-                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                        <div key={i} className="text-center text-[10px] font-black text-slate-300">{d}</div>
-                      ))}
-                      {Array.from({ length: 31 }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            "aspect-square rounded-lg flex items-center justify-center text-[11px] font-black border transition-all",
-                            i === 10 ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-200" :
-                            i < 10 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                            "bg-slate-50 text-slate-400 border-slate-100"
-                          )}
-                        >
-                          {i + 1}
-                        </div>
-                      ))}
+           {activeTab === 'attendance' && (
+              <motion.div 
+                key="attendance"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="max-w-4xl mx-auto space-y-6"
+              >
+                <div className="flex justify-between items-center px-1">
+                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">Attendance Logs</h2>
+                   <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setCalendarDate(new Date(calendarDate.setMonth(calendarDate.getMonth() - 1)))}
+                        className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                      >
+                         <ChevronRight size={20} className="rotate-180" />
+                      </button>
+                      <span className="text-sm font-black text-slate-900 uppercase tracking-widest min-w-[120px] text-center">
+                         {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                      <button 
+                        onClick={() => setCalendarDate(new Date(calendarDate.setMonth(calendarDate.getMonth() + 1)))}
+                        className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                      >
+                         <ChevronRight size={20} />
+                      </button>
                    </div>
                 </div>
+                
+                <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)]">
+                   <div className="grid grid-cols-7 gap-2 mb-6">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => (
+                        <div key={i} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest pb-4">{d}</div>
+                      ))}
+                      {(() => {
+                        const daysInMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate();
+                        const firstDayOfMonth = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay();
+                        const padding = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                        
+                        return [
+                          ...Array(padding).fill(null),
+                          ...Array.from({ length: daysInMonth }, (_, i) => i + 1)
+                        ].map((day, i) => {
+                          if (!day) return <div key={`pad-${i}`} />;
+                          
+                          const dateStr = `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const log = attendanceLogs.find(l => (l.Date || l.date) === dateStr);
+                          const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                          
+                          let statusColor = "bg-slate-50 text-slate-400 border-slate-100";
+                          if (log?.Status === 'Present' || log?.status === 'Present') statusColor = "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-200";
+                          else if (isToday) statusColor = "bg-white text-indigo-600 border-indigo-200 ring-2 ring-indigo-50";
+
+                          return (
+                            <div 
+                              key={day} 
+                              className={cn(
+                                "aspect-square rounded-2xl flex flex-col items-center justify-center text-[13px] font-black border transition-all cursor-default group relative",
+                                statusColor
+                              )}
+                            >
+                               {day}
+                               {log && !isToday && <div className="absolute bottom-2 w-1 h-1 rounded-full bg-white/40" />}
+                            </div>
+                          );
+                        });
+                      })()}
+                   </div>
+
+                   <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-slate-50">
+                      <div className="flex items-center gap-2">
+                         <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Present</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Absent</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <div className="w-3 h-3 rounded-full bg-slate-200"></div>
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Holiday</span>
+                      </div>
+                   </div>
+                </div>
+
                 <div className="space-y-4">
-                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Today's Timeline</h3>
-                   <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
-                      {attendanceLogs.filter(log => (log.Date || log.date) === new Date().toISOString().split('T')[0]).length > 0 ? (
-                        <>
-                          <div className="absolute left-10 top-12 bottom-12 w-0.5 bg-slate-100"></div>
-                          <div className="space-y-8 relative">
-                             {attendanceLogs.filter(log => (log.Date || log.date) === new Date().toISOString().split('T')[0]).map((log, i) => (
-                               <div key={i} className="flex items-start gap-6">
-                                  <div className="w-8 h-8 rounded-full bg-emerald-500 border-4 border-white shadow-lg z-10 flex items-center justify-center">
-                                     <CheckCircle2 size={12} className="text-white" />
-                                  </div>
-                                  <div>
-                                     <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">
-                                        {log['Check In'] ? 'Shift Started' : 'Shift Recorded'}
-                                     </h4>
-                                     <p className="text-[11px] font-bold text-slate-400">
-                                        {log['Check In'] || 'Recorded'} • {log.Site || 'Nexus HQ'}
-                                     </p>
-                                  </div>
-                               </div>
-                             ))}
-                          </div>
-                        </>
+                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Timeline Summary</h3>
+                   <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
+                      {attendanceLogs.length > 0 ? (
+                        <div className="space-y-6">
+                           {attendanceLogs.slice(0, 3).map((log, i) => (
+                             <div key={i} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-5">
+                                   <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                                      <Calendar size={20} />
+                                   </div>
+                                   <div>
+                                      <h4 className="font-bold text-slate-900 text-sm">{new Date(log.Date || log.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</h4>
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{log.Status || log.status}</p>
+                                   </div>
+                                </div>
+                                <div className="text-right">
+                                   <p className="text-sm font-black text-slate-900">{log['Check In'] || '--:--'}</p>
+                                   <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Arrival</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
                       ) : (
-                        <div className="text-center py-4">
-                           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">No activity recorded today</p>
+                        <div className="text-center py-12">
+                           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-200">
+                              <Calendar size={32} />
+                           </div>
+                           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">No historical logs found</p>
                         </div>
                       )}
                    </div>
                 </div>
-             </motion.div>
-          )}
+              </motion.div>
+           )}
         </AnimatePresence>
       </main>
 
