@@ -42,6 +42,7 @@ export default function EmployeePortal({ user, onLogout }) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [todayLog, setTodayLog] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -95,9 +96,10 @@ export default function EmployeePortal({ user, onLogout }) {
         
         // Determine current clock status from today's log
         const today = new Date().toISOString().split('T')[0];
-        const todayLog = myAttendance.find(log => (log.Date || log.date) === today);
-        if (todayLog) {
-          setClockStatus(todayLog.Status === 'Present' || todayLog.status === 'Present' ? 'In' : 'Out');
+        const currentLog = myAttendance.find(log => (log.Date || log.date) === today);
+        setTodayLog(currentLog);
+        if (currentLog) {
+          setClockStatus(currentLog.Status === 'Present' || currentLog.status === 'Present' ? 'In' : 'Out');
         }
 
         // 3. Fetch leave history
@@ -122,6 +124,20 @@ export default function EmployeePortal({ user, onLogout }) {
     fetchEmployeeData();
   }, [user.email]);
 
+  const getLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => reject(err),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    });
+  };
+
   const handleClockAction = async () => {
     if (!employeeRecord) {
       toast.error('Employee record not found. Contact HR.');
@@ -129,10 +145,20 @@ export default function EmployeePortal({ user, onLogout }) {
     }
 
     setIsClocking(true);
+    let locationData = null;
+
     try {
+      // Try to get location
+      try {
+        locationData = await getLocation();
+      } catch (locErr) {
+        console.warn('Location capture failed:', locErr.message);
+        // We continue but log that location was missed
+      }
+
       const newStatus = clockStatus === 'In' ? 'Out' : 'In';
       const today = new Date().toISOString().split('T')[0];
-      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
       // Save to database
       await apiClient.post('/api/database', {
@@ -144,12 +170,15 @@ export default function EmployeePortal({ user, onLogout }) {
           Status: newStatus === 'In' ? 'Present' : 'Out',
           'Check In': newStatus === 'In' ? nowTime : undefined,
           'Check Out': newStatus === 'Out' ? nowTime : undefined,
+          'Latitude': locationData?.lat,
+          'Longitude': locationData?.lng,
+          'Location Status': locationData ? 'Verified' : 'Manual'
         }
       });
 
       setClockStatus(newStatus);
       fetchEmployeeData(); // Refresh logs
-      toast.success(newStatus === 'In' ? 'Shift Started! Have a great day.' : 'Shift Ended! Rest well.');
+      toast.success(newStatus === 'In' ? 'Shift Started! Location Verified.' : 'Shift Ended! Rest well.');
     } catch (error) {
       console.error('Clock error:', error);
       toast.error('Failed to sync attendance. Try again.');
@@ -192,9 +221,12 @@ export default function EmployeePortal({ user, onLogout }) {
   // Tabs for bottom navigation and desktop sidebar
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
+    { id: 'updates', label: 'Updates', icon: Bell },
     { id: 'attendance', label: 'Attendance', icon: Calendar },
     { id: 'leave', label: 'Leave', icon: Clock },
+    { id: 'payroll', label: 'Payroll', icon: Briefcase },
     { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'help', label: 'Help Desk', icon: AlertCircle },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
@@ -333,8 +365,7 @@ export default function EmployeePortal({ user, onLogout }) {
               <div className="bg-white rounded-[40px] p-10 shadow-[0_30px_60px_rgba(0,0,0,0.05)] border border-white/50 text-center relative overflow-hidden">
                  <div className="space-y-1 mb-10">
                     <div className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums flex items-center justify-center gap-3">
-                       {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                       <span className="text-xl font-medium text-slate-400">hrs</span>
+                       {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                     </div>
                     <p className="text-sm font-medium text-slate-400">
                        {currentTime.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} - {currentTime.toLocaleDateString('en-US', { weekday: 'long' })}
@@ -342,26 +373,37 @@ export default function EmployeePortal({ user, onLogout }) {
                  </div>
                  
                  <div className="relative flex justify-center mb-12">
+                    {/* Multi-layered Ripples */}
+                    <div className={cn("absolute inset-0 m-auto w-48 h-48 rounded-full animate-ping opacity-20 duration-1000", clockStatus === 'In' ? 'bg-rose-400' : 'bg-emerald-400')} />
+                    <div className={cn("absolute inset-0 m-auto w-48 h-48 rounded-full animate-ping opacity-10 duration-1000 delay-300", clockStatus === 'In' ? 'bg-rose-400' : 'bg-emerald-400')} />
+                    <div className={cn("absolute inset-0 m-auto w-56 h-56 rounded-full border-2 border-dashed opacity-10 animate-[spin_10s_linear_infinite]", clockStatus === 'In' ? 'border-rose-400' : 'border-emerald-400')} />
+
                     <motion.button 
-                      whileTap={{ scale: 0.92 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={handleClockAction}
                       disabled={isClocking}
                       className={cn(
-                        "w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 transition-all duration-500 relative z-10",
+                        "w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 transition-all duration-500 relative z-10 border-4 border-white/30 backdrop-blur-sm",
                         clockStatus === 'In'
-                          ? "bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-[0_20px_40px_rgba(244,63,94,0.3)]"
-                          : "bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-[0_20px_40px_rgba(16,185,129,0.3)]"
+                          ? "bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white shadow-[0_30px_60px_-12px_rgba(244,63,94,0.5)]"
+                          : "bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 text-white shadow-[0_30px_60px_-12px_rgba(16,185,129,0.5)]"
                       )}
                     >
-                       <div className="w-12 h-12 flex items-center justify-center mb-1">
-                          <Fingerprint size={48} strokeWidth={1.5} />
-                       </div>
-                       <span className="font-bold text-lg tracking-tight">
-                          {isClocking ? "..." : clockStatus === 'In' ? 'Check-out' : 'Check-in'}
+                       <motion.div 
+                         animate={{ scale: [1, 1.1, 1] }}
+                         transition={{ repeat: Infinity, duration: 2 }}
+                         className="w-14 h-14 flex items-center justify-center mb-1"
+                       >
+                          <Fingerprint size={56} strokeWidth={1.5} />
+                       </motion.div>
+                       <span className="font-black text-xl tracking-widest uppercase">
+                          {isClocking ? "Processing" : clockStatus === 'In' ? 'Check-out' : 'Check-in'}
                        </span>
+                       
+                       {/* Glossy Overlay */}
+                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
                     </motion.button>
-                    {/* Ripple effects */}
-                    <div className={cn("absolute inset-0 m-auto w-48 h-48 rounded-full animate-ping opacity-20", clockStatus === 'In' ? 'bg-rose-400' : 'bg-emerald-400')} />
                  </div>
                  
                  <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-8 mt-2">
@@ -370,7 +412,7 @@ export default function EmployeePortal({ user, onLogout }) {
                           <Clock size={20} />
                        </div>
                        <div>
-                          <p className="text-sm font-bold text-slate-900">00:00 AM</p>
+                          <p className="text-sm font-bold text-slate-900">{todayLog?.['Check In'] || todayLog?.['check_in'] || '--:--'}</p>
                           <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">Check-in time</p>
                        </div>
                     </div>
@@ -379,10 +421,16 @@ export default function EmployeePortal({ user, onLogout }) {
                           <Clock size={20} />
                        </div>
                        <div>
-                          <p className="text-sm font-bold text-slate-900">00:00 PM</p>
+                          <p className="text-sm font-bold text-slate-900">{todayLog?.['Check Out'] || todayLog?.['check_out'] || '--:--'}</p>
                           <p className="text-[10px] font-bold text-rose-600 uppercase tracking-tight">Check-out time</p>
                        </div>
                     </div>
+                    {todayLog?.['Latitude'] && (
+                      <div className="col-span-2 mt-6 flex items-center justify-center gap-2 text-[10px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-50/50 py-2 rounded-full border border-indigo-100/50">
+                         <MapPin size={12} />
+                         Location Verified: {parseFloat(todayLog['Latitude']).toFixed(4)}, {parseFloat(todayLog['Longitude']).toFixed(4)}
+                      </div>
+                    )}
                  </div>
               </div>
 
@@ -404,30 +452,74 @@ export default function EmployeePortal({ user, onLogout }) {
                  </div>
               </div>
 
+              {/* Announcements & Holidays Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* Notice Board */}
+                 <div className="space-y-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Notice Board</h3>
+                    <div className="bg-slate-900 rounded-[32px] p-6 text-white relative overflow-hidden shadow-xl shadow-slate-200">
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                       <div className="relative space-y-4">
+                          <div className="flex items-center gap-2 text-indigo-400">
+                             <Bell size={16} />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Latest Update</span>
+                          </div>
+                          <p className="text-sm font-bold leading-relaxed">
+                             Quarterly Townhall meeting scheduled for Friday, 15th May at 4:00 PM. All hands on deck!
+                          </p>
+                          <button onClick={() => setActiveTab('updates')} className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
+                             View all announcements <ChevronRight size={12} />
+                          </button>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Upcoming Holidays */}
+                 <div className="space-y-4">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Upcoming Holidays</h3>
+                    <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
+                       {[
+                          { name: 'Republic Day', date: 'Jan 26', day: 'Monday' },
+                          { name: 'Holi', date: 'Mar 25', day: 'Tuesday' },
+                          { name: 'Independence Day', date: 'Aug 15', day: 'Friday' },
+                       ].map((holiday, i) => (
+                          <div key={i} className="p-4 flex items-center justify-between">
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex flex-col items-center justify-center">
+                                   <span className="text-[10px] font-black text-slate-900 leading-none">{holiday.date.split(' ')[1]}</span>
+                                   <span className="text-[8px] font-bold text-slate-400 uppercase">{holiday.date.split(' ')[0]}</span>
+                                </div>
+                                <div>
+                                   <h4 className="text-xs font-bold text-slate-900">{holiday.name}</h4>
+                                   <p className="text-[10px] text-slate-400 font-medium">{holiday.day}</p>
+                                </div>
+                             </div>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+              </div>
+
               {/* Quick Actions List */}
               <div className="space-y-4">
                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Essentials</h3>
                  <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
                      <button 
-                       onClick={() => {
-                         const latest = payrollData[0];
-                         if (latest) toast.info(`Downloading ${latest.Month} payslip...`);
-                         else toast.warn('No payslips available yet.');
-                       }}
+                       onClick={() => setActiveTab('payroll')}
                        className="w-full p-5 flex items-center justify-between hover:bg-slate-50 transition-all text-left group"
                      >
                        <div className="flex items-center gap-4">
                           <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                             <FileText size={22} />
+                             <Briefcase size={22} />
                           </div>
                           <div>
-                             <h4 className="font-bold text-slate-900 text-sm">Latest Payslip</h4>
+                             <h4 className="font-bold text-slate-900 text-sm">Payroll & Earnings</h4>
                              <p className="text-[10px] font-medium text-slate-400">
-                               Available: {payrollData[0]?.Month || 'N/A'}
+                                View your salary breakdown
                              </p>
                           </div>
                        </div>
-                       <Download size={18} className="text-slate-300 group-hover:text-amber-600" />
+                       <ChevronRight size={18} className="text-slate-300 group-hover:text-amber-600" />
                     </button>
                     
                     <button onClick={() => setActiveTab('leave')} className="w-full p-5 flex items-center justify-between hover:bg-slate-50 transition-all text-left group">
@@ -446,6 +538,223 @@ export default function EmployeePortal({ user, onLogout }) {
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'updates' && (
+            <motion.div 
+              key="updates"
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+              className="max-w-4xl mx-auto space-y-8"
+            >
+              <div className="flex justify-between items-center px-1">
+                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Notice Board</h2>
+              </div>
+
+              <div className="space-y-6">
+                 {[
+                    { title: 'New Leave Policy 2026', content: 'We have updated our leave policy to include additional wellness leaves. Please check the documents section for the full PDF.', date: '2 days ago', type: 'Policy' },
+                    { title: 'Office Expansion', content: 'Exciting news! We are expanding our Pune office to the 5th floor. More space, more collaboration areas coming soon.', date: '1 week ago', type: 'News' },
+                    { title: 'Security Reminder', content: 'Please ensure you use biometric check-in for every shift. Manual attendance requests will be restricted from next month.', date: '2 weeks ago', type: 'Security' },
+                    { title: 'Health Insurance Cards', content: 'The new health insurance cards are ready for collection from the HR desk.', date: '3 weeks ago', type: 'Benefits' },
+                 ].map((notice, i) => (
+                    <div key={i} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all space-y-4">
+                       <div className="flex justify-between items-start">
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                            notice.type === 'Policy' ? "bg-indigo-50 text-indigo-600" :
+                            notice.type === 'News' ? "bg-emerald-50 text-emerald-600" :
+                            notice.type === 'Security' ? "bg-rose-50 text-rose-600" :
+                            "bg-amber-50 text-amber-600"
+                          )}>
+                             {notice.type}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{notice.date}</span>
+                       </div>
+                       <div className="space-y-2">
+                          <h4 className="text-xl font-black text-slate-900 tracking-tight">{notice.title}</h4>
+                          <p className="text-slate-500 text-sm leading-relaxed font-medium">{notice.content}</p>
+                       </div>
+                       <button className="text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-600 transition-colors">Read More</button>
+                    </div>
+                 ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'payroll' && (
+            <motion.div 
+              key="payroll"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+              className="max-w-4xl mx-auto space-y-8"
+            >
+               {/* Salary Summary Card */}
+               <div className="bg-slate-900 rounded-[40px] p-10 text-white relative overflow-hidden shadow-2xl shadow-slate-200">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full -mr-40 -mt-40 blur-3xl"></div>
+                  <div className="relative space-y-8">
+                     <div className="flex justify-between items-start">
+                        <div>
+                           <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Net Payable Amount</p>
+                           <h2 className="text-5xl font-black tracking-tighter tabular-nums">
+                              ₹{payrollData[0]?.['Total Pay Rate'] || '0.00'}
+                           </h2>
+                        </div>
+                        <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center">
+                           <Briefcase size={32} className="text-indigo-400" />
+                        </div>
+                     </div>
+                     
+                     <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/5">
+                        <div>
+                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Payment Status</p>
+                           <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                              <span className="text-sm font-bold">Processed</span>
+                           </div>
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Bank Account</p>
+                           <p className="text-sm font-bold">XXXX XXXX 4582</p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Detailed Breakdown */}
+               <div className="space-y-4">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Salary Breakdown</h3>
+                  <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                     <div className="p-8 space-y-6">
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center text-sm font-bold">
+                              <span className="text-slate-400">Basic Salary</span>
+                              <span className="text-slate-900">₹{(payrollData[0]?.['Total Pay Rate'] * 0.6).toFixed(2)}</span>
+                           </div>
+                           <div className="flex justify-between items-center text-sm font-bold">
+                              <span className="text-slate-400">HRA</span>
+                              <span className="text-slate-900">₹{(payrollData[0]?.['Total Pay Rate'] * 0.3).toFixed(2)}</span>
+                           </div>
+                           <div className="flex justify-between items-center text-sm font-bold">
+                              <span className="text-slate-400">Special Allowance</span>
+                              <span className="text-slate-900">₹{(payrollData[0]?.['Total Pay Rate'] * 0.1).toFixed(2)}</span>
+                           </div>
+                        </div>
+                        <div className="h-px bg-slate-50"></div>
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center text-sm font-bold text-rose-500">
+                              <span>PF Deduction</span>
+                              <span>- ₹1,800.00</span>
+                           </div>
+                           <div className="flex justify-between items-center text-sm font-bold text-rose-500">
+                              <span>Professional Tax</span>
+                              <span>- ₹200.00</span>
+                           </div>
+                        </div>
+                     </div>
+                     <div className="bg-slate-50 p-6 flex justify-between items-center">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Earnings</span>
+                        <span className="text-lg font-black text-slate-900">₹{payrollData[0]?.['Total Pay Rate']}</span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Payment History */}
+               <div className="space-y-4">
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Payment History</h3>
+                  <div className="space-y-3">
+                     {payrollData.slice(0, 6).map((pay, i) => (
+                        <div key={i} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-all">
+                                 <Calendar size={20} />
+                              </div>
+                              <div>
+                                 <h4 className="font-bold text-slate-900 text-sm">{pay.Month || 'N/A'}</h4>
+                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Released on {pay['Payment Date'] || '5th of Month'}</p>
+                              </div>
+                           </div>
+                           <div className="text-right flex items-center gap-4">
+                              <div className="hidden sm:block">
+                                 <p className="text-sm font-black text-slate-900">₹{pay['Total Pay Rate']}</p>
+                                 <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Success</p>
+                              </div>
+                              <button className="p-3 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                                 <Download size={18} />
+                              </button>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'help' && (
+             <motion.div 
+               key="help"
+               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+               className="max-w-2xl mx-auto space-y-8"
+             >
+                <div className="text-center space-y-2">
+                   <h2 className="text-3xl font-black text-slate-900 tracking-tight">Help Desk</h2>
+                   <p className="text-slate-400 text-sm font-medium">Need assistance? Raise a ticket and we'll get back to you.</p>
+                </div>
+
+                <div className="bg-white rounded-[40px] p-10 border border-slate-100 shadow-xl shadow-slate-200/50 space-y-8">
+                   <div className="grid grid-cols-2 gap-4">
+                      <button className="p-6 rounded-[32px] border-2 border-indigo-100 bg-indigo-50/30 text-center space-y-3 group hover:bg-indigo-50 transition-all">
+                         <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto text-indigo-600 group-hover:scale-110 transition-transform">
+                            <ShieldCheck size={24} />
+                         </div>
+                         <p className="text-xs font-black text-slate-900 uppercase tracking-widest">HR Query</p>
+                      </button>
+                      <button className="p-6 rounded-[32px] border-2 border-slate-50 bg-slate-50/30 text-center space-y-3 group hover:border-indigo-100 hover:bg-indigo-50/30 transition-all">
+                         <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto text-slate-400 group-hover:text-indigo-600 group-hover:scale-110 transition-transform">
+                            <Smartphone size={24} />
+                         </div>
+                         <p className="text-xs font-black text-slate-900 uppercase tracking-widest">IT Support</p>
+                      </button>
+                   </div>
+
+                   <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); toast.success('Ticket raised successfully! #TIC-4829'); }}>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                         <input 
+                           type="text" 
+                           placeholder="What do you need help with?"
+                           className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all" 
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Description</label>
+                         <textarea 
+                           placeholder="Tell us more about your issue..."
+                           className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-indigo-50 transition-all h-32 resize-none" 
+                         />
+                      </div>
+                      <button className="w-full py-5 bg-slate-900 text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all">
+                         Submit Ticket
+                      </button>
+                   </form>
+                </div>
+
+                {/* Recent Tickets */}
+                <div className="space-y-4">
+                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Open Tickets</h3>
+                   <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                            <Clock size={20} />
+                         </div>
+                         <div>
+                            <h4 className="font-bold text-slate-900 text-sm">#TIC-3920: PF Number Correction</h4>
+                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">In Progress</p>
+                         </div>
+                      </div>
+                      <ChevronRight size={18} className="text-slate-300" />
+                   </div>
+                </div>
+             </motion.div>
+          )}
+
 
           {activeTab === 'leave' && (
             <motion.div 
@@ -795,7 +1104,7 @@ export default function EmployeePortal({ user, onLogout }) {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-6 py-4 z-50">
         <div className="max-w-md mx-auto flex justify-between items-center">
-          {tabs.map(tab => {
+          {tabs.filter(t => ['home', 'attendance', 'leave', 'payroll', 'profile'].includes(t.id)).map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -813,8 +1122,8 @@ export default function EmployeePortal({ user, onLogout }) {
                      className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full"
                    />
                 )}
-                <Icon size={22} strokeWidth={isActive ? 3 : 2} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{tab.label}</span>
+                <Icon size={20} strokeWidth={isActive ? 3 : 2} />
+                <span className="text-[9px] font-black uppercase tracking-widest">{tab.label}</span>
               </button>
             );
           })}
