@@ -181,7 +181,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
     }
   };
 
-  const handleRunPayroll = async () => {
+  const handleBulkProcess = async () => {
     const readyEmployees = payrollData.filter(p => p.isReady);
     if (readyEmployees.length === 0) {
       toast.error('No employees ready for payroll generation.');
@@ -267,7 +267,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
           </button>
           <button 
             onClick={handleBulkProcess}
-            disabled={isProcessing || filteredPayroll.every(p => !p.isReady)}
+            disabled={isProcessing || filteredData.every(p => !p.isReady)}
             className="flex-1 lg:flex-none px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-[10px] hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
           >
             {isProcessing ? 'Processing...' : 'Bulk Finalize'}
