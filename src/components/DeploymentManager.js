@@ -1,7 +1,7 @@
 "use client"; // Premium Responsive Deployment
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, ArrowRight, X, Clock, Calendar, Briefcase, DollarSign, Search, Shield, MapPin, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
+import { Building2, ArrowRight, X, Clock, Calendar, Briefcase, DollarSign, Search, Shield, MapPin, UserCheck, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export default function DeploymentManager({ employees, clients, onSave }) {
