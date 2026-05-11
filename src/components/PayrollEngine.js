@@ -61,7 +61,8 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
 
       // Check for Manual Override from Attendance Roll
       const manualRecord = monthlyAttendanceData.find(r => 
-        (r.employee_id === empId) && r.month === selectedMonth
+        (r.employee_id === empId || r['Employee ID'] === empId) && 
+        (r.Date?.startsWith(selectedMonth) || r.date?.startsWith(selectedMonth))
       );
       
       const isOverridden = manualRecord !== undefined;

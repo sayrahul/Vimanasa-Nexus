@@ -30,6 +30,32 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
   const activeEmployees = employees.filter(e => e.Status !== 'Inactive');
   const uniqueClients = [...new Set(activeEmployees.map(e => e['Assigned Client']).filter(Boolean))].sort();
 
+  // Load existing overrides from attendanceData
+  React.useEffect(() => {
+    const existingManual = {};
+    const monthlyRolls = attendanceData.filter(r => 
+      (r.status === 'monthly_roll' || r.Status === 'monthly_roll') && 
+      (r.Date?.startsWith(selectedMonth) || r.date?.startsWith(selectedMonth))
+    );
+
+    monthlyRolls.forEach(record => {
+      const empId = record.employee_id || record['Employee ID'];
+      if (empId) {
+        existingManual[empId] = {
+          days: record.payable_days,
+          ot: record.overtime_hours,
+          remarks: record.remarks
+        };
+      }
+    });
+
+    if (Object.keys(existingManual).length > 0) {
+      setManualData(existingManual);
+    } else {
+      setManualData({});
+    }
+  }, [selectedMonth, attendanceData]);
+
   const getDaysInMonth = (yearMonth) => {
     const [year, month] = yearMonth.split('-');
     return new Date(year, month, 0).getDate();

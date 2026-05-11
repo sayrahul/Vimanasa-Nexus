@@ -76,7 +76,6 @@ export default function DashboardLayout() {
     leaveRequests: [],
     expenses: [],
     invoices: [],
-    monthly_attendance: [],
     candidates: [],
     job_openings: [],
   });
@@ -308,7 +307,7 @@ export default function DashboardLayout() {
     const tabs = [
       'workforce', 'clients', 'partners', 'attendance', 'leave', 
       'expenses', 'finance', 'payroll', 'compliance', 'invoices', 
-      'candidates', 'job_openings', 'monthly_attendance'
+      'candidates', 'job_openings'
     ];
     tabs.forEach(tab => {
       fetchData(tab, true);
@@ -738,10 +737,23 @@ export default function DashboardLayout() {
                       onSaveRoll={async (records, month) => {
                         try {
                           for (const record of records) {
-                            await apiClient.post('/api/database', { table: 'monthly_attendance', data: record });
+                            // Map the record to the attendance table schema
+                            // We use a special Date (last day of month) and Status (monthly_roll)
+                            const [year, monthNum] = month.split('-');
+                            const lastDay = new Date(year, monthNum, 0).getDate();
+                            const attendanceRecord = {
+                              employee_id: record.employee_id,
+                              Date: `${month}-${lastDay}`,
+                              Status: 'monthly_roll',
+                              // Custom fields go into metadata
+                              payable_days: record.payable_days,
+                              overtime_hours: record.overtime_hours,
+                              remarks: record.remarks
+                            };
+                            await apiClient.post('/api/database', { table: 'attendance', data: attendanceRecord });
                           }
                           toast.success('✅ Attendance roll finalized!');
-                          fetchData('monthly_attendance');
+                          fetchData('attendance');
                         } catch (error) { toast.error('❌ Failed to save roll.'); }
                       }}
                     />
@@ -753,7 +765,7 @@ export default function DashboardLayout() {
                     <PayrollEngine 
                       employees={data.workforce}
                       attendanceData={data.attendance}
-                      monthlyAttendanceData={data.monthly_attendance}
+                      monthlyAttendanceData={data.attendance.filter(r => r.status === 'monthly_roll' || r.Status === 'monthly_roll')}
                       onSavePayroll={async (record) => {
                         try {
                           await apiClient.post('/api/database', { table: 'payroll', data: record });
