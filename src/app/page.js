@@ -670,7 +670,7 @@ export default function DashboardLayout() {
                         try {
                           await apiClient.put('/api/database', {
                             table: 'leave', id: request.id,
-                            data: { ...request, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() }
+                            data: { ...request, Status: 'Approved', approved_by: 'Admin', approved_at: new Date().toISOString() }
                           });
                           toast.success('✅ Leave request approved');
                           fetchData('leave');
@@ -680,7 +680,7 @@ export default function DashboardLayout() {
                         try {
                           await apiClient.put('/api/database', {
                             table: 'leave', id: request.id,
-                            data: { ...request, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() }
+                            data: { ...request, Status: 'Rejected', approved_by: 'Admin', approved_at: new Date().toISOString() }
                           });
                           toast.success('✅ Leave request rejected');
                           fetchData('leave');
@@ -755,7 +755,7 @@ export default function DashboardLayout() {
                       }}
                       onUpdateStatus={async (invoice, idx, newStatus) => {
                         try {
-                          await apiClient.put('/api/database', { table: 'invoices', id: invoice.id, data: { ...invoice, status: newStatus } });
+                          await apiClient.put('/api/database', { table: 'invoices', id: invoice.id, data: { ...invoice, Status: newStatus } });
                           toast.success('✅ Invoice status updated!');
                           fetchData('invoices');
                         } catch (error) { toast.error('❌ Failed to update status.'); }
@@ -778,14 +778,14 @@ export default function DashboardLayout() {
                       }}
                       onApprove={async (expense, idx) => {
                         try {
-                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'approved', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, Status: 'Approved', approved_by: 'Admin', approved_at: new Date().toISOString() } });
                           toast.success('✅ Expense claim approved');
                           fetchData('expenses');
                         } catch (error) { toast.error('❌ Failed to approve expense claim.'); }
                       }}
                       onReject={async (expense, idx) => {
                         try {
-                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, status: 'rejected', approved_by: 'Admin', approved_at: new Date().toISOString() } });
+                          await apiClient.put('/api/database', { table: 'expenses', id: expense.id, data: { ...expense, Status: 'Rejected', approved_by: 'Admin', approved_at: new Date().toISOString() } });
                           toast.success('✅ Expense claim rejected');
                           fetchData('expenses');
                         } catch (error) { toast.error('❌ Failed to reject expense claim.'); }
