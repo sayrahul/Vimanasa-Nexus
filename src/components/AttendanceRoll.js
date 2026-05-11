@@ -25,7 +25,7 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
   const [clientFilter, setClientFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [manualDays, setManualDays] = useState({}); // { employeeId: days }
+  const [manualData, setManualData] = useState({}); // { employeeId: { days, ot, remarks } }
 
   const activeEmployees = employees.filter(e => e.Status !== 'Inactive');
   const uniqueClients = [...new Set(activeEmployees.map(e => e['Assigned Client']).filter(Boolean))].sort();
@@ -37,7 +37,6 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
 
   const totalDaysInMonth = getDaysInMonth(selectedMonth);
 
-  // Calculate "Calculated Days" based on existing daily attendance
   const calculatedDays = useMemo(() => {
     const result = {};
     activeEmployees.forEach(emp => {
@@ -46,11 +45,9 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
         (r['Employee ID'] === empId || r.employeeId === empId) && 
         r.Date?.startsWith(selectedMonth)
       );
-
       const presentDays = monthRecords.filter(r => r.Status === 'Present').length;
       const halfDays = monthRecords.filter(r => r.Status === 'Half Day').length;
       const leaveDays = monthRecords.filter(r => r.Status === 'On Leave').length;
-      
       result[empId] = presentDays + (halfDays * 0.5) + leaveDays;
     });
     return result;
@@ -63,37 +60,55 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
     return matchesSearch && matchesClient;
   });
 
-  const handleDayChange = (empId, val) => {
-    const numVal = parseFloat(val);
-    if (isNaN(numVal)) {
-      const newDays = { ...manualDays };
-      delete newDays[empId];
-      setManualDays(newDays);
+  const handleUpdate = (empId, field, val) => {
+    const current = manualData[empId] || {};
+    if (val === null || val === '') {
+      const updated = { ...current };
+      delete updated[field];
+      if (Object.keys(updated).length === 0) {
+        const newData = { ...manualData };
+        delete newData[empId];
+        setManualData(newData);
+      } else {
+        setManualData({ ...manualData, [empId]: updated });
+      }
       return;
     }
-    if (numVal < 0 || numVal > totalDaysInMonth) return;
-    setManualDays({ ...manualDays, [empId]: numVal });
-  };
-
-  const handleBulkUpload = () => {
-    toast.info('Bulk CSV upload feature coming soon! Please enter manually for now.');
+    setManualData({ ...manualData, [empId]: { ...current, [field]: val } });
   };
 
   const handleAutoFill = () => {
-    const newManual = {};
+    const newManual = { ...manualData };
     filteredEmployees.forEach(emp => {
       const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
-      newManual[empId] = calculatedDays[empId] || 0;
+      newManual[empId] = { ...(newManual[empId] || {}), days: calculatedDays[empId] || 0 };
     });
-    setManualDays({ ...manualDays, ...newManual });
+    setManualData(newManual);
     toast.success('Manual days synced with calculated records');
   };
 
+  const handleMarkAllPresent = () => {
+    const newManual = { ...manualData };
+    filteredEmployees.forEach(emp => {
+      const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
+      newManual[empId] = { ...(newManual[empId] || {}), days: totalDaysInMonth };
+    });
+    setManualData(newManual);
+    toast.success(`All filtered marked as ${totalDaysInMonth} days`);
+  };
+
+  const handleReset = () => {
+    setManualData({});
+    toast.info('All overrides cleared');
+  };
+
   const handleSave = async () => {
-    const recordsToSave = Object.entries(manualDays).map(([empId, days]) => ({
+    const recordsToSave = Object.entries(manualData).map(([empId, data]) => ({
       employee_id: empId,
       month: selectedMonth,
-      payable_days: days,
+      payable_days: data.days,
+      overtime_hours: data.ot || 0,
+      remarks: data.remarks || '',
       type: 'monthly_roll',
       updated_at: new Date().toISOString()
     }));
@@ -108,7 +123,7 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
       if (onSaveRoll) {
         await onSaveRoll(recordsToSave, selectedMonth);
       }
-      toast.success('Attendance roll saved successfully');
+      toast.success('Attendance roll finalized successfully');
     } catch (error) {
       toast.error('Failed to save attendance roll');
     } finally {
@@ -116,185 +131,228 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
     }
   };
 
+  // Stats
+  const overriddenCount = Object.keys(manualData).length;
+  const totalEmployeesCount = filteredEmployees.length;
+
   return (
-    <div className="space-y-6 sm:space-y-8 pb-20">
-      {/* Header */}
+    <div className="space-y-6 pb-24 lg:pb-12">
+      {/* Premium Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
-              <Clock size={24} />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-slate-900 rounded-[22px] flex items-center justify-center shadow-2xl shadow-slate-200">
+            <Clock size={28} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Manual Attendance Roll</h2>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
+                <Users size={12} /> {totalEmployeesCount} Employees
+              </span>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md">
+                <CheckCircle2 size={12} /> {overriddenCount} Overridden
+              </span>
             </div>
-            Monthly Attendance Roll
-          </h2>
-          <p className="text-slate-500 font-medium mt-1 flex items-center gap-2 text-sm sm:text-base">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Manual override & bulk attendance processing
-          </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           <button 
-            onClick={handleAutoFill}
-            className="flex-1 lg:flex-none px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+            onClick={handleReset}
+            className="flex-1 lg:flex-none px-6 py-3 bg-white text-rose-600 border border-rose-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-sm"
           >
-            <RefreshCw size={16} /> SYNC WITH AUTO
+            Reset All
+          </button>
+          <button 
+            onClick={handleMarkAllPresent}
+            className="flex-1 lg:flex-none px-6 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-100 transition-all shadow-sm"
+          >
+            Mark All Present
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving || Object.keys(manualDays).length === 0}
-            className="flex-1 lg:flex-none px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold text-xs hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
+            disabled={isSaving || overriddenCount === 0}
+            className="w-full lg:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-widest"
           >
-            {isSaving ? 'Saving...' : 'Finalize Roll'}
-            <Save size={16} />
+            {isSaving ? 'Processing...' : 'Finalize Roll'}
+            <ArrowRight size={18} />
           </button>
         </div>
       </div>
 
-      {/* Settings Bar */}
-      <div className="bg-white/40 backdrop-blur-xl rounded-[32px] border border-slate-200/60 p-6 shadow-sm flex flex-col md:flex-row items-end gap-6">
-        <div className="w-full md:w-64 space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reporting Month</label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-blue-50/50 outline-none font-bold text-slate-800 bg-white"
-            />
+      {/* Modern Control Center */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-3">
+          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reporting Month</label>
+            <div className="relative group">
+              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 transition-transform group-hover:scale-110" size={20} />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-100 outline-none font-black text-slate-800 bg-slate-50 focus:bg-white focus:ring-4 focus:ring-indigo-50/50 transition-all"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 w-full space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Search Employee</label>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by name or ID..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-50 transition-all font-semibold text-sm"
-            />
+        <div className="lg:col-span-6">
+          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Search Directory</label>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+              <input 
+                type="text" 
+                placeholder="Search by name, ID or role..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-slate-50 transition-all font-semibold text-sm"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="w-full md:w-auto space-y-2">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Client Filter</label>
-          <div className="relative">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <select
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-              className="pl-10 pr-10 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-50 transition-all font-bold text-xs appearance-none text-slate-700 min-w-[160px]"
-            >
-              <option value="All">All Clients</option>
-              {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+        <div className="lg:col-span-3">
+          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Client View</label>
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+              <select
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
+                className="w-full pl-12 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:bg-white focus:ring-4 focus:ring-slate-50 transition-all font-black text-xs appearance-none text-slate-700"
+              >
+                <option value="All">All Entities</option>
+                {uniqueClients.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Info Alert */}
-      <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-4">
-        <Info size={20} className="text-indigo-500 mt-0.5 shrink-0" />
-        <div className="text-xs font-medium text-indigo-700 leading-relaxed">
-          <p className="font-black uppercase tracking-wider mb-1">Intelligence Advice:</p>
-          Manual Attendance Roll overrides automated daily logs for the selected month. Use this when clients provide a total attendance figure. 
-          The payroll engine will automatically prioritize these manual figures for salary calculation.
-        </div>
-      </div>
-
-      {/* Employee List */}
+      {/* Table Section */}
       <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
-        <div className="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          <div className="col-span-4">Employee Information</div>
-          <div className="col-span-3 text-center">Auto-Calculated Days</div>
-          <div className="col-span-3 text-center">Manual Payable Days</div>
-          <div className="col-span-2 text-right">Status</div>
+        {/* Bulk Header Controls */}
+        <div className="px-8 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleAutoFill}
+              className="px-4 py-2 bg-white text-indigo-600 border border-indigo-100 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-sm"
+            >
+              <RefreshCw size={14} /> Sync All from Daily Logs
+            </button>
+          </div>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <Info size={14} /> Use 0.5 for Half-Days
+          </div>
         </div>
 
+        {/* List Content */}
         <div className="divide-y divide-slate-100">
           <AnimatePresence mode="popLayout">
             {filteredEmployees.length > 0 ? (
               filteredEmployees.map((emp, idx) => {
                 const empId = emp['ID'] || emp.employeeId || emp['Employee ID'];
                 const autoVal = calculatedDays[empId] || 0;
-                const manualVal = manualDays[empId];
-                const isOverridden = manualVal !== undefined;
+                const manual = manualData[empId] || {};
+                const isOverridden = manual.days !== undefined;
 
                 return (
                   <motion.div 
-                    layout
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     key={empId}
-                    className="p-6 lg:px-8 lg:py-5 hover:bg-slate-50/80 transition-colors"
+                    className={cn(
+                      "group p-6 lg:px-8 lg:py-6 transition-all",
+                      isOverridden ? "bg-indigo-50/20" : "hover:bg-slate-50/50"
+                    )}
                   >
                     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:items-center gap-6">
-                      {/* Employee Info */}
+                      {/* Left Side: Employee Brand */}
                       <div className="col-span-4 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-slate-400 border border-slate-200">
+                        <div className={cn(
+                          "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base border transition-all",
+                          isOverridden ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100" : "bg-slate-100 text-slate-400 border-slate-200"
+                        )}>
                           {emp.Employee?.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-slate-900 text-base truncate">{emp.Employee}</h4>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{empId}</span>
-                            <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider bg-blue-50 px-2 rounded-md">
-                              {emp['Assigned Client'] || 'Internal'}
-                            </span>
+                          <h4 className="font-bold text-slate-900 text-base lg:text-sm truncate leading-tight">{emp.Employee}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{empId}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{emp['Assigned Client'] || 'Internal'}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Auto Calculated */}
-                      <div className="col-span-3 flex flex-col items-center">
-                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Auto Days</span>
-                        <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 font-black text-slate-400 text-lg">
-                          {autoVal}
+                      {/* Middle: Data Entry Grid */}
+                      <div className="col-span-6 grid grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Auto Days</label>
+                          <div className="h-12 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center font-black text-slate-400">
+                            {autoVal}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Manual Input */}
-                      <div className="col-span-3 flex flex-col items-center">
-                        <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-blue-500">Manual Override</span>
-                        <div className="relative w-full max-w-[140px]">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest ml-1">Payable Days</label>
                           <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            max={totalDaysInMonth}
+                            type="number" step="0.5" min="0" max={totalDaysInMonth}
                             placeholder={autoVal.toString()}
-                            value={manualVal || ''}
-                            onChange={(e) => handleDayChange(empId, e.target.value)}
+                            value={manual.days || ''}
+                            onChange={(e) => handleUpdate(empId, 'days', e.target.value)}
                             className={cn(
-                              "w-full px-4 py-3 rounded-xl border-2 outline-none font-black text-center text-xl transition-all",
-                              isOverridden 
-                                ? "border-blue-500 bg-blue-50 text-blue-700 shadow-lg shadow-blue-100" 
-                                : "border-slate-100 bg-white text-slate-400 focus:border-blue-200"
+                              "h-12 w-full px-4 rounded-2xl border-2 outline-none font-black text-center text-lg transition-all",
+                              isOverridden ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-xl shadow-indigo-50" : "border-slate-100 bg-white text-slate-400 focus:border-indigo-200"
                             )}
                           />
-                          {isOverridden && (
-                            <button 
-                              onClick={() => handleDayChange(empId, null)}
-                              className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-blue-700 transition-colors"
-                            >
-                              ×
-                            </button>
-                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[9px] font-black text-emerald-500 uppercase tracking-widest ml-1">OT Hours</label>
+                          <input
+                            type="number" step="1" min="0"
+                            placeholder="0"
+                            value={manual.ot || ''}
+                            onChange={(e) => handleUpdate(empId, 'ot', e.target.value)}
+                            className={cn(
+                              "h-12 w-full px-4 rounded-2xl border-2 outline-none font-black text-center text-lg transition-all",
+                              manual.ot ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-xl shadow-emerald-50" : "border-slate-100 bg-white text-slate-400 focus:border-emerald-200"
+                            )}
+                          />
+                        </div>
+
+                        <div className="hidden lg:flex flex-col gap-1.5">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Remarks</label>
+                          <input
+                            type="text"
+                            placeholder="Add note..."
+                            value={manual.remarks || ''}
+                            onChange={(e) => handleUpdate(empId, 'remarks', e.target.value)}
+                            className="h-12 w-full px-4 rounded-2xl border-2 border-slate-100 outline-none font-bold text-xs bg-white focus:border-indigo-200"
+                          />
                         </div>
                       </div>
 
-                      {/* Status */}
-                      <div className="col-span-2 flex justify-end">
+                      {/* Right Side: Status Badge */}
+                      <div className="col-span-2 flex items-center justify-between lg:justify-end gap-3 mt-4 lg:mt-0">
+                         <div className="lg:hidden flex-1">
+                            <input
+                              type="text"
+                              placeholder="Notes..."
+                              value={manual.remarks || ''}
+                              onChange={(e) => handleUpdate(empId, 'remarks', e.target.value)}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-100 outline-none font-bold text-[10px] bg-slate-50"
+                            />
+                         </div>
                         {isOverridden ? (
-                          <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-200">
-                            <CheckCircle2 size={12} /> Overridden
+                          <div className="bg-indigo-600 text-white p-2 rounded-xl shadow-lg shadow-indigo-200">
+                            <CheckCircle2 size={20} />
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-200">
-                            <Clock size={12} /> Auto-Sync
+                          <div className="bg-slate-100 text-slate-300 p-2 rounded-xl">
+                            <RefreshCw size={20} />
                           </div>
                         )}
                       </div>
@@ -303,28 +361,51 @@ export default function AttendanceRoll({ employees = [], attendanceData = [], on
                 );
               })
             ) : (
-              <div className="p-20 text-center flex flex-col items-center">
-                <Users size={48} className="text-slate-200 mb-4" />
-                <h4 className="text-lg font-bold text-slate-900">No employees to roll</h4>
-                <p className="text-slate-500 text-sm">Adjust filters to find employees</p>
+              <div className="p-32 text-center flex flex-col items-center">
+                <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center text-slate-200 mb-8 border border-slate-100">
+                   <Users size={40} />
+                </div>
+                <h4 className="text-2xl font-black text-slate-900">No matches found</h4>
+                <p className="text-slate-500 font-medium max-w-sm mt-2">Adjust your filters or try a different search term to find employees.</p>
               </div>
             )}
           </AnimatePresence>
         </div>
       </div>
 
-      {/* Bulk Upload Modal Mock */}
-      <div className="flex justify-center mt-8">
-        <button 
-          onClick={handleBulkUpload}
-          className="flex items-center gap-3 px-10 py-5 bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all group"
-        >
-          <FileSpreadsheet size={24} className="group-hover:scale-110 transition-transform" />
-          <div className="text-left">
-            <p className="font-black uppercase tracking-widest text-xs">Bulk Upload Attendance</p>
-            <p className="text-[10px] font-medium opacity-60">Upload CSV provided by Client for massive updates</p>
-          </div>
-        </button>
+      {/* Fixed Mobile Action Bar */}
+      <div className="lg:hidden fixed bottom-6 left-6 right-6 z-[100] flex gap-3">
+         <button 
+           onClick={handleSave}
+           disabled={isSaving || overriddenCount === 0}
+           className="flex-1 bg-slate-900 text-white h-16 rounded-[24px] font-black text-sm shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform disabled:opacity-50"
+         >
+           {isSaving ? <RefreshCw className="animate-spin" /> : <Save size={20} />}
+           FINALIZE ATTENDANCE ROLL
+         </button>
+      </div>
+
+      {/* CSV Bulk Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="p-8 bg-white border border-slate-200 rounded-[32px] flex items-center gap-6 group hover:border-indigo-200 transition-all">
+            <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
+               <Download size={24} />
+            </div>
+            <div>
+               <h5 className="font-black text-sm uppercase tracking-widest text-slate-800">Download Template</h5>
+               <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Get pre-filled CSV for this month</p>
+            </div>
+         </div>
+
+         <div className="p-8 bg-white border border-slate-200 rounded-[32px] flex items-center gap-6 group hover:border-emerald-200 transition-all cursor-pointer">
+            <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:scale-110 transition-transform">
+               <Upload size={24} />
+            </div>
+            <div>
+               <h5 className="font-black text-sm uppercase tracking-widest text-slate-800">Import CSV Sheet</h5>
+               <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Process mass updates from client files</p>
+            </div>
+         </div>
       </div>
     </div>
   );

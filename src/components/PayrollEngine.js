@@ -66,6 +66,7 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
       
       const isOverridden = manualRecord !== undefined;
       const payableDays = isOverridden ? parseFloat(manualRecord.payable_days) : payableDaysCalculated;
+      const otHours = isOverridden ? parseFloat(manualRecord.overtime_hours || 0) : 0;
 
       // Base Salary Details
       const basicSalaryRaw = parseFloat(emp['Basic Salary']) || 0;
@@ -82,7 +83,11 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
       const earnedHra = dailyHra * payableDays;
       const earnedAllowances = dailyAllowances * payableDays;
 
-      const grossSalary = earnedBasic + earnedHra + earnedAllowances;
+      // Overtime Calculation (Hourly Rate = Daily Gross / 8)
+      const hourlyRate = (totalPayRate / totalDaysInMonth) / 8;
+      const overtimePay = otHours * hourlyRate;
+
+      const grossSalary = earnedBasic + earnedHra + earnedAllowances + overtimePay;
 
       // Deductions Rules
       let pfDeduction = 0;
@@ -118,6 +123,8 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
         earnedBasic,
         earnedHra,
         earnedAllowances,
+        otHours,
+        overtimePay,
         grossSalary,
         pfDeduction,
         esicDeduction,
@@ -404,7 +411,12 @@ export default function PayrollEngine({ employees = [], attendanceData = [], mon
 
                       <div className="lg:col-span-2 text-right">
                         <span className="lg:hidden text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Gross</span>
-                        <span className="font-bold text-slate-700 text-sm">₹{data.grossSalary.toLocaleString('en-IN', {maximumFractionDigits: 0})}</span>
+                        <div className="font-bold text-slate-700 text-sm">₹{data.grossSalary.toLocaleString('en-IN', {maximumFractionDigits: 0})}</div>
+                        {data.overtimePay > 0 && (
+                          <div className="text-[8px] font-black text-emerald-600 uppercase tracking-tighter mt-0.5">
+                            +₹{Math.round(data.overtimePay)} OT
+                          </div>
+                        )}
                       </div>
 
                       <div className="lg:col-span-2 text-right">
