@@ -53,109 +53,123 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-6 antialiased">
-      <div className="w-full max-w-[440px] space-y-12">
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-             <div className="w-20 h-20 bg-black rounded-[24px] flex items-center justify-center shadow-2xl group transition-transform hover:scale-105 active:scale-95 cursor-pointer">
-                <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-10 w-auto invert" />
-             </div>
-          </div>
-          <div className="space-y-2">
-             <h1 className="text-4xl font-black text-black tracking-[-0.06em]">Nexus.</h1>
-             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.4em]">Enterprise Access Protocol</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-700"></div>
+      </div>
 
-        <div className="bg-white rounded-[40px] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-slate-100">
-          <form onSubmit={handleLogin} className="space-y-8">
+      <div className="relative w-full max-w-md">
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-center relative">
+            <div className="absolute inset-0 bg-black/10"></div>
+            <div className="relative">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-white p-4 rounded-2xl shadow-lg">
+                  <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-16 w-auto" />
+                </div>
+              </div>
+              <h1 className="text-2xl font-black text-white mb-2">Welcome Back</h1>
+              <p className="text-blue-100 text-sm font-medium">Sign in to access your dashboard</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} className="p-8 space-y-6">
             {error && (
-              <div className="bg-rose-50 p-5 rounded-2xl animate-in slide-in-from-top-2 duration-300 border border-rose-100 flex items-center gap-3">
-                 <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-                 <p className="text-[11px] font-black text-rose-800 uppercase tracking-widest">{error}</p>
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                </div>
               </div>
             )}
 
-            <div className="space-y-6">
-               <div className="space-y-2">
-                 <label htmlFor="username" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Identity</label>
-                 <input
-                   id="username"
-                   type="text"
-                   value={username}
-                   onChange={(e) => setUsername(e.target.value)}
-                   required
-                   className="w-full px-6 py-5 bg-[#F9F9F9] border border-slate-50 rounded-2xl focus:bg-white focus:border-black transition-all outline-none text-black font-bold text-sm placeholder:text-slate-300"
-                   placeholder="Username or ID"
-                 />
-               </div>
-
-               <div className="space-y-2">
-                 <div className="flex justify-between items-center ml-1">
-                    <label htmlFor="password" className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Secret</label>
-                    <button
-                      type="button"
-                      className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-black transition-colors"
-                      onClick={() => alert('Contact Systems Admin: systems@vimanasa.com')}
-                    >
-                      Forgotten?
-                    </button>
-                 </div>
-                 <div className="relative">
-                   <input
-                     id="password"
-                     type={showPassword ? "text" : "password"}
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     required
-                     className="w-full px-6 py-5 bg-[#F9F9F9] border border-slate-50 rounded-2xl focus:bg-white focus:border-black transition-all outline-none text-black font-bold text-sm placeholder:text-slate-300"
-                     placeholder="••••••••"
-                   />
-                   <button
-                     type="button"
-                     onClick={() => setShowPassword(!showPassword)}
-                     className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-300 hover:text-black transition-colors"
-                   >
-                     {showPassword ? (
-                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                     ) : (
-                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                     )}
-                   </button>
-                 </div>
-               </div>
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-sm font-bold text-slate-700">Username</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                </div>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium"
+                  placeholder="Enter your username"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative flex items-center justify-center">
-                   <input
-                     type="checkbox"
-                     checked={rememberMe}
-                     onChange={(e) => setRememberMe(e.target.checked)}
-                     className="peer sr-only"
-                   />
-                   <div className="w-6 h-6 bg-[#F9F9F9] border border-slate-200 rounded-lg peer-checked:bg-black peer-checked:border-black transition-all duration-200" />
-                   <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path d="M5 13l4 4L19 7"/></svg>
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-bold text-slate-700">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                  </svg>
                 </div>
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest select-none">Persistent Session</span>
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                />
+                <span className="text-slate-600 font-medium select-none">Remember me</span>
               </label>
+              <button
+                type="button"
+                className="text-blue-600 font-semibold hover:text-blue-700"
+                onClick={() => alert('Contact admin: vimanasaservices@gmail.com')}
+              >
+                Forgot password?
+              </button>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-black text-white font-black text-[11px] uppercase tracking-[0.4em] py-6 rounded-2xl shadow-xl hover:bg-slate-900 transition-all disabled:opacity-50 active:scale-[0.98]"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-3"
             >
-              {isLoading ? "Authenticating..." : "Authorize Portal Access"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
           </form>
-        </div>
 
-        <div className="text-center">
-           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">
-              Vimanasa Global Nexus Registry • 2026
-           </p>
+          <div className="px-8 pb-8 text-center">
+            <p className="text-xs text-slate-500">© 2026 Vimanasa Services LLP. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </div>
