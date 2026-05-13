@@ -116,10 +116,10 @@ export default function CareersPage() {
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  <option>All Types</option>
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Contract</option>
+                  <option value="All">All Types</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
                 </select>
                 <div className="hidden md:block pr-4 pointer-events-none">
                   <Filter size={16} className="text-slate-400" />

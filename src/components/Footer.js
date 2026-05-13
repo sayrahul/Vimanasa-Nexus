@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, MapPin, Phone } from "lucide-react";
@@ -22,6 +23,12 @@ const FOOTER_LINKS = {
 };
 
 export function Footer() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const currentYear = new Date().getFullYear();
 
   return (
@@ -30,8 +37,14 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-4">
           <div className="lg:col-span-2 space-y-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg">
-                <img src="/vimanasa-logo.png" alt="Vimanasa" className="h-6 w-auto invert" />
+              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                <Image 
+                  src="/vimanasa-logo.png" 
+                  alt="Vimanasa" 
+                  width={48}
+                  height={48}
+                  className="object-contain p-2 invert" 
+                />
               </div>
               <h2 className="text-xl font-black tracking-[-0.05em] text-black uppercase">Vimanasa.</h2>
             </div>
@@ -87,7 +100,7 @@ export function Footer() {
            <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">
-                © {currentYear} Vimanasa Global Nexus Registry
+                © {mounted ? currentYear : '2026'} Vimanasa Global Nexus Registry
               </p>
            </div>
            <div className="flex gap-10">

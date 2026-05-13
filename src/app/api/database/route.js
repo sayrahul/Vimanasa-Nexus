@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase';
 import { toDB, toFrontend } from '@/lib/dataMapper';
 import { verifyToken } from '@/lib/authSecure';
-import { verifyCaptcha } from '@/lib/captcha';
+import { verifyCaptcha, getCaptchaStatus } from '@/lib/captcha';
 import { validateFile } from '@/lib/fileValidation';
 import { sanitizeCandidateData, containsXss } from '@/lib/inputSanitization';
 
@@ -321,21 +321,25 @@ export async function POST(request) {
 
       // CAPTCHA verification
       const captchaToken = insertData?.captchaToken;
-      if (!captchaToken) {
+      const { configured: captchaConfigured } = getCaptchaStatus();
+
+      if (captchaConfigured && !captchaToken) {
         return json(request, { 
           error: 'Validation Error', 
           message: 'CAPTCHA verification required' 
         }, 400);
       }
 
-      const clientIp = getClientKey(request);
-      const captchaResult = await verifyCaptcha(captchaToken, clientIp);
-      
-      if (!captchaResult.success) {
-        return json(request, { 
-          error: 'CAPTCHA Failed', 
-          message: 'CAPTCHA verification failed. Please try again.' 
-        }, 400);
+      if (captchaConfigured && captchaToken) {
+        const clientIp = getClientKey(request);
+        const captchaResult = await verifyCaptcha(captchaToken, clientIp);
+        
+        if (!captchaResult.success) {
+          return json(request, { 
+            error: 'CAPTCHA Failed', 
+            message: 'CAPTCHA verification failed. Please try again.' 
+          }, 400);
+        }
       }
 
       // Remove captchaToken from data before validation
