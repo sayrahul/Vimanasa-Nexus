@@ -12,13 +12,30 @@ const ITERATIONS = 100000; // OWASP recommended minimum
 const KEY_LENGTH = 32; // 256 bits
 const SALT_LENGTH = 16; // 128 bits
 
+// Support for both Browser/Edge and Node.js environments
+const getCrypto = () => {
+  if (typeof crypto !== 'undefined') return crypto;
+  if (typeof globalThis !== 'undefined' && globalThis.crypto) return globalThis.crypto;
+  try {
+    return require('crypto').webcrypto;
+  } catch (e) {
+    try {
+      return require('crypto');
+    } catch (e2) {
+      return null;
+    }
+  }
+};
+
+const _crypto = getCrypto();
+
 /**
  * Generate a random salt
  * @returns {Promise<string>} Base64-encoded salt
  */
 async function generateSalt() {
   const salt = new Uint8Array(SALT_LENGTH);
-  crypto.getRandomValues(salt);
+  _crypto.getRandomValues(salt);
   return arrayBufferToBase64(salt);
 }
 
@@ -92,7 +109,7 @@ async function pbkdf2(password, salt, iterations, keyLength) {
   const saltBuffer = base64ToArrayBuffer(salt);
 
   // Import password as key material
-  const keyMaterial = await crypto.subtle.importKey(
+  const keyMaterial = await _crypto.subtle.importKey(
     'raw',
     passwordBuffer,
     { name: 'PBKDF2' },
@@ -101,7 +118,7 @@ async function pbkdf2(password, salt, iterations, keyLength) {
   );
 
   // Derive key using PBKDF2
-  const derivedBits = await crypto.subtle.deriveBits(
+  const derivedBits = await _crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
       salt: saltBuffer,
@@ -227,7 +244,7 @@ export function generateSecurePassword(length = 16) {
   const allChars = lowercase + uppercase + numbers + special;
 
   const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
+  _crypto.getRandomValues(array);
 
   let password = '';
   

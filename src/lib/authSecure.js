@@ -47,21 +47,25 @@ export async function authenticateUser(username, password, metadata = {}) {
       .single();
 
     if (error || !user) {
+      console.warn(`[Auth] User not found or inactive: ${username}`);
       // Log failed attempt for non-existent user
       await logAuthAttempt(null, username, false, 'User not found', metadata);
       return null;
     }
 
     // Check if account is locked
-    if (user.locked_until && new Date(user.locked_until) > new Date()) {
-      const lockoutMinutes = Math.ceil(
-        (new Date(user.locked_until) - new Date()) / 60000
-      );
+    const isLocked = user.is_locked || (user.locked_until && new Date(user.locked_until) > new Date());
+    
+    if (isLocked) {
+      const lockMessage = user.locked_until 
+        ? `Account locked for ${Math.ceil((new Date(user.locked_until) - new Date()) / 60000)} more minutes`
+        : 'Account is locked';
+        
       await logAuthAttempt(
         user.id,
         username,
         false,
-        `Account locked for ${lockoutMinutes} more minutes`,
+        lockMessage,
         metadata
       );
       return null;
@@ -71,10 +75,13 @@ export async function authenticateUser(username, password, metadata = {}) {
     const isValidPassword = await verifyPassword(password, user.password_hash);
 
     if (!isValidPassword) {
+      console.warn(`[Auth] Invalid password for user: ${username}`);
       // Increment failed attempts
       await recordFailedLogin(user.id, username, metadata);
       return null;
     }
+
+    console.log(`[Auth] Successful login for user: ${username}`);
 
     // Check if password needs rehashing (e.g., iterations increased)
     if (needsRehash(user.password_hash)) {
@@ -86,7 +93,7 @@ export async function authenticateUser(username, password, metadata = {}) {
     }
 
     // Record successful login
-    await recordSuccessfulLogin(user.id, username, metadata);
+    await recordSuccessfulLogin(user, username, metadata);
 
     // Return user without sensitive data
     const { password_hash, ...userWithoutPassword } = user;
@@ -263,20 +270,28 @@ export async function updatePassword(userId, newPassword) {
  * @param {string} username
  * @param {Object} metadata
  */
-async function recordSuccessfulLogin(userId, username, metadata) {
+async function recordSuccessfulLogin(user, username, metadata) {
   try {
     // Update user record
+    const updateData = {
+      last_login_at: new Date().toISOString(),
+      failed_login_attempts: 0,
+      is_locked: false,
+    };
+    
+    // Only include locked_until if it exists in the schema
+    // (We'll check this by seeing if it was in the user object we fetched)
+    if ('locked_until' in user) {
+      updateData.locked_until = null;
+    }
+
     await supabaseAdmin
       .from('users')
-      .update({
-        last_login_at: new Date().toISOString(),
-        failed_login_attempts: 0,
-        locked_until: null,
-      })
-      .eq('id', userId);
+      .update(updateData)
+      .eq('id', user.id);
 
     // Log successful login
-    await logAuthAttempt(userId, username, true, 'Login successful', metadata);
+    await logAuthAttempt(user.id, username, true, 'Login successful', metadata);
   } catch (error) {
     console.error('Record successful login error:', error);
   }
@@ -306,9 +321,19 @@ async function recordFailedLogin(userId, username, metadata) {
     };
 
     if (shouldLock) {
-      const lockUntil = new Date();
-      lockUntil.setMinutes(lockUntil.getMinutes() + LOCKOUT_DURATION_MINUTES);
-      updateData.locked_until = lockUntil.toISOString();
+      updateData.is_locked = true;
+      
+      // Only include locked_until if it likely exists in the schema
+      const { data: columnInfo } = await supabaseAdmin
+        .from('users')
+        .select('locked_until')
+        .limit(1);
+        
+      if (columnInfo) {
+        const lockUntil = new Date();
+        lockUntil.setMinutes(lockUntil.getMinutes() + LOCKOUT_DURATION_MINUTES);
+        updateData.locked_until = lockUntil.toISOString();
+      }
     }
 
     await supabaseAdmin
@@ -337,15 +362,20 @@ async function recordFailedLogin(userId, username, metadata) {
  */
 async function logAuthAttempt(userId, username, success, message, metadata) {
   try {
-    await supabaseAdmin.from('user_audit_log').insert({
+    const table = 'audit_logs'; // Default to audit_logs which we know exists
+    
+    await supabaseAdmin.from(table).insert({
       user_id: userId,
       username: username,
       action: 'login_attempt',
       ip_address: metadata.ip || null,
       user_agent: metadata.userAgent || null,
-      success: success,
-      error_message: success ? null : message,
-      metadata: metadata,
+      status: success ? 'success' : 'failure',
+      details: {
+        message: message,
+        ...metadata
+      },
+      created_at: new Date().toISOString()
     });
   } catch (error) {
     console.error('Log auth attempt error:', error);
